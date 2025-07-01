@@ -8,7 +8,7 @@ BIN_DIR="./bin"
 mkdir -p "$BIN_DIR"
 
 GO_OUT="$BIN_DIR/gateway"
-GO_SRC="cmd/gateway"
+GO_SRC="./cmd/gateway"
 
 # Resolve the action.
 ACTION="all"
