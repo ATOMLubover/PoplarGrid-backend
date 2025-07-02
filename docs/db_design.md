@@ -1,171 +1,137 @@
-# 数据库设计文档
+# **数据库设计文档 (v2)**
 
-## 一、人员基础信息表 (members)
+## **一、核心实体表**
 
-**`存储人员基本信息`**
+### **1.1 成员表 (members)**
 
-| 字段名        | 类型         | 约束             | 描述         |
-| ------------- | ------------ | ---------------- | ------------ |
-| id            | SERIAL       | PK               | 主键ID       |
-| created_at    | TIMESTAMP    |                  | 创建时间     |
-| updated_at    | TIMESTAMP    |                  | 更新时间     |
-| deleted_at    | TIMESTAMP    |                  | 删除时间     |
-| nickname      | VARCHAR(128) | UNIQUE, NOT NULL | 用户名       |
-| email         | VARCHAR(128) | UNIQUE, NOT NULL | 邮箱         |
-| password_hash | VARCHAR(256) | NOT NULL         | 密码哈希值   |
-| longyi_id     | VARCHAR(50)  |                  | 龙译ID       |
-| is_admin      | BOOLEAN      |                  | 管理员身份   |
-| labors        | SMALLINT     |                  | 职责掩码     |
-| remark        | TEXT         |                  | 备注         |
-| last_active   | TIMESTAMP    |                  | 上次活跃时间 |
+**`存储平台用户（汉化组成员）的基本信息`**
 
----
+| 字段名 | 类型 | 约束 | 描述 |
+| :---- | :---- | :---- | :---- |
+| id | SERIAL | PK | 主键ID |
+| created_at | TIMESTAMP |  | 创建时间 |
+| updated_at | TIMESTAMP |  | 更新时间 |
+| deleted_at | TIMESTAMP |  | 软删除时间 |
+| nickname | VARCHAR(128) | UNIQUE, NOT NULL | 用户名 |
+| email | VARCHAR(128) | UNIQUE, NOT NULL | 邮箱 |
+| password_hash | VARCHAR(256) | NOT NULL | 密码哈希值 |
+| **moetran_id** | **TEXT** | **UNIQUE, NOT NULL** | **尨译系统对应的用户ID** |
+| poplar_is_admin | BOOLEAN |  | 是否为本平台管理员 |
+| labors | SMALLINT |  | 职责掩码 (按位存储) |
+| remark | TEXT |  | 备注 |
+| last_active | TIMESTAMP |  | 上次活跃时间 |
 
-## 二、标签表 (tags)
+### **1.2 汉化组表 (teams)**
 
-**`存储系统标签`**
+**`存储从尨译同步的汉化组信息`**
 
-| 字段名      | 类型         | 约束             | 描述     |
-| ----------- | ------------ | ---------------- | -------- |
-| id          | SERIAL       | PK               | 主键ID   |
-| created_at  | TIMESTAMP    |                  | 创建时间 |
-| updated_at  | TIMESTAMP    |                  | 更新时间 |
-| deleted_at  | TIMESTAMP    |                  | 删除时间 |
-| name        | VARCHAR(128) | UNIQUE, NOT NULL | 标签名   |
-| description | VARCHAR(256) |                  | 标签描述 |
+| 字段名 | 类型 | 约束 | 描述 |
+| :---- | :---- | :---- | :---- |
+| id | SERIAL | PK | 主键ID |
+| created_at | TIMESTAMP |  | 创建时间 |
+| updated_at | TIMESTAMP |  | 更新时间 |
+| deleted_at | TIMESTAMP |  | 软删除时间 |
+| name | VARCHAR(256) | UNIQUE, NOT NULL | 汉化组名称 |
+| **moetran_id** | **TEXT** | **UNIQUE, NOT NULL** | **尨译系统对应的团队ID** |
 
----
+### **1.3 作品集表 (worksets)**
 
-## 三、成员偏好表 (member_preferences)
+**`存储从尨译同步的作品集信息`**
 
-**`存储成员标签偏好`**
+| 字段名 | 类型 | 约束 | 描述 |
+| :---- | :---- | :---- | :---- |
+| id | SERIAL | PK | 主键ID |
+| created_at | TIMESTAMP |  | 创建时间 |
+| updated_at | TIMESTAMP |  | 更新时间 |
+| deleted_at | TIMESTAMP |  | 软删除时间 |
+| title | TEXT |  | 作品集标题 |
+| **moetran_id** | **TEXT** | **UNIQUE, NOT NULL** | **尨译系统对应的作品集ID** |
 
-| 字段名      | 类型    | 约束         | 描述     |
-| ----------- | ------- | ------------ | -------- |
-| member_id   | INT     | FK, NOT NULL | 成员ID   |
-| tag_id      | INT     | FK, NOT NULL | 标签ID   |
-| is_prefered | BOOLEAN | NOT NULL     | 是否偏好 |
+### **1.4 作品表 (works)**
 
----
+**`存储从尨译同步的具体作品信息`**
 
-## 四、作品集表 (worksets)
+| 字段名 | 类型 | 约束 | 描述 |
+| :---- | :---- | :---- | :---- |
+| id | SERIAL | PK | 主键ID |
+| created_at | TIMESTAMP |  | 创建时间 |
+| updated_at | TIMESTAMP |  | 更新时间 |
+| deleted_at | TIMESTAMP |  | 软删除时间 |
+| title | TEXT | UNIQUE, NOT NULL | 作品标题 |
+| **moetran_id** | **TEXT** | **UNIQUE, NOT NULL** | **尨译系统对应的作品ID** |
+| description | TEXT |  | 作品描述 |
 
-**`存储作品集信息`**
+### **1.5 标签表 (tags)**
 
-| 字段名     | 类型         | 约束 | 描述       |
-| ---------- | ------------ | ---- | ---------- |
-| id         | SERIAL       | PK   | 主键ID     |
-| created_at | TIMESTAMP    |      | 创建时间   |
-| updated_at | TIMESTAMP    |      | 更新时间   |
-| deleted_at | TIMESTAMP    |      | 删除时间   |
-| title      | VARCHAR(255) |      | 作品集标题 |
+**`存储用于项目分类的系统标签`**
 
----
+| 字段名 | 类型 | 约束 | 描述 |
+| :---- | :---- | :---- | :---- |
+| id | SERIAL | PK | 主键ID |
+| created_at | TIMESTAMP |  | 创建时间 |
+| updated_at | TIMESTAMP |  | 更新时间 |
+| deleted_at | TIMESTAMP |  | 软删除时间 |
+| name | VARCHAR(128) | UNIQUE, NOT NULL | 标签名 |
+| description | VARCHAR(256) |  | 标签描述 |
 
-## 五、项目表 (projects)
+## **二、项目与关联表**
 
-**`存储项目信息`**
+### **2.1 项目表 (projects)**
 
-| 字段名             | 类型         | 约束     | 描述         |
-| ------------------ | ------------ | -------- | ------------ |
-| id                 | SERIAL       | PK       | 主键ID       |
-| created_at         | TIMESTAMP    |          | 创建时间     |
-| updated_at         | TIMESTAMP    |          | 更新时间     |
-| deleted_at         | TIMESTAMP    |          | 删除时间     |
-| team_affiliated_to | VARCHAR(100) | NOT NULL | 所属团队     |
-| legacy_id          | INT          | INDEX    | 历史遗留序号 |
-| workset_id         | INT          | FK       | 作品集ID     |
-| title              | VARCHAR(255) |          | 项目标题     |
-| description        | TEXT         |          | 项目描述     |
-| status             | INT          |          | 状态掩码     |
-| urgency          | SMALLINT      |          | 紧急度       |
+**`存储核心的汉化项目进度信息`**
 
-### 项目状态掩码定义（值）
+| 字段名 | 类型 | 约束 | 描述 |
+| :---- | :---- | :---- | :---- |
+| id | SERIAL | PK | 主键ID |
+| created_at | TIMESTAMP |  | 创建时间 |
+| updated_at | TIMESTAMP |  | 更新时间 |
+| deleted_at | TIMESTAMP |  | 软删除时间 |
+| legacy_id | INTEGER | INDEX | 历史遗留序号 (兼容旧数据) |
+| **team_id** | INTEGER | **FK, NOT NULL** | **所属汉化组ID** |
+| **workset_id** | INTEGER | **FK, NOT NULL** | **所属作品集ID** |
+| **work_id** | INTEGER | **FK, NOT NULL** | **所属作品ID** |
+| status | INTEGER | INDEX | 状态掩码 (按位存储) |
+| urgency | SMALLINT |  | 紧急度 |
 
-| 状态常量                        | 值         | 描述                               |
-| ------------------------------- | ---------- | ---------------------------------- |
-| PROJ_STATUS_UNSET_MASK          | X          | 未知状态，当 status = 0 时在此状态 |
-| PROJ_STATUS_ON_TRANSLATING_MASK | 2          | 翻译中                             |
-| PROJ_STATUS_TRANSLATED_MASK     | 4          | 翻译完成                           |
-| PROJ_STATUS_ON_PROOF_MASK       | 8          | 校对中                             |
-| PROJ_STATUS_PROVED_MASK         | 16         | 校对完成                           |
-| PROJ_STATUS_ON_LETTERING_MASK   | 32         | 嵌字中                             |
-| PROJ_STATUS_LETTERED_MASK       | 64         | 嵌字完成                           |
-| PROJ_STATUS_ON_REVIEWING_MASK   | 128        | 审核中                             |
-| PROJ_STATUS_REVIEWED_MASK       | 256        | 审核完成                           |
-| PROJ_STATUS_PUBLISHED_MASK      | 512        | 已发布                             |
-| PROJ_STATUS_CANCELED            | 2147483648 | 中止                               |
+### **2.2 项目分工表 (project_labor_divisions)**
 
----
+**`存储项目与成员的分工关系 (多对多)`**
 
-## 六、项目标签表 (project_tags)
+| 字段名 | 类型 | 约束 | 描述 |
+| :---- | :---- | :---- | :---- |
+| id | SERIAL | PK | 主键ID |
+| project_id | INTEGER | FK, NOT NULL | 项目ID |
+| member_id | INTEGER | FK, NOT NULL | 成员ID |
+| labor_role | INTEGER |  | 职责掩码 (按位存储) |
 
-**`项目与标签关联`**
+### **2.3 项目标签表 (project_tags)**
 
-| 字段名     | 类型      | 约束      | 描述     |
-| ---------- | --------- | --------- | -------- |
-| id         | SERIAL    | PK        | 主键ID   |
-| created_at | TIMESTAMP |           | 创建时间 |
-| updated_at | TIMESTAMP |           | 更新时间 |
-| deleted_at | TIMESTAMP |           | 删除时间 |
-| project_id | INT       | FK, INDEX | 项目ID   |
-| tag_id     | INT       | FK, INDEX | 标签ID   |
+**`存储项目与标签的关联关系 (多对多)`**
 
----
+| 字段名 | 类型 | 约束 | 描述 |
+| :---- | :---- | :---- | :---- |
+| project_id | INTEGER | PK, FK, NOT NULL | 项目ID |
+| tag_id | INTEGER | PK, FK, NOT NULL | 标签ID |
 
-## 七、项目分工表 (project_labor_divisions)
+### **2.4 成员偏好表 (member_preferences)**
 
-**`项目人员分工`**
+**`存储成员不擅长的标签 (用于分配参考)`**
 
-| 字段名     | 类型      | 约束 | 描述     |
-| ---------- | --------- | ---- | -------- |
-| id         | SERIAL    | PK   | 主键ID   |
-| created_at | TIMESTAMP |      | 创建时间 |
-| updated_at | TIMESTAMP |      | 更新时间 |
-| deleted_at | TIMESTAMP |      | 删除时间 |
-| project_id | INT       | FK   | 项目ID   |
-| member_id  | INT       | FK   | 成员ID   |
-| labor_role | INT  |      | 职责掩码 |
+| 字段名 | 类型 | 约束 | 描述 |
+| :---- | :---- | :---- | :---- |
+| id | SERIAL | PK | 主键ID |
+| member_id | INTEGER | FK, NOT NULL | 成员ID |
+| tag_id | INTEGER | FK, NOT NULL | 标签ID |
+| **is_resisted** | BOOLEAN |  | **是否不擅长/抵触该标签** |
 
-### 职责掩码定义（值）
+## **三、外键关系图谱**
 
-| 职责常量                 | 值  | 描述   |
-| ------------------------ | --- | ------ |
-| LABOR_CREATOR_SHIFT      | 1   | 创建者 |
-| LABOR_PRICINPAL_SHIFT    | 2   | 负责人 |
-| LABOR_SRC_PROV_SHIFT     | 4   | 图源   |
-| LABOR_CLEANER_SHIFT      | 8   | 修图   |
-| LABOR_GRAPHIC_PROC_SHIFT | 16  | 美工   |
-| LABOR_TRANSLATOR_SHIFT   | 32  | 翻译   |
-| LABOR_PROOF_SHIFT        | 64  | 校对   |
-| LABOR_LETTERER_SHIFT     | 128 | 嵌字   |
-| LABOR_REVIEWER_SHIFT     | 256 | 审核   |
-
----
-
-## 外键关系
-
-1. `member_preferences.member_id` → `members.id`
-2. `member_preferences.tag_id` → `tags.id`
-3. `projects.workset_id` → `worksets.id`
-4. `project_tags.project_id` → `projects.id`
-5. `project_tags.tag_id` → `tags.id`
-6. `project_labor_divisions.project_id` → `projects.id`
-7. `project_labor_divisions.member_id` → `members.id`
-
-## 索引优化
-
-1. `members.last_active` (DESC)
-2. `projects.legacy_id`
-3. `project_tags.project_id`
-4. `project_tags.tag_id`
-
-## 分区建议
-
-```sql
-ALTER TABLE projects PARTITION BY LIST (status_category) (
-    PARTITION pending VALUES IN (1),  -- 仅PROJ_STATUS_UNSET_MASK
-    PARTITION finished VALUES IN (3), -- PROJ_STATUS_PUBLISHED_MASK 或 PROJ_STATUS_CANCELED
-    PARTITION active VALUES IN (2)    -- 其他状态
-);
-```
+* projects.team_id → teams.id  
+* projects.workset_id → worksets.id  
+* projects.work_id → works.id  
+* project_labor_divisions.project_id → projects.id  
+* project_labor_divisions.member_id → members.id  
+* project_tags.project_id → projects.id  
+* project_tags.tag_id → tags.id  
+* member_preferences.member_id → members.id  
+* member_preferences.tag_id → tags.id

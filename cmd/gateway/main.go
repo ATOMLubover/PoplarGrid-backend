@@ -1,109 +1,99 @@
 package main
 
 import (
-	_ "poplargrid/docs" // Replace with your project path, ensure 'swag init' has been run to generate docs
+	"fmt"
+	"path/filepath"
+	"poplargrid/internal/gateway_server/config"
+	"poplargrid/internal/gateway_server/routes"
+	"poplargrid/internal/shared/configutil"
+	"strconv"
 
-	"github.com/iris-contrib/swagger/swaggerFiles"
-	swagger "github.com/iris-contrib/swagger/v12"
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/mvc"
+
+	_ "poplargrid/docs/gateway" // 引入生成的 Swagger 文档
 )
 
-// HealthCheckResponse Health check response struct
-type HealthCheckResponse struct {
-	Status  string `json:"status" example:"OK"`
-	Version string `json:"version" example:"1.0.0"`
-}
-
-// GreetRequest Example request DTO
-type GreetRequest struct {
-	Name     string `json:"name" binding:"required" example:"John"`
-	Language string `json:"language" example:"en" enums:"en,es,fr"`
-}
-
-// GreetResponse Example response DTO
-type GreetResponse struct {
-	Message string `json:"message" example:"Hello John!"`
-	Status  int    `json:"status" example:"200"`
-}
-
-// @title Iris Swagger API
+// @title PoplarGrid 网关 API
 // @version 1.0
-// @description A complete runnable Swagger integration example
+// @description PoplarGrid 服务器的网关服务器，负责限流、转发和协调请求
 // @host localhost:8080
-// @BasePath /api/v1
 func main() {
+	cfg := LoadConfig("gateway_config.yaml", "yaml")
+
+	app := NewIrisApp(cfg)
+	mvcApp := NewMvcApp(app, cfg)
+
+	// 初始化 MVC 应用
+	InitMvcApp(mvcApp, cfg)
+
+	// 开始启动监听
+	app.Listen(":" + strconv.Itoa(cfg.Server.Port))
+}
+
+// ========= 在 main 函数初始化加载流程中出现错误直接 panic ==========
+
+// 加载网关服务器的配置
+func LoadConfig(relPath string, cfgType string) *config.Config {
+	// 先检查配置文件路径
+	absPath, err := filepath.Abs(relPath)
+	if err != nil {
+		panic(fmt.Sprintf("无法获取配置文件的绝对路径: %v", err))
+	}
+
+	var cfg config.Config
+	if err := configutil.LoadConfig(&cfg, absPath, cfgType); err != nil {
+		panic(fmt.Sprintf("无法加载配置: %v", err))
+	}
+
+	fmt.Printf("已加载配置文件：%v\n", cfg)
+
+	// 在 debug 模式下打印内存中的结构体检查
+	if cfg.Server.Mode == "debug" {
+		fmt.Printf("已加载配置结构体：%+v\n", cfg)
+	}
+
+	return &cfg
+}
+
+// 构造底层 Iris 应用
+func NewIrisApp(cfg *config.Config) *iris.Application {
 	app := iris.Default()
-	app.Logger().SetLevel("debug")
 
-	// 1. Register Swagger UI and documentation routes
-	// Explicitly handle /swagger without a trailing slash, redirecting it to /swagger/.
-	// Use 302 Found (temporary redirect) to prevent browser caching issues.
-	app.Get("/swagger", func(ctx iris.Context) {
-		ctx.Redirect("/swagger/", iris.StatusFound)
-	})
-
-	// Core: Use swagger.WrapHandler to handle all requests related to Swagger UI.
-	// It is responsible for serving index.html and other static files, and fetching doc.json based on configuration.
-	// When accessing /swagger/, it should return index.html.
-	// When accessing /swagger, it should theoretically be handled by the redirect above.
-	// {any:path} will match /swagger/, /swagger/index.html, /swagger/swagger-ui.css, etc.
-	app.Get("/swagger/{any:path}", swagger.WrapHandler(swaggerFiles.Handler, func(c *swagger.Config) {
-		// This is the URL Swagger UI uses to fetch the API definition.
-		// Using a relative path can sometimes resolve environment-specific path resolution issues.
-		c.URL = "/swagger/doc.json" // Modified to relative path
-	}))
-
-	// 2. Register API routes (to avoid path conflicts)
-	api := app.Party("/api/v1")
-	{
-		api.Get("/health", HealthCheck)
-		api.Post("/greet", GreetHandler)
+	// 设置日志级别
+	// 注意：在 release 模式下，日志级别设置为 error
+	// 默认状态下，日志级别为 info
+	switch cfg.Server.Mode {
+	case "debug":
+		{
+			app.Logger().SetLevel("debug")
+		}
+	case "release":
+		{
+			app.Logger().SetLevel("error")
+		}
+	default:
+		{
+			panic("未知的运行模式，请检查配置文件")
+		}
 	}
 
-	app.Listen(":8080")
+	return app
 }
 
-// HealthCheck godoc
-// @Summary Service health check
-// @Description Checks the service status
-// @Tags System
-// @Produce json
-// @Success 200 {object} HealthCheckResponse
-// @Router /health [get]
-func HealthCheck(ctx iris.Context) {
-	ctx.JSON(HealthCheckResponse{
-		Status:  "OK",
-		Version: "1.0.0",
-	})
+// 构造一个封装底层 Iris 应用的 MVC 应用
+func NewMvcApp(irisApp *iris.Application, cfg *config.Config) *mvc.Application {
+	// 直接包装整个根路由
+	mvcApp := mvc.New(irisApp)
+
+	// 设置 MVC 应用的配置
+	mvcApp.Register(cfg)
+
+	return mvcApp
 }
 
-// GreetHandler godoc
-// @Summary Generate greeting
-// @Description Generates a greeting based on name and language
-// @Tags User
-// @Accept json
-// @Produce json
-// @Param body body GreetRequest true "Request parameters"
-// @Success 200 {object} GreetResponse
-// @Failure 400 {object} map[string]string
-// @Router /greet [post]
-func GreetHandler(ctx iris.Context) {
-	var req GreetRequest
-	if err := ctx.ReadJSON(&req); err != nil {
-		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
-			Title("Request parameter error").DetailErr(err))
-		return
-	}
-
-	// Processing logic
-	greeting := map[string]string{"en": "Hello", "es": "Hola", "fr": "Bonjour"}
-	msg, ok := greeting[req.Language]
-	if !ok {
-		msg = greeting["en"] // Default language
-	}
-
-	ctx.JSON(GreetResponse{
-		Message: msg + " " + req.Name + "!",
-		Status:  iris.StatusOK,
-	})
+// 由于初始化 MVC 应用较为复杂，单独分出一个函数
+func InitMvcApp(root *mvc.Application, cfg *config.Config) {
+	// 添加 /transfer 子路由组
+	routes.ConfigureTransferRoutes(root)
 }

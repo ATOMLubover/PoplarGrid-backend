@@ -1,0 +1,21 @@
+# 总体服务器配置
+server:
+  # 启动模式 (比如 "debug", "release")
+  mode: "debug"
+  # 监听端口
+  port: 8070  
+
+database:
+  # 数据库类型，目前只支持 PostgreSQL
+  type: "postgresql"
+  host: "172.21.144.1"
+  port: 5432
+  user: "postgresql"
+  # 为了提高安全性，密码可以通过环境变量传递
+  pwd_env_var: "DB_PASSWORD"
+  # 数据库名称
+  db_name: "poplargrid"
+  # 是否启用 SSL
+  ssl_enabled: false
+  # 连接超时时间（秒）
+  connect_timeout: 10

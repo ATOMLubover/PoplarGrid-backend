@@ -1,0 +1,8 @@
+host: localhost:8080
+info:
+  contact: {}
+  description: PoplarGrid 服务器的网关服务器，负责限流、转发和协调请求
+  title: PoplarGrid 网关 API
+  version: "1.0"
+paths: {}
+swagger: "2.0"

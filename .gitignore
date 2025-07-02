@@ -37,3 +37,6 @@ tmp/
 # build dir
 build/
 bin/
+
+# IDE files
+.vscode/
