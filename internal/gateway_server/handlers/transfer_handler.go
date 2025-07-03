@@ -10,7 +10,7 @@ import (
 type TransferHandler struct {
 }
 
-// GetHealthCheck godoc
+// HealthCheck godoc
 // @Summary 检查 transfer 路由的连通性
 // @Tags transfer
 // @Produce json
@@ -23,6 +23,6 @@ func (h *TransferHandler) HealthCheck(ctx iris.Context) {
 	})
 }
 
-func (h *TransferHandler) TransferToMoetran(ctx iris.Context) {
+// func (h *TransferHandler) TransferToMoetran(ctx iris.Context) {
 
-}
+// }

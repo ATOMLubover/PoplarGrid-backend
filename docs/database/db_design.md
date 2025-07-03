@@ -17,7 +17,7 @@
 | password_hash | VARCHAR(256) | NOT NULL | 密码哈希值 |
 | **moetran_id** | **TEXT** | **UNIQUE, NOT NULL** | **尨译系统对应的用户ID** |
 | poplar_is_admin | BOOLEAN |  | 是否为本平台管理员 |
-| labors | SMALLINT |  | 职责掩码 (按位存储) |
+| labors | INTEGER |  | 职责掩码 (按位存储) |
 | remark | TEXT |  | 备注 |
 | last_active | TIMESTAMP |  | 上次活跃时间 |
 
@@ -99,7 +99,6 @@
 
 | 字段名 | 类型 | 约束 | 描述 |
 | :---- | :---- | :---- | :---- |
-| id | SERIAL | PK | 主键ID |
 | project_id | INTEGER | FK, NOT NULL | 项目ID |
 | member_id | INTEGER | FK, NOT NULL | 成员ID |
 | labor_role | INTEGER |  | 职责掩码 (按位存储) |
@@ -119,7 +118,6 @@
 
 | 字段名 | 类型 | 约束 | 描述 |
 | :---- | :---- | :---- | :---- |
-| id | SERIAL | PK | 主键ID |
 | member_id | INTEGER | FK, NOT NULL | 成员ID |
 | tag_id | INTEGER | FK, NOT NULL | 标签ID |
 | **is_resisted** | BOOLEAN |  | **是否不擅长/抵触该标签** |

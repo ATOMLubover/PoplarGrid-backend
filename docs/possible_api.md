@@ -105,7 +105,7 @@ func (s *CoreService) SyncWorksets() error {
     tx := s.db.Begin()
     for _, ws := range worksets {
         tx.Create(&Workset{
-            MoetranID: ws.ID,
+            MoetranID: ws.Id,
             Title:     ws.Title,
         })
     }

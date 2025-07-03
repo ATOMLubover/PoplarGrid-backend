@@ -17,10 +17,11 @@ CREATE TABLE members (
     password_hash VARCHAR(256) NOT NULL,
     moetran_id TEXT NOT NULL UNIQUE, -- Changed from longyi_id, now NOT NULL
     poplar_is_admin BOOLEAN NOT NULL DEFAULT FALSE, -- Renamed from is_admin
-    labors SMALLINT NOT NULL DEFAULT 0,
+    labors INTEGER NOT NULL DEFAULT 0,
     remark TEXT NULL,
     last_active TIMESTAMPTZ(3) NULL
 );
+CREATE INDEX idx_members_nickname ON members(nickname);
 
 
 -- Table: teams (NEW)
@@ -98,7 +99,6 @@ CREATE INDEX idx_projects_status ON projects(status);
 -- Table: member_preferences (MODIFIED)
 -- Stores tags that a member is not good at or wants to avoid.
 CREATE TABLE member_preferences (
-    id SERIAL PRIMARY KEY,
     member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
     tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
     is_resisted BOOLEAN NOT NULL DEFAULT FALSE, -- Renamed from is_prefered, meaning is inverted
@@ -109,21 +109,20 @@ CREATE TABLE member_preferences (
 
 -- Table: project_tags (MODIFIED)
 -- Join table between projects and tags. Using composite primary key.
-CREATE TABLE project_tags (
-    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+CREATE TABLE work_tags (
+    work_id INTEGER NOT NULL REFERENCES work(id) ON DELETE CASCADE,
     tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
     
-    PRIMARY KEY (project_id, tag_id) -- More accurately reflects a pure join table
+    PRIMARY KEY (work_id, tag_id) -- More accurately reflects a pure join table
 );
 
 
 -- Table: project_labor_divisions
 -- Join table for project assignments.
 CREATE TABLE project_labor_divisions (
-    id SERIAL PRIMARY KEY,
     project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
-    labor_role INTEGER NOT NULL, -- Changed from SMALLINT to INTEGER
+    labor_role INTEGER NOT NULL,
 
     UNIQUE(project_id, member_id) -- A member should only have one labor entry per project
 );

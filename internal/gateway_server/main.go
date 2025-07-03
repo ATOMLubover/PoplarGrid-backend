@@ -130,8 +130,6 @@ func NewMvcApp(irisApp *iris.Application, cfg *config.Config) *mvc.Application {
 
 // InitMvcApp 专门负责 MVC 应用的复杂初始化
 func InitMvcApp(root *mvc.Application, cfg *config.Config) {
-	
-
 	// 添加 /transfer 子路由组
 	routes.ConfigureTransferRoutes(root)
 }

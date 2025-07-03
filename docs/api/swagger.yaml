@@ -1,0 +1,153 @@
+definitions:
+  dtos.MemberFullInfo:
+    properties:
+      email:
+        type: string
+      labors:
+        type: integer
+      last_active:
+        description: 格式为 "2006-01-02 15:04:05"
+        type: string
+      member_id:
+        type: integer
+      moetran_id:
+        type: string
+      nickname:
+        type: string
+      poplar_is_admin:
+        type: boolean
+      remark:
+        type: string
+    type: object
+  dtos.ProjectFullInfo:
+    properties:
+      labor_division:
+        description: 分工成员列表
+        items:
+          $ref: '#/definitions/dtos.ProjectMemberLabor'
+        type: array
+      legacy_id:
+        type: integer
+      project_id:
+        type: integer
+      status:
+        type: integer
+      team:
+        allOf:
+        - $ref: '#/definitions/dtos.TeamFullInfo'
+        description: 汉化组信息
+      title:
+        type: string
+      urgency:
+        type: integer
+      work:
+        allOf:
+        - $ref: '#/definitions/dtos.WorkFullInfo'
+        description: 作品信息
+      workset:
+        allOf:
+        - $ref: '#/definitions/dtos.WorksetFullInfo'
+        description: 作品集信息
+    type: object
+  dtos.ProjectMemberLabor:
+    properties:
+      labor_role:
+        description: 分工角色，使用位掩码存储
+        type: integer
+      member_name:
+        description: 成员昵称
+        type: string
+    type: object
+  dtos.TeamFullInfo:
+    properties:
+      moetran_id:
+        description: 尨译 ID
+        type: string
+      team_id:
+        type: integer
+      team_name:
+        type: string
+    type: object
+  dtos.WorkFullInfo:
+    properties:
+      description:
+        type: string
+      moetran_id:
+        description: 尨译 ID
+        type: string
+      tags:
+        description: 标签列表
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      work_id:
+        type: integer
+    type: object
+  dtos.WorksetFullInfo:
+    properties:
+      moetran_id:
+        description: 尨译 ID
+        type: string
+      title:
+        type: string
+      workset_id:
+        type: integer
+    type: object
+host: localhost:8071
+info:
+  contact: {}
+  description: PoplarGrid 服务器的 API 处理服务器，负责协调表格相关业务
+  title: PoplarGrid API 服务器
+  version: "1.0"
+paths:
+  /member/list:
+    get:
+      description: 注意当列表为空，会返回 null 费不是空数组
+      parameters:
+      - description: 页码，默认值为 1
+        in: query
+        name: pageSerial
+        type: integer
+      - description: 每页数量，默认值为 10
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.MemberFullInfo'
+            type: array
+      summary: 获取成员详细信息的列表分页，如果想要获取全部内容可以设置一个很大的 pageSize
+      tags:
+      - member
+  /proj/list:
+    get:
+      description: 注意当列表为空返回值是 null 而非 []
+      parameters:
+      - description: 页码，默认值为 1
+        in: query
+        name: pageSerial
+        type: integer
+      - description: 每页数量，默认值为 10
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.ProjectFullInfo'
+            type: array
+      summary: 获取项目列表分页
+      tags:
+      - project
+swagger: "2.0"

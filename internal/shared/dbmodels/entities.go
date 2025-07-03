@@ -1,0 +1,117 @@
+package dbmodels
+
+import (
+	"time"
+)
+
+// 成员的基本信息
+type Member struct {
+	BaseModel
+
+	// 基本信息
+	Nickname     string `gorm:"uniqueIndex;size:128;not null"`
+	Email        string `gorm:"unique;size:128;not null"`
+	PasswordHash string `gorm:"size:256;not null"`
+
+	// 接受尨译分配的 ID
+	MoetranId string `gorm:"uniqueIndex;type:text;not null"`
+
+	// 在仪表盘中的身份
+	PoplarIsAdmin bool
+	// 负责角色
+	Labors uint
+
+	// 补充备注
+	Remark string `gorm:"type:text"`
+
+	// 上一次活跃时间（可能是通过 ping 来确定）
+	LastActive time.Time
+}
+
+func (Member) TableName() string {
+	return "members"
+}
+
+// tag 基础信息
+type Tag struct {
+	BaseModel
+
+	Name        string `gorm:"uniqueIndex;size:128;not null"`
+	Description string `gorm:"size:256"`
+}
+
+func (Tag) TableName() string {
+	return "tags"
+}
+
+// 作品集（同步尨译信息）
+// 考虑到数量较少，前端可以直接加载完整列表，这里不提供除了
+// 主键和外键以外的索引
+type Workset struct {
+	BaseModel
+
+	Title     string
+	MoetranId string `gorm:"uniqueIndex;type:text;not null"`
+}
+
+func (Workset) TableName() string {
+	return "worksets"
+}
+
+// 作品（同步尨译信息）
+// 作品数量较大，所以对 title 也启用外键
+type Work struct {
+	BaseModel
+
+	Title     string `gorm:"uniqueIndex;type:text;not null"`
+	MoetranId string `gorm:"uniqueIndex;type:text;not null"`
+
+	Description string `gorm:"type:text"`
+}
+
+func (Work) TableName() string {
+	return "works"
+}
+
+// 汉化组
+// 数量较少，可以一次加载完全，所以同样没有对 name 使用索引
+type Team struct {
+	BaseModel
+
+	Name      string `gorm:"unique;size:256;not null"`
+	MoetranId string `gorm:"uniqueIndex;type:text;not null"`
+}
+
+func (Team) TableName() string {
+	return "teams"
+}
+
+// 项目进度表
+type Project struct {
+	BaseModel
+
+	// 历史遗留序号（【】中的序号），保留对老作品的兼容
+	// 经过观察，有序号重复的地方，如果可以最好重构这部分
+	LegacyId uint `gorm:"index"`
+
+	// 所属汉化组（同步尨译）
+	TeamId PrimaryKey
+	FkTeam Team `gorm:"foreignKey:TeamId"`
+
+	// 所属作品集（同步尨译）
+	WorksetId PrimaryKey
+	FkWorkset Workset `gorm:"foreignKey:WorksetId"`
+
+	// 所属作品（同步龙译）
+	WorkId PrimaryKey
+	FkWork Work `gorm:"foreignKey:WorkId"`
+
+	// 当前项目的状态
+	Status uint
+	// 用紧急度代替好漫无汉等
+	Urgency int16 `gorm:"type:smallint"`
+}
+
+func (Project) TableName() string {
+	return "projects"
+}

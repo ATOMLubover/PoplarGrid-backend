@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"path/filepath"
-	"poplargrid/internal/gateway_server/config"
-	"poplargrid/internal/gateway_server/routes"
+	"poplargrid/internal/api_server/config"
+	"poplargrid/internal/api_server/routes"
 	"poplargrid/internal/shared/configutil"
 	"strconv"
 
@@ -14,17 +14,21 @@ import (
 	"github.com/kataras/iris/v12/middleware/recover"
 	"github.com/kataras/iris/v12/middleware/requestid"
 	"github.com/kataras/iris/v12/mvc"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 
-	_ "poplargrid/docs/gateway" // 引入生成的 Swagger 文档
+	_ "poplargrid/docs/api" // 引入生成的 Swagger 文档
 )
 
-// @title PoplarGrid 网关服务器
+// @title PoplarGrid API 服务器
 // @version 1.0
-// @description PoplarGrid 服务器的网关服务器，负责限流、转发和协调请求
-// @host localhost:8080
+// @description PoplarGrid 服务器的 API 处理服务器，负责协调表格相关业务
+// @host localhost:8071
 func main() {
-	cfg := LoadConfig("gateway_config.yaml", "yaml")
+	// 先加载配置文件
+	cfg := LoadConfig("api_config.yaml", "yaml")
 
+	// 构造底层 Iris 应用
 	app := NewIrisApp(cfg)
 
 	// 初始化 Swagger
@@ -96,6 +100,7 @@ func NewIrisApp(cfg *config.Config) *iris.Application {
 	return app
 }
 
+// InitSwagger 初始化 Swagger 文档和 UI
 func InitSwagger(app *iris.Application, cfg *config.Config) {
 	if cfg.Server.Mode != "debug" {
 		// 在非 debug 模式下不启用 Swagger
@@ -130,8 +135,39 @@ func NewMvcApp(irisApp *iris.Application, cfg *config.Config) *mvc.Application {
 
 // InitMvcApp 专门负责 MVC 应用的复杂初始化
 func InitMvcApp(root *mvc.Application, cfg *config.Config) {
-	
+	// 初始化所有 repositories
 
-	// 添加 /transfer 子路由组
-	routes.ConfigureTransferRoutes(root)
+	// 添加 /member 子路由组
+	routes.ConfigMemberRoutes(root)
+	// 添加 /project 子路由组
+	routes.ConfigProjectRoutes(root)
+}
+
+// NewDatabase 创建一个新的数据库上下文
+func NewDatabase(cfg *config.Config) *gorm.DB {
+	// 根据 cfg 来创建对应数据库连接
+	switch cfg.Database.Type {
+	case "postgres":
+		{
+			// 使用 PostgreSQL 数据库
+			dsn := fmt.Sprintf(
+				`host=%s port=%d user=%s password=%s
+                    dbname=%s sslmode=%s connect_timeout=%d`,
+				cfg.Database.Host, cfg.Database.Port,
+				cfg.Database.User, configutil.LoadEnvVariable(cfg.Database.PwdEnvVar, "TPOW2483137020#"),
+				cfg.Database.DbName, cfg.Database.SslEnabled, cfg.Database.ConnectTimeout)
+
+			// 连接到 PostgreSQL 数据库
+			context, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+			if err != nil {
+				panic(fmt.Errorf("无法连接到 PostgreSQL 数据库: %v", err))
+			}
+
+			return context
+		}
+
+	default:
+		// 目前只支持 PostgreSQL
+		panic(fmt.Sprintf("不支持的数据库类型: %s", cfg.Database.Type))
+	}
 }
