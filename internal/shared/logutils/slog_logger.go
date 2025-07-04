@@ -8,7 +8,7 @@ import (
 // 构造 logger
 // 直接使用标准库的 slog 以简化依赖
 func NewLogger(opts *slog.HandlerOptions) *slog.Logger {
-	if opts == nil {
+	if opts != nil {
 		// 如果选项不为空，则使用 opts 构造 text handler
 		return slog.New(slog.NewTextHandler(os.Stdout, opts))
 	}

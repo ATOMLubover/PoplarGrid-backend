@@ -56,7 +56,7 @@ func (r *MembersRepo) SelectAllToSlice(offset, num int) ([]*dbmodels.Member, err
 	var members []*dbmodels.Member
 
 	if err := r.GetTable().
-		Select("nickname", "email", "moetran_id",
+		Select("id", "nickname", "email", "moetran_id",
 			"poplar_is_admin", "labors", "remark", "last_active"). // 此处不返回 password_hash
 		Offset(offset).
 		Limit(num).

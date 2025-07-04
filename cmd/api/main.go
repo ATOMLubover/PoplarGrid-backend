@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"path/filepath"
 	"poplargrid/internal/api_server/config"
+	"poplargrid/internal/api_server/handlers"
+	"poplargrid/internal/api_server/repositories"
 	"poplargrid/internal/api_server/routes"
+	"poplargrid/internal/api_server/services"
 	"poplargrid/internal/shared/configutil"
 	"strconv"
 
@@ -35,8 +38,7 @@ func main() {
 	InitSwagger(app, cfg)
 
 	// 初始化 MVC 应用
-	mvcApp := NewMvcApp(app, cfg)
-	InitMvcApp(mvcApp, cfg)
+	InitMvcApp(NewMvcApp(app, cfg), cfg)
 
 	// 开始启动监听
 	app.Listen(":" + strconv.Itoa(cfg.Server.Port))
@@ -136,18 +138,35 @@ func NewMvcApp(irisApp *iris.Application, cfg *config.Config) *mvc.Application {
 // InitMvcApp 专门负责 MVC 应用的复杂初始化
 func InitMvcApp(root *mvc.Application, cfg *config.Config) {
 	// 初始化所有 repositories
+	dbCtx := NewDatabase(cfg)
+	relTables := repositories.NewRelationTables(dbCtx)
+	memberRepo := repositories.NewMembersRepo(dbCtx)
+	projRepo := repositories.NewProjectsRepo(dbCtx)
+
+	// 初始化所有 services
+	memberSrv := services.NewMemberService(memberRepo)
+	projSrv := services.NewProjectService(projRepo)
+
+	// 注册 repositories 和 services 到 MVC 应用
+	root.Register(dbCtx, relTables, memberRepo, projRepo,
+		memberSrv, projSrv)
 
 	// 添加 /member 子路由组
-	routes.ConfigMemberRoutes(root)
+	routes.ConfigureMemberRoutes(root)
 	// 添加 /project 子路由组
-	routes.ConfigProjectRoutes(root)
+	{
+		projHandler := root.Party("/project")
+
+		// 注册 ProjectHandler
+		projHandler.Handle(new(handlers.ProjectHandler))
+	}
 }
 
 // NewDatabase 创建一个新的数据库上下文
 func NewDatabase(cfg *config.Config) *gorm.DB {
 	// 根据 cfg 来创建对应数据库连接
 	switch cfg.Database.Type {
-	case "postgres":
+	case "postgresql":
 		{
 			// 使用 PostgreSQL 数据库
 			dsn := fmt.Sprintf(

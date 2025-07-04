@@ -20,7 +20,7 @@ SERVER_NAME="$1" # 服务器的文件夹名和最终可执行文件的名字
 
 # 变量宏定义
 BIN_DIR="$ROOT_DIR/bin" # 二进制文件输出目录
-GO_SRC_DIR="$ROOT_DIR/internal/${SERVER_NAME}_server" # Go 源码目录
+GO_SRC_DIR="$ROOT_DIR/cmd/${SERVER_NAME}" # Go 源码目录
 GO_OUT="$BIN_DIR/$SERVER_NAME" # 编译输出的二进制文件路径
 SWAG_OUTPUT_DIR="$ROOT_DIR/docs/$SERVER_NAME" # 定义 Swagger 文档的输出目录
 
@@ -71,7 +71,7 @@ run_swag_init() {
 
     if ! swag init \
         -o "$SWAG_OUTPUT_DIR" \
-        --dir "$GO_SRC_DIR" ; then
+        --dir "$GO_SRC_DIR","$ROOT_DIR/internal/${SERVER_NAME}_server/handlers","$ROOT_DIR/internal/${SERVER_NAME}_server/dtos"; then
         echo "[ Swagger API 文档生成失败 ]"
         exit 1
     fi

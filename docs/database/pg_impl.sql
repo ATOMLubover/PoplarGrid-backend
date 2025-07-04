@@ -22,6 +22,9 @@ CREATE TABLE members (
     last_active TIMESTAMPTZ(3) NULL
 );
 CREATE INDEX idx_members_nickname ON members(nickname);
+CREATE INDEX idx_members_deleted_at ON members(deleted_at);
+CREATE INDEX idx_members_poplar_is_admin ON members(poplar_is_admin);
+CREATE INDEX idx_members_labors ON members(labors DESC);
 
 
 -- Table: teams (NEW)
@@ -35,7 +38,7 @@ CREATE TABLE teams (
     name VARCHAR(256) NOT NULL UNIQUE,
     moetran_id TEXT NOT NULL UNIQUE
 );
-
+CREATE INDEX idx_teams_deleted_at ON teams(deleted_at);
 
 -- Table: worksets
 -- Stores workset (series/collection) info synchronized from Moetran.
@@ -48,7 +51,9 @@ CREATE TABLE worksets (
     title TEXT NOT NULL, -- Title can be fetched from Moetran
     moetran_id TEXT NOT NULL UNIQUE -- Added for synchronization
 );
-
+CREATE INDEX idx_worksets_deleted_at ON worksets(deleted_at);
+CREATE INDEX idx_worksets_title_trgm ON worksets USING GIN (title gin_trgm_ops);
+CREATE INDEX idx_worksets_updated_at ON worksets(updated_at DESC);
 
 -- Table: works (NEW)
 -- Stores individual work (chapter/article) info synchronized from Moetran.
@@ -58,11 +63,13 @@ CREATE TABLE works (
     updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ(3) NULL,
 
+    last_edit TIMESTAMPTZ(3) NULL, -- New field for tracking last edit time
     title TEXT NOT NULL UNIQUE,
     moetran_id TEXT NOT NULL UNIQUE,
     description TEXT NULL
 );
-
+CREATE INDEX idx_works_deleted_at ON works(deleted_at);
+CREATE INDEX idx_works_last_edit ON works(last_edit DESC NULLS LAST);
 
 -- Table: tags
 -- Stores system-wide tags for categorization.

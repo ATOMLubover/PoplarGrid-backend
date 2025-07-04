@@ -1,23 +1,15 @@
 package config
 
-// Config 目前适配 viper 的配置文件格式（mapstructure）
-// 直接支持 YAML、JSON 等格式，
-// 未来可以扩展为支持更多配置文件格式（但是似乎没必要）
-
-// 网关服务器的配置结构体
+// Config 是更新服务器的配置结构体
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	Database DatabaseConfig `mapstructure:"database"`
-	Api      ApiConfig      `mapstructure:"api"`
+	// Server 配置
+	Server ServerConfig `mapstructure:"server"`
 }
 
-// 总体服务器配置结构体
+// ServerConfig 是更新服务器的服务器配置
 type ServerConfig struct {
-	// 启动模式
+	// Mode 运行模式
 	Mode string `mapstructure:"mode"`
-
-	// 控制服务器的地址和端口
-	Port int `mapstructure:"port"`
 }
 
 // 数据库配置结构体
@@ -42,12 +34,4 @@ type DatabaseConfig struct {
 
 	// 连接超时时间
 	ConnectTimeout int `mapstructure:"connect_timeout"`
-}
-
-// API 配置结构体
-type ApiConfig struct {
-	// 尨译 API 基础 URL
-	BaseUrl string `mapstructure:"base_url"`
-	// 尨译 API 的授权 Token（初始化时）
-	AuthToken string `mapstructure:"auth_token"`
 }

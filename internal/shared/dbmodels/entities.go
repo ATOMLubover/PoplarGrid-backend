@@ -59,7 +59,7 @@ func (Workset) TableName() string {
 }
 
 // 作品（同步尨译信息）
-// 作品数量较大，所以对 title 也启用外键
+// 作品数量较大，所以对 title 也启用索引
 type Work struct {
 	BaseModel
 

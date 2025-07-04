@@ -1,6 +1,11 @@
 package dbmodels
 
-import "unsafe"
+import (
+	"time"
+	"unsafe"
+
+	"gorm.io/gorm"
+)
 
 // 为 GORM 自带的 uint 主键类型起一个醒目的别名
 type PrimaryKey uint
@@ -10,11 +15,11 @@ type BaseModel struct {
 	// 主键 ID
 	Id PrimaryKey `gorm:"primaryKey;autoIncrement;not null"`
 	// 创建时间
-	CreatedAt int64 `gorm:"autoCreateTime;not null"`
+	CreatedAt time.Time `gorm:"autoCreateTime;not null"`
 	// 更新时间
-	UpdatedAt int64 `gorm:"autoUpdateTime;not null"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime;not null"`
 	// 删除时间
-	DeletedAt int64 `gorm:"index"`
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
 // 职责掩码位移

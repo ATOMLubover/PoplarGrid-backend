@@ -3,8 +3,9 @@ server:
   # 启动模式 (比如 "debug", "release")
   mode: "debug"
   # 监听端口
-  port: 8071  
+  port: 8072  
 
+# 服务器配置
 database:
   # 数据库类型，目前只支持 PostgreSQL
   type: "postgresql"
@@ -19,3 +20,10 @@ database:
   ssl_enabled: "disable"
   # 连接超时时间（秒）
   connect_timeout: 10
+
+# 尨译 API 配置
+api:
+  # 尨译 API 基础 URL
+  base_url: "https://api.moetran.com"
+  # 尨译 API 的授权 Token（初始化时）
+  auth_token: "eyJhbGciOiJIUzUxMiIsImlhdCI6MTc1MTAzNzMwNywiZXhwIjoxNzUzNjI5MzA3fQ.eyJpZCI6IjY4NWViNTdiY2U2NmMwZTEwZTAyY2ZiOSIsInBjIjoiNTc1MzJhOTNkMGZmYjdjZiJ9.okzYOJgtYwhJXqED_cEx9ywKUXki0tGxBgX19vcPW4SSBJgTOrhgOfUYIgOcrJGl9jWzOmqvlR2J9Zh7nwmiRA"
