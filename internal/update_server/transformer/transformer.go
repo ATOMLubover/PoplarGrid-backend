@@ -7,10 +7,28 @@ import (
 	"strconv"
 )
 
+// UsersToMembers 将尨译的用户信息转化为本地 Member 模型
+func UsersToMembers(team *dbmodel.Team, users []apidto.MoetranUser) ([]*dbmodel.Member, error) {
+	var members []*dbmodel.Member
+
+	for _, user := range users {
+		members = append(members, &dbmodel.Member{
+			TeamId:    team.Id, // 使用传入的 team 的 IDS
+			Nickname:  user.Name,
+			MoetranId: user.Id,
+
+			Email: user.Id, // 这里使用 user.Id 作为 Email 占位，防止新创建时违反 unique
+		})
+	}
+
+	return members, nil
+}
+
 // ProjSetsToWorksets 将尨译的 project-set 格式转化成 Workset 格式
 func ProjSetsToWorksets(team *dbmodel.Team, projsets []apidto.MoetranProjSet) (
 	[]*dbmodel.Workset, error) {
 	var worksets []*dbmodel.Workset
+
 	for _, projset := range projsets {
 		name := projset.Name
 		if name == "default" || name == "" {

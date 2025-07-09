@@ -10,7 +10,7 @@ import (
 	"poplargrid/internal/shared/configutil"
 	"poplargrid/internal/shared/logutils"
 	"poplargrid/internal/update_server/crawler"
-	"poplargrid/internal/update_server/dao"
+	"poplargrid/internal/update_server/repository"
 	"syscall"
 
 	"gorm.io/driver/postgres"
@@ -29,16 +29,17 @@ func main() {
 	dbCtx := NewDatabase(cfg)
 
 	// 创建各个 repo
-	projectsRepo := dao.NewProjectsRepo(dbCtx)
-	worksetsRepo := dao.NewWorksetsRepo(dbCtx)
-	teamsRepo := dao.NewTeamsRepo(dbCtx)
+	projectsRepo := repository.NewProjectsRepo(dbCtx)
+	worksetsRepo := repository.NewWorksetsRepo(dbCtx)
+	teamsRepo := repository.NewTeamsRepo(dbCtx)
+	membersRepo := repository.NewMembersRepo(dbCtx)
 
 	// 创建 API 客户端
 	apiClient := NewApiClient(cfg)
 
 	// 创建 Crawler 实例
 	crawler := crawler.NewCrawler(
-		projectsRepo, worksetsRepo, teamsRepo,
+		projectsRepo, worksetsRepo, teamsRepo, membersRepo,
 		apiClient)
 
 	// 建立停止信号通道

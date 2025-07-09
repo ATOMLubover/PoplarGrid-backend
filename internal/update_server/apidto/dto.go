@@ -19,9 +19,9 @@ type MoetranProjSet struct {
 type MoetranProj struct {
 	CreateTime MoetranTime `json:"create_time"` // 项目创建时间
 	EditTime   MoetranTime `json:"edit_time"`   // 项目最后编辑时间
-	Id         string      `json:"id"`          // 对应 Work.MoetranId
+	Id         string      `json:"id"`          // 对应 Project.MoetranId
 
-	Name  string `json:"name"`  // 包含 LegacyId，对应本地 Work.Title
+	Name  string `json:"name"`  // 包含 LegacyId，对应本地 Project.Title
 	Intro string `json:"intro"` // 项目简介，暂时不确定能怎么对应到本地模型
 
 	Status int `json:"status"` // 项目在第三方系统的状态，对应本地 Project.Status
@@ -40,6 +40,12 @@ type MoetranProj struct {
 	Team struct {
 		Id string `json:"id"` // 对应 Team.MoetranId
 	} `json:"team"`
+}
+
+// MoetranUser 是尨译关于用户信息的结构体
+type MoetranUser struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
 }
 
 // ========= 以下是对尨译特殊的时间格式进行的反序列化辅助函数 =========

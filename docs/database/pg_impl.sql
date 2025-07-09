@@ -13,6 +13,7 @@ CREATE TABLE members (
     updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ(3) NULL,
     
+    team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
     nickname VARCHAR(128) NOT NULL,
     email VARCHAR(128) NOT NULL,
     password_hash VARCHAR(256) NOT NULL,

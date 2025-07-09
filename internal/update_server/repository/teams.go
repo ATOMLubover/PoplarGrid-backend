@@ -24,7 +24,7 @@ func (r *TeamsRepo) GetTable() *gorm.DB {
 	return r.DbCtx.Model(&dbmodel.Team{})
 }
 
-// SelectNameAndId 获取所有汉化组的详细信息
+// Select 获取所有汉化组的详细信息
 func (r *TeamsRepo) Select() ([]*dbmodel.Team, error) {
 	var teams []*dbmodel.Team
 	if err := r.GetTable().

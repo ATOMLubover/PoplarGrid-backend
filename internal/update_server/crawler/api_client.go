@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	apimodel "poplargrid/internal/update_server/apidto"
+	"poplargrid/internal/update_server/apidto"
 	"time"
 )
 
@@ -18,11 +18,16 @@ const (
 	// 获取 project 的 URL 模板
 	// 需要 page, limit, project_set, status, word 查询参数
 	PROJ_API_FMT = "%s/v1/teams/%s/projects?%s"
+	// 获取成员的 URL 模板
+	// 需要 page, limit, word 查询参数
+	USER_API_FMT = "%s/v1/teams/%s/users?%s"
 
 	// 获取作品集时的分页大小
 	PROJ_SET_PAGE_SIZE = 50
 	// 获取作品时的分页大小
 	PROJ_PAGE_SIZE = 15
+	// 获取成员时的分页大小
+	USER_PAGE_SIZE = 25
 )
 
 var (
@@ -74,8 +79,8 @@ func (c *ApiClient) ModifyAuthToken(newAuthToken string) {
 
 // GetProjectSetUri 获取指定汉化组的作品集
 func (c *ApiClient) GetAllProjSets(teamMoetranId string) (
-	[]apimodel.MoetranProjSet, error) {
-	allProjSets := make([]apimodel.MoetranProjSet, 0)
+	[]apidto.MoetranProjSet, error) {
+	allProjSets := make([]apidto.MoetranProjSet, 0)
 
 	// 循环获取所有分页的作品集信息
 	for page := 1; ; page++ {
@@ -101,7 +106,7 @@ func (c *ApiClient) GetAllProjSets(teamMoetranId string) (
 				res.StatusCode, string(bodyBytes))
 		}
 
-		currProjSets := make([]apimodel.MoetranProjSet, 0)
+		currProjSets := make([]apidto.MoetranProjSet, 0)
 
 		decoder := json.NewDecoder(res.Body)
 		if err := decoder.Decode(&currProjSets); err != nil {
@@ -125,8 +130,8 @@ func (c *ApiClient) GetAllProjSets(teamMoetranId string) (
 // GetPartProjects 获取指定汉化组和作品集的下的部分分页作品
 // 与 GetAllProjectSets 不同的是，这个函数的分页控制由调用者进行
 func (c *ApiClient) GetPartProjs(teamMoetranId, projSetMoetranId string, page int) (
-	[]apimodel.MoetranProj, error) {
-	partProjs := make([]apimodel.MoetranProj, 0)
+	[]apidto.MoetranProj, error) {
+	partProjs := make([]apidto.MoetranProj, 0)
 
 	// 构造查询 URL
 	urlParams := url.Values{}
@@ -163,6 +168,46 @@ func (c *ApiClient) GetPartProjs(teamMoetranId, projSetMoetranId string, page in
 	}
 
 	return partProjs, nil
+}
+
+// GetPartUsers 获取指定汉化组的部分分页成员信息
+// 与 GetAllProjectSets 不同的是，这个函数的分页控制由调用者进行
+func (c *ApiClient) GetPartUsers(teamMoetranId string, page int) (
+	[]apidto.MoetranUser, error) {
+	partUsers := make([]apidto.MoetranUser, 0)
+
+	// 构造查询 URL
+	urlParams := url.Values{}
+	urlParams.Set("page", fmt.Sprintf("%d", page))
+	urlParams.Set("limit", "25")
+
+	userUrl := fmt.Sprintf(USER_API_FMT,
+		c.baseUrl, teamMoetranId, urlParams.Encode())
+
+	slog.Debug("获取部分成员信息的 URL",
+		"url", userUrl, "page", page,
+		"team_moetran_id", teamMoetranId)
+
+	// 请求获取成员信息
+	res, err := c.sSendGetRequest(userUrl, c.authTokenStr)
+	if err != nil {
+		return nil, fmt.Errorf("请求获取成员信息失败：%w", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		// 此处暂时先直接读取请求体，且不处理重试
+		bodyBytes, _ := io.ReadAll(res.Body)
+		return nil, fmt.Errorf("获取成员信息失败，HTTP 状态码：%d，响应体：%s",
+			res.StatusCode, string(bodyBytes))
+	}
+
+	decoder := json.NewDecoder(res.Body)
+	if err := decoder.Decode(&partUsers); err != nil {
+		return nil, fmt.Errorf("解析成员信息失败：%w", err)
+	}
+
+	return partUsers, nil
 }
 
 // sSendGetRequest 用来辅助构造和发送 GET 请求

@@ -8,6 +8,10 @@ import (
 type Member struct {
 	BaseModel
 
+	// 所属的汉化组
+	TeamId PrimaryKey
+	FkTeam Team `gorm:"foreignKey:TeamId"`
+
 	// 基本信息
 	Nickname     string `gorm:"uniqueIndex;size:128;not null"`
 	Email        string `gorm:"unique;size:128;not null"`

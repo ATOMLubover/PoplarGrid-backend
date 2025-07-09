@@ -16,6 +16,8 @@ type Crawler struct {
 	worksetsRepo *repository.WorksetsRepo
 	// 汉化组 repo
 	teamsRepo *repository.TeamsRepo
+	// 成员 repo
+	membersRepo *repository.MembersRepo
 
 	// 用于与尨译 API 交互的 HTTP 客户端
 	apiClient *ApiClient
@@ -29,12 +31,14 @@ func NewCrawler(
 	projsRepo *repository.ProjectsRepo,
 	worksetsRepo *repository.WorksetsRepo,
 	teamsRepo *repository.TeamsRepo,
+	membersRepo *repository.MembersRepo,
 	apiClient *ApiClient,
 ) *Crawler {
 	return &Crawler{
 		projsRepo:    projsRepo,
 		worksetsRepo: worksetsRepo,
 		teamsRepo:    teamsRepo,
+		membersRepo:  membersRepo,
 
 		apiClient: apiClient,
 
@@ -89,6 +93,15 @@ func (c *Crawler) SyncMoetran() error {
 		return err
 	}
 
+	// 先遍历获取所有汉化组的成员信息
+	for _, team := range teams {
+		if err := c.SyncUsersOfTeam(team); err != nil {
+			slog.Error("同步汉化组成员信息失败",
+				"team_name", team.Name, "team_id", team.Id, "error", err)
+			continue // 继续处理下一个汉化组，避免直接退出
+		}
+	}
+
 	// 开始遍历更新各个汉化组的作品集和作品信息
 	for _, team := range teams {
 		if err := c.SyncWorksetsOfTeam(team); err != nil {
@@ -97,6 +110,61 @@ func (c *Crawler) SyncMoetran() error {
 			continue // 继续处理下一个汉化组，避免直接退出
 		}
 	}
+
+	return nil
+}
+
+// SyncUsersOfTeam 从尨译获取指定汉化组的所有成员信息
+// 这个函数拆分了整体逻辑，方便重试和调试
+func (c *Crawler) SyncUsersOfTeam(team *dbmodel.Team) error {
+	slog.Info("开始从尨译获取成员信息",
+		"team_name", team.Name, "team_id", team.Id)
+
+	// 从龙译分页地获取成员信息
+	for page := 1; ; page++ {
+		// 从尨译获取当前页的成员信息
+		partUsers, err := c.apiClient.
+			GetPartUsers(team.MoetranId, page)
+		if err != nil {
+			slog.Error("从尨译获取成员信息失败", "error", err, "page", page)
+		}
+
+		if len(partUsers) == 0 {
+			// 如果当前页没有成员信息，则说明已经是最后一页了
+			slog.Info("当前页没有成员信息，可能是最后一页", "page", page)
+			break
+		}
+
+		slog.Info("从尨译获取成员信息成功", "length", len(partUsers), "page", page)
+
+		// 将获取到的成员信息转换成数据库模型
+		users, err := transformer.UsersToMembers(team, partUsers)
+		if err != nil {
+			slog.Error("转换成员信息失败", "error", err, "page", page)
+			return err
+		}
+
+		slog.Info("转换成员信息成功", "length", len(users), "page", page)
+
+		// 将转换后的成员信息存入数据库
+		if err := c.membersRepo.BulkUpsert(users); err != nil {
+			slog.Error("批量插入成员信息到数据库失败", "error", err, "page", page)
+			return err
+		}
+
+		slog.Info("批量插入成员信息到数据库成功", "length", len(users), "page", page)
+
+		// 如果当前页的成员数量小于预设的每页成员数量，则确定已经是最后一页了
+		if len(partUsers) < USER_PAGE_SIZE {
+			slog.Info("当前页成员数量小于预设的每页数量，确定为最后一页", "page", page)
+			break // 退出当前成员页的处理循环
+		}
+
+		// 为了防止请求过快导致被限速，增加延时
+		time.Sleep(50 * time.Millisecond)
+	}
+
+	slog.Info("所有成员信息处理完成", "team_name", team.Name, "team_id", team.Id)
 
 	return nil
 }
