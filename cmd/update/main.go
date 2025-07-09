@@ -10,8 +10,7 @@ import (
 	"poplargrid/internal/shared/configutil"
 	"poplargrid/internal/shared/logutils"
 	"poplargrid/internal/update_server/crawler"
-	"poplargrid/internal/update_server/persistence"
-	"poplargrid/internal/update_server/transformer"
+	"poplargrid/internal/update_server/dao"
 	"syscall"
 
 	"gorm.io/driver/postgres"
@@ -24,39 +23,33 @@ func main() {
 	cfg := LoadConfig("update_config.yaml", "yaml")
 
 	// 创建日志记录器
-	logger := NewLogger(cfg)
+	InitLogger(cfg)
 
 	// 创建数据库上下文
 	dbCtx := NewDatabase(cfg)
 
 	// 创建各个 repo
-	worksRepo := persistence.NewWorksRepo(dbCtx)
-	worksetsRepo := persistence.NewWorksetsRepo(dbCtx, logger)
-	teamsRepo := persistence.NewTeamsRepo(dbCtx)
-
-	// 创建 transformer
-	transformer := transformer.NewTransformer()
+	projectsRepo := dao.NewProjectsRepo(dbCtx)
+	worksetsRepo := dao.NewWorksetsRepo(dbCtx)
+	teamsRepo := dao.NewTeamsRepo(dbCtx)
 
 	// 创建 API 客户端
 	apiClient := NewApiClient(cfg)
 
 	// 创建 Crawler 实例
 	crawler := crawler.NewCrawler(
-		worksRepo, worksetsRepo, teamsRepo,
-		apiClient,
-		transformer,
-		logger,
-	)
+		projectsRepo, worksetsRepo, teamsRepo,
+		apiClient)
 
 	// 建立停止信号通道
-	stopChan := make(chan os.Signal, 1)
+	shutdownChan := make(chan os.Signal, 1)
 	// 监听系统信号以便优雅地关闭
-	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(shutdownChan, os.Interrupt, syscall.SIGTERM)
 
 	// 启动爬虫
 	crawler.Start()
 
-	sig := <-stopChan
+	sig := <-shutdownChan
 	fmt.Printf("接收到信号: %v，正在关闭 Update Server...\n", sig)
 
 	// 停止爬虫
@@ -96,12 +89,14 @@ func LoadConfig(relPath string, cfgType string) *config.Config {
 	return &cfg
 }
 
-// NewLogger 创建一个新的日志记录器
-func NewLogger(cfg *config.Config) *slog.Logger {
+// InitLogger 设置全局日志记录器
+func InitLogger(cfg *config.Config) {
 	// 暂时不根据 cfg 配置使用不同的日志记录器
 	lgr := logutils.NewLogger(nil)
 
-	return lgr
+	// 因为项目体量小，最终决定还是直接使用全局 slog.Logger
+	// 这样可以避免在每个模块中都传递日志记录器
+	slog.SetDefault(lgr)
 }
 
 // NewDatabase 创建一个新的数据库上下文

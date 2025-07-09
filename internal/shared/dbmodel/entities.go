@@ -1,4 +1,4 @@
-package dbmodels
+package dbmodel
 
 import (
 	"time"
@@ -23,6 +23,8 @@ type Member struct {
 
 	// 补充备注
 	Remark string `gorm:"type:text"`
+	// QQ 号
+	QqNumber string `gorm:"size:64"`
 
 	// 上一次活跃时间（可能是通过 ping 来确定）
 	LastActive time.Time
@@ -50,27 +52,15 @@ func (Tag) TableName() string {
 type Workset struct {
 	BaseModel
 
-	Title     string
+	TeamId PrimaryKey
+	FkTeam Team `gorm:"foreignKey:TeamId"`
+
+	Name      string `gorm:"uniqueIndex;type:text;not null"`
 	MoetranId string `gorm:"uniqueIndex;type:text;not null"`
 }
 
 func (Workset) TableName() string {
 	return "worksets"
-}
-
-// 作品（同步尨译信息）
-// 作品数量较大，所以对 title 也启用索引
-type Work struct {
-	BaseModel
-
-	Title     string `gorm:"uniqueIndex;type:text;not null"`
-	MoetranId string `gorm:"uniqueIndex;type:text;not null"`
-
-	Description string `gorm:"type:text"`
-}
-
-func (Work) TableName() string {
-	return "works"
 }
 
 // 汉化组
@@ -90,21 +80,17 @@ func (Team) TableName() string {
 type Project struct {
 	BaseModel
 
+	// 内嵌作品的信息
+	Title     string `gorm:"index;type:text;not null"`
+	MoetranId string `gorm:"uniqueIndex;type:text;not null"`
+
 	// 历史遗留序号（【】中的序号），保留对老作品的兼容
 	// 经过观察，有序号重复的地方，如果可以最好重构这部分
 	LegacyId uint `gorm:"index"`
 
-	// 所属汉化组（同步尨译）
-	TeamId PrimaryKey
-	FkTeam Team `gorm:"foreignKey:TeamId"`
-
 	// 所属作品集（同步尨译）
 	WorksetId PrimaryKey
 	FkWorkset Workset `gorm:"foreignKey:WorksetId"`
-
-	// 所属作品（同步龙译）
-	WorkId PrimaryKey
-	FkWork Work `gorm:"foreignKey:WorkId"`
 
 	// 当前项目的状态
 	Status uint

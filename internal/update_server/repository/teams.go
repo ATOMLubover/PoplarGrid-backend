@@ -1,7 +1,7 @@
-package persistence
+package repository
 
 import (
-	"poplargrid/internal/shared/dbmodels"
+	"poplargrid/internal/shared/dbmodel"
 
 	"gorm.io/gorm"
 )
@@ -21,14 +21,13 @@ func NewTeamsRepo(db *gorm.DB) *TeamsRepo {
 
 // GetTable 获取 teams 表的上下文引用
 func (r *TeamsRepo) GetTable() *gorm.DB {
-	return r.DbCtx.Model(&dbmodels.Team{})
+	return r.DbCtx.Model(&dbmodel.Team{})
 }
 
-// SelectNameAndId 获取 teams 表的名称和 ID
-func (r *TeamsRepo) SelectNameAndId() ([]*dbmodels.Team, error) {
-	var teams []*dbmodels.Team
+// SelectNameAndId 获取所有汉化组的详细信息
+func (r *TeamsRepo) Select() ([]*dbmodel.Team, error) {
+	var teams []*dbmodel.Team
 	if err := r.GetTable().
-		Select("id", "name", "moetran_id").
 		Find(&teams).
 		Error; err != nil {
 		return nil, err

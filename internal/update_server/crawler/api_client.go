@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
-	"poplargrid/internal/update_server/transformer"
+	apimodel "poplargrid/internal/update_server/apidto"
 	"time"
 )
 
@@ -56,9 +57,7 @@ type ApiClient struct {
 
 // NewApiClient 创建一个新的 ApiClient 实例
 // authTokenStr 要单独调用函数在运行时修改
-func NewApiClient(
-	baseUrl string,
-) *ApiClient {
+func NewApiClient(baseUrl string) *ApiClient {
 	return &ApiClient{
 		baseUrl: baseUrl,
 
@@ -74,8 +73,9 @@ func (c *ApiClient) ModifyAuthToken(newAuthToken string) {
 }
 
 // GetProjectSetUri 获取指定汉化组的作品集
-func (c *ApiClient) GetProjectSetUri(teamMoetranId string) ([]transformer.MoetranProjSet, error) {
-	allProjSets := make([]transformer.MoetranProjSet, 0)
+func (c *ApiClient) GetAllProjSets(teamMoetranId string) (
+	[]apimodel.MoetranProjSet, error) {
+	allProjSets := make([]apimodel.MoetranProjSet, 0)
 
 	// 循环获取所有分页的作品集信息
 	for page := 1; ; page++ {
@@ -101,7 +101,7 @@ func (c *ApiClient) GetProjectSetUri(teamMoetranId string) ([]transformer.Moetra
 				res.StatusCode, string(bodyBytes))
 		}
 
-		currProjSets := make([]transformer.MoetranProjSet, 0)
+		currProjSets := make([]apimodel.MoetranProjSet, 0)
 
 		decoder := json.NewDecoder(res.Body)
 		if err := decoder.Decode(&currProjSets); err != nil {
@@ -116,10 +116,53 @@ func (c *ApiClient) GetProjectSetUri(teamMoetranId string) ([]transformer.Moetra
 		}
 
 		// 为了防止请求过快导致被限速，增加延时
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	return allProjSets, nil
+}
+
+// GetPartProjects 获取指定汉化组和作品集的下的部分分页作品
+// 与 GetAllProjectSets 不同的是，这个函数的分页控制由调用者进行
+func (c *ApiClient) GetPartProjs(teamMoetranId, projSetMoetranId string, page int) (
+	[]apimodel.MoetranProj, error) {
+	partProjs := make([]apimodel.MoetranProj, 0)
+
+	// 构造查询 URL
+	urlParams := url.Values{}
+	urlParams.Set("page", fmt.Sprintf("%d", page))
+	urlParams.Set("limit", fmt.Sprintf("%d", PROJ_PAGE_SIZE))
+	urlParams.Set("status", fmt.Sprintf("%d", 0))
+	urlParams.Set("project_set", projSetMoetranId)
+
+	projUrl := fmt.Sprintf(PROJ_API_FMT,
+		c.baseUrl, teamMoetranId, urlParams.Encode())
+
+	slog.Debug("获取部分作品信息的 URL",
+		"url", projUrl, "page", page,
+		"team_moetran_id", teamMoetranId,
+		"proj_set_moetran_id", projSetMoetranId)
+
+	// 请求获取作品信息
+	res, err := c.sSendGetRequest(projUrl, c.authTokenStr)
+	if err != nil {
+		return nil, fmt.Errorf("请求获取作品信息失败：%w", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		// 此处暂时先直接读取请求体，且不处理重试
+		bodyBytes, _ := io.ReadAll(res.Body)
+		return nil, fmt.Errorf("获取作品信息失败，HTTP 状态码：%d，响应体：%s",
+			res.StatusCode, string(bodyBytes))
+	}
+
+	decoder := json.NewDecoder(res.Body)
+	if err := decoder.Decode(&partProjs); err != nil {
+		return nil, fmt.Errorf("解析作品信息失败：%w", err)
+	}
+
+	return partProjs, nil
 }
 
 // sSendGetRequest 用来辅助构造和发送 GET 请求

@@ -1,4 +1,4 @@
-package dtos
+package dto
 
 // 成员的简要信息
 type MemberBriefInfo struct {

@@ -1,8 +1,10 @@
-package dbmodels
+package dbmodel
 
 // 成员偏好 tag
 // 关联成员与 tag
 type MemberPreference struct {
+	Id PrimaryKey `gorm:"primaryKey;autoIncrement;not null"`
+
 	MemberId PrimaryKey `gorm:"index"`
 	FkMember Member     `gorm:"foreignKey:MemberId"`
 
@@ -17,22 +19,26 @@ func (MemberPreference) TableName() string {
 	return "member_preferences"
 }
 
-// 作品所携带 tag
-// 关联作品与 tag
-type WorkTag struct {
-	WorkId PrimaryKey `gorm:"index"`
-	FkWork Work       `gorm:"foreignKey:WorkId"`
+// 项目所携带 tag
+// 关联项目与 tag
+type ProjectTag struct {
+	Id PrimaryKey `gorm:"primaryKey;autoIncrement;not null"`
+
+	ProjectId PrimaryKey `gorm:"index"`
+	FkProject Project    `gorm:"foreignKey:ProjectId"`
 
 	TagId PrimaryKey `gorm:"index"`
 	FkTag Tag        `gorm:"foreignKey:TagId"`
 }
 
-func (WorkTag) TableName() string {
+func (ProjectTag) TableName() string {
 	return "project_tags"
 }
 
 // 项目分工表
 type ProjectLaborDivision struct {
+	Id PrimaryKey `gorm:"primaryKey;autoIncrement;not null"`
+
 	ProjectId PrimaryKey
 	FkProject Project `gorm:"foreignKey:ProjectId"`
 

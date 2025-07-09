@@ -1,4 +1,4 @@
-package transformer
+package apidto
 
 import (
 	"fmt"
@@ -25,6 +25,11 @@ type MoetranProj struct {
 	Intro string `json:"intro"` // 项目简介，暂时不确定能怎么对应到本地模型
 
 	Status int `json:"status"` // 项目在第三方系统的状态，对应本地 Project.Status
+
+	// 一些进度信息
+	TranslatedCount int `json:"translated_source_count"` // 已翻译的标记数
+	ProofedCount    int `json:"checked_source_count"`    // 已校对的标记数
+	TotalCount      int `json:"source_count"`            // 总标记数
 
 	// 嵌套的所属作品集信息
 	ProjectSet struct {

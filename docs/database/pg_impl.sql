@@ -1,140 +1,151 @@
--- PostgreSQL Version for the Localization Team Project Database (v2)
--- Reflects new requirements for Moetran integration.
+-- PostgreSQL Version for the Localization Team Project Database
+-- Corrected version to match the Go models design (v3).
+-- Key changes: 'works' table removed, 'projects' restored, and 'project_tags' created.
 
 BEGIN;
 
 
 -- Table: members
--- Stores user information.
+-- Stores user information. Matches the Member struct.
 CREATE TABLE members (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ(3) NULL,
     
-    nickname VARCHAR(128) NOT NULL UNIQUE,
-    email VARCHAR(128) NOT NULL UNIQUE,
+    nickname VARCHAR(128) NOT NULL,
+    email VARCHAR(128) NOT NULL,
     password_hash VARCHAR(256) NOT NULL,
-    moetran_id TEXT NOT NULL UNIQUE, -- Changed from longyi_id, now NOT NULL
-    poplar_is_admin BOOLEAN NOT NULL DEFAULT FALSE, -- Renamed from is_admin
+    moetran_id TEXT NOT NULL,
+    poplar_is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     labors INTEGER NOT NULL DEFAULT 0,
     remark TEXT NULL,
-    last_active TIMESTAMPTZ(3) NULL
+    qq_number VARCHAR(64) NULL,
+    last_active TIMESTAMPTZ(3) NULL,
+
+    CONSTRAINT unique_members_nickname UNIQUE (nickname),
+    CONSTRAINT unique_members_email UNIQUE (email),
+    CONSTRAINT unique_members_moetran_id UNIQUE (moetran_id)
 );
-CREATE INDEX idx_members_nickname ON members(nickname);
+-- Indexes from original schema, which are good practice.
 CREATE INDEX idx_members_deleted_at ON members(deleted_at);
-CREATE INDEX idx_members_poplar_is_admin ON members(poplar_is_admin);
-CREATE INDEX idx_members_labors ON members(labors DESC);
 
 
--- Table: teams (NEW)
--- Stores translation team info synchronized from Moetran.
+-- Table: teams
+-- Stores translation team info. Matches the Team struct.
 CREATE TABLE teams (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ(3) NULL,
 
-    name VARCHAR(256) NOT NULL UNIQUE,
-    moetran_id TEXT NOT NULL UNIQUE
+    name VARCHAR(256) NOT NULL,
+    moetran_id TEXT NOT NULL,
+
+    CONSTRAINT unique_teams_name UNIQUE (name),
+    CONSTRAINT unique_teams_moetran_id UNIQUE (moetran_id)
 );
 CREATE INDEX idx_teams_deleted_at ON teams(deleted_at);
 
+
 -- Table: worksets
--- Stores workset (series/collection) info synchronized from Moetran.
+-- Stores workset (series/collection) info. Matches the Workset struct.
 CREATE TABLE worksets (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
+    updated_at TIMESTamptz(3) NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ(3) NULL,
     
-    title TEXT NOT NULL, -- Title can be fetched from Moetran
-    moetran_id TEXT NOT NULL UNIQUE -- Added for synchronization
+    team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    moetran_id TEXT NOT NULL,
+
+    CONSTRAINT unique_worksets_moetran_id UNIQUE (moetran_id),
+    CONSTRAINT unique_worksets_name UNIQUE (name)
 );
 CREATE INDEX idx_worksets_deleted_at ON worksets(deleted_at);
-CREATE INDEX idx_worksets_title_trgm ON worksets USING GIN (title gin_trgm_ops);
-CREATE INDEX idx_worksets_updated_at ON worksets(updated_at DESC);
 
--- Table: works (NEW)
--- Stores individual work (chapter/article) info synchronized from Moetran.
-CREATE TABLE works (
-    id SERIAL PRIMARY KEY,
-    created_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
-    deleted_at TIMESTAMPTZ(3) NULL,
-
-    last_edit TIMESTAMPTZ(3) NULL, -- New field for tracking last edit time
-    title TEXT NOT NULL UNIQUE,
-    moetran_id TEXT NOT NULL UNIQUE,
-    description TEXT NULL
-);
-CREATE INDEX idx_works_deleted_at ON works(deleted_at);
-CREATE INDEX idx_works_last_edit ON works(last_edit DESC NULLS LAST);
 
 -- Table: tags
--- Stores system-wide tags for categorization.
+-- Stores system-wide tags for categorization. Matches the Tag struct.
 CREATE TABLE tags (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ(3) NULL,
     
-    name VARCHAR(128) NOT NULL UNIQUE,
-    description VARCHAR(256) NULL
+    name VARCHAR(128) NOT NULL,
+    description VARCHAR(256) NULL,
+
+    CONSTRAINT unique_tags_name UNIQUE (name)
 );
+CREATE INDEX idx_tags_deleted_at ON tags(deleted_at);
 
 
--- Table: projects (HEAVILY MODIFIED)
--- Core table tracking the progress of a localization project.
+-- Table: projects (CORRECTED)
+-- Core table tracking the progress of a localization project. Now matches the Project struct.
 CREATE TABLE projects (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ(3) NULL,
     
+    -- Restored fields from the Go model
+    title TEXT NOT NULL,
+    moetran_id TEXT NOT NULL,
+
+    -- Fields that were already correct
     legacy_id INTEGER NULL,
-    team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE, -- Changed from team_affiliated_to
     workset_id INTEGER NOT NULL REFERENCES worksets(id) ON DELETE CASCADE,
-    work_id INTEGER NOT NULL REFERENCES works(id) ON DELETE CASCADE, -- NEW foreign key
     status INTEGER NOT NULL,
-    urgency SMALLINT NOT NULL
+    urgency SMALLINT NOT NULL,
+
+    -- Add unique constraints as defined in the Go model's gorm tags
+    -- CONSTRAINT unique_projects_title_legacy_id_workset_id UNIQUE (moetran_id, workset_id),
+    CONSTRAINT unique_projects_moetran_id UNIQUE (moetran_id)
 );
+CREATE INDEX idx_projects_deleted_at ON projects(deleted_at);
 CREATE INDEX idx_projects_legacy_id ON projects(legacy_id);
-CREATE INDEX idx_projects_status ON projects(status);
+CREATE INDEX idx_projects_title ON projects(title);
 
 
--- Table: member_preferences (MODIFIED)
--- Stores tags that a member is not good at or wants to avoid.
+-- Table: member_preferences
+-- Stores member's tag preferences. Matches the MemberPreference struct.
 CREATE TABLE member_preferences (
     member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
     tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-    is_resisted BOOLEAN NOT NULL DEFAULT FALSE, -- Renamed from is_prefered, meaning is inverted
+    is_resisted BOOLEAN NOT NULL DEFAULT FALSE,
     
-    UNIQUE (member_id, tag_id)
+    -- A member can only have one preference entry per tag.
+    PRIMARY KEY (member_id, tag_id)
 );
 
 
--- Table: project_tags (MODIFIED)
--- Join table between projects and tags. Using composite primary key.
-CREATE TABLE work_tags (
-    work_id INTEGER NOT NULL REFERENCES work(id) ON DELETE CASCADE,
+-- Table: project_tags (CORRECTED)
+-- Join table between projects and tags. Replaces 'work_tags'. Matches the ProjectTag struct.
+CREATE TABLE project_tags (
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
     
-    PRIMARY KEY (work_id, tag_id) -- More accurately reflects a pure join table
+    -- A tag can only be applied to a project once.
+    PRIMARY KEY (project_id, tag_id)
 );
 
 
 -- Table: project_labor_divisions
--- Join table for project assignments.
+-- Join table for project assignments. Matches the ProjectLaborDivision struct.
 CREATE TABLE project_labor_divisions (
     project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
     labor_role INTEGER NOT NULL,
 
-    UNIQUE(project_id, member_id) -- A member should only have one labor entry per project
+    -- A member should only have one labor entry per project
+    -- Using PRIMARY KEY is also an option here, but UNIQUE works perfectly.
+    CONSTRAINT unique_pld_project_member UNIQUE (project_id, member_id)
 );
-CREATE INDEX idx_labor_project_id ON project_labor_divisions(project_id);
-CREATE INDEX idx_labor_member_id ON project_labor_divisions(member_id);
+-- Indexes are helpful for querying assignments by project or by member.
+CREATE INDEX idx_pld_project_id ON project_labor_divisions(project_id);
+CREATE INDEX idx_pld_member_id ON project_labor_divisions(member_id);
 
 
 COMMIT;

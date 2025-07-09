@@ -1,79 +1,101 @@
 package transformer
 
 import (
-	"poplargrid/internal/shared/dbmodels"
+	"poplargrid/internal/shared/dbmodel"
+	"poplargrid/internal/update_server/apidto"
+	"regexp"
+	"strconv"
 )
 
-// Transformer 是数据转换器的接口
-type Transformer struct {
-}
-
-// NewTransformer 构造一个新的 Transformer 实例
-func NewTransformer() *Transformer {
-	return &Transformer{}
-}
-
-// ProjectSetsToWorksets 将尨译的 project-set 格式转化成 Workset 格式
-func (t *Transformer) ProjectSetsToWorksets(projsets []MoetranProjSet,
-) ([]*dbmodels.Workset, error) {
-	var worksets []*dbmodels.Workset
+// ProjSetsToWorksets 将尨译的 project-set 格式转化成 Workset 格式
+func ProjSetsToWorksets(team *dbmodel.Team, projsets []apidto.MoetranProjSet) (
+	[]*dbmodel.Workset, error) {
+	var worksets []*dbmodel.Workset
 	for _, projset := range projsets {
-		title := projset.Name
-		if title == "default" || title == "" {
-			title = "未分组"
+		name := projset.Name
+		if name == "default" || name == "" {
+			name = "未分组"
 		}
 
-		worksets = append(worksets, &dbmodels.Workset{
-			BaseModel: dbmodels.BaseModel{
+		worksets = append(worksets, &dbmodel.Workset{
+			BaseModel: dbmodel.BaseModel{
 				CreatedAt: projset.CreateTime.Time,
 				UpdatedAt: projset.EditTime.Time,
 			},
-			Title:     projset.Name,
+			Name:      name,
 			MoetranId: projset.Id,
+			TeamId:    team.Id, // 使用传入的 team 的 ID
 		})
 	}
 
 	return worksets, nil
 }
 
-// ProjsToWorks 从尨译的 project 信息提取出 Work 格式信息
-func (t *Transformer) ProjsToWorks(projects []MoetranProj,
-) ([]*dbmodels.Work, error) {
-	// 将 MoetranProj 部分信息转化为 dbmodels.Work
-	var works []*dbmodels.Work
-	for _, project := range projects {
-		works = append(works, &dbmodels.Work{
-			BaseModel: dbmodels.BaseModel{
-				CreatedAt: project.CreateTime.Time,
-				UpdatedAt: project.EditTime.Time,
+// ProjsToWorks 从尨译的 project 信息提取出 Project 格式信息
+// workset 是辅助处理的作品集信息，为当前 projs 所在的作品集
+func ProjsToProjects(projs []apidto.MoetranProj, workset *dbmodel.Workset) (
+	[]*dbmodel.Project, error) {
+	// 将 MoetranProj 信息转化为 dbmodel.Project
+	var projects []*dbmodel.Project
+
+	for _, proj := range projs {
+		projects = append(projects, &dbmodel.Project{
+			BaseModel: dbmodel.BaseModel{
+				CreatedAt: proj.CreateTime.Time,
+				UpdatedAt: proj.EditTime.Time,
 			},
-			Title:       project.Name,
-			MoetranId:   project.Id,
-			Description: project.Intro,
+			Title:     sExtractCleanTitle(proj.Name),
+			MoetranId: proj.Id,
+			LegacyId:  sExtractLegacyId(proj.Name),
+			WorksetId: workset.Id, // 使用传入的 workset 的 ID
 		})
 	}
 
-	return works, nil
+	return projects, nil
 }
 
-// // ProjsToProjects 将尨译的 project 信息提取出 Project 格式信息
-// func (t *Transformer) ProjsToProjects(projects []crawler.MoetranProj,
-// ) ([]*dbmodels.Project, error) {
-// 	// 将 MoetranProj 部分信息转化为 dbmodels.Project
-// 	var dbProjects []*dbmodels.Project
-// 	for _, project := range projects {
-// 		// 尝试获取 Legacy ID
-// 		legacyId, _ := sExtractLegacyId(project.Name)
-// 		// 提取纯净的标题
-// 		cleanTitle := sExtractCleanTitle(project.Name)
+// ============== 辅助函数 ==============
 
-// 		dbProjects = append(dbProjects, &dbmodels.Project{
-// 			BaseModel: dbmodels.BaseModel{
-// 				CreatedAt: project.CreateTime,
-// 			},
-// 			LegacyId: legacyId,
-// 		})
-// 	}
+// sExtractLegacyId 从标题字符串中提取出 Legacy ID 部分
+// 返回值为提取出的 Legacy ID 和一个布尔值，表示是否成功提取
+func sExtractLegacyId(title string) uint {
+	// 使用正则表达式匹配标题中的 Legacy ID
+	// Legacy ID 的格式为【数字】
+	re := regexp.MustCompile(`【(\d+)】`)
 
-// 	return dbProjects, nil
-// }
+	matches := re.FindStringSubmatch(title)
+
+	if len(matches) <= 0 {
+		// 如果没有匹配到任何内容，返回 0
+		return 0
+	}
+
+	if len(matches) > 1 {
+		// 获取匹配的第一个子字符串，即【】之间的数字部分
+		legacyIdStr := matches[1]
+
+		// 将字符串数字转换为整数
+		legacyId, err := strconv.ParseUint(
+			legacyIdStr, 10, 32)
+		if err != nil {
+			return 0
+		}
+
+		return uint(legacyId)
+	}
+
+	// 如果只匹配到 Legacy ID 的整体格式，但没有数字部分，返回 0
+	// 虽然这种情况不太可能，因为正则表达式肯定会匹配到数字
+	return 0
+}
+
+// sExtractFullName 去除标题字符串中的 Legacy ID 部分
+// 返回值为纯净的标题字符串
+func sExtractCleanTitle(title string) string {
+	// 使用正则表达式匹配标题中的 Legacy ID
+	// Legacy ID 整体的格式为【一个数字】
+	re := regexp.MustCompile(`【\d+】`)
+
+	// 替换匹配到的 Legacy ID 部分为空字符串
+	return re.ReplaceAllString(title, "")
+}

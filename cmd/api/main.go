@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"path/filepath"
 	"poplargrid/internal/api_server/config"
-	"poplargrid/internal/api_server/handlers"
-	"poplargrid/internal/api_server/repositories"
-	"poplargrid/internal/api_server/routes"
+	"poplargrid/internal/api_server/handler"
+	"poplargrid/internal/api_server/repository"
+	"poplargrid/internal/api_server/route"
 	"poplargrid/internal/api_server/services"
 	"poplargrid/internal/shared/configutil"
 	"strconv"
@@ -139,9 +139,9 @@ func NewMvcApp(irisApp *iris.Application, cfg *config.Config) *mvc.Application {
 func InitMvcApp(root *mvc.Application, cfg *config.Config) {
 	// 初始化所有 repositories
 	dbCtx := NewDatabase(cfg)
-	relTables := repositories.NewRelationTables(dbCtx)
-	memberRepo := repositories.NewMembersRepo(dbCtx)
-	projRepo := repositories.NewProjectsRepo(dbCtx)
+	relTables := repository.NewRelationTables(dbCtx)
+	memberRepo := repository.NewMembersRepo(dbCtx)
+	projRepo := repository.NewProjectsRepo(dbCtx)
 
 	// 初始化所有 services
 	memberSrv := services.NewMemberService(memberRepo)
@@ -152,13 +152,13 @@ func InitMvcApp(root *mvc.Application, cfg *config.Config) {
 		memberSrv, projSrv)
 
 	// 添加 /member 子路由组
-	routes.ConfigureMemberRoutes(root)
+	route.ConfigureMemberRoutes(root)
 	// 添加 /project 子路由组
 	{
 		projHandler := root.Party("/project")
 
 		// 注册 ProjectHandler
-		projHandler.Handle(new(handlers.ProjectHandler))
+		projHandler.Handle(new(handler.ProjectHandler))
 	}
 }
 

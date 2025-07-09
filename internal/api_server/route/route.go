@@ -1,7 +1,7 @@
-package routes
+package route
 
 import (
-	"poplargrid/internal/api_server/handlers"
+	"poplargrid/internal/api_server/handler"
 
 	"github.com/kataras/iris/v12/mvc"
 )
@@ -12,7 +12,7 @@ func ConfigureMemberRoutes(app *mvc.Application) {
 	memberParty := app.Party("/member")
 
 	// 绑定指定路由（使用类型安全的方法）
-	memberHandlerInst := new(handlers.MemberHandler)
+	memberHandlerInst := new(handler.MemberHandler)
 	memberParty.Handle(memberHandlerInst)
 	{
 		// 注册测试路由

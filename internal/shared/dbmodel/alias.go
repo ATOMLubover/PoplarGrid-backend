@@ -1,4 +1,4 @@
-package dbmodels
+package dbmodel
 
 import (
 	"time"

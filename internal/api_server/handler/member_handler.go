@@ -1,7 +1,7 @@
-package handlers
+package handler
 
 import (
-	"poplargrid/internal/api_server/dtos"
+	"poplargrid/internal/api_server/dto"
 	"poplargrid/internal/api_server/services"
 
 	"github.com/kataras/iris/v12"
@@ -63,10 +63,10 @@ func (h *MemberHandler) MemberListPage(ctx iris.Context) {
 	}
 
 	// 成功返回成员详情列表
-	var responseSlice []*dtos.MemberFullInfo
+	var responseSlice []*dto.MemberFullInfo
 
 	for _, member := range members {
-		responseSlice = append(responseSlice, &dtos.MemberFullInfo{
+		responseSlice = append(responseSlice, &dto.MemberFullInfo{
 			Nickname:      member.Nickname,
 			Email:         member.Email,
 			MoetranId:     member.MoetranId,

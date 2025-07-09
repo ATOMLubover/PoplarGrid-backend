@@ -1,7 +1,7 @@
-package repositories
+package repository
 
 import (
-	"poplargrid/internal/shared/dbmodels"
+	"poplargrid/internal/shared/dbmodel"
 
 	"gorm.io/gorm"
 )
@@ -20,15 +20,15 @@ func NewRelationTables(db *gorm.DB) *RelationTables {
 
 // 获取成员偏好表的上下文引用
 func (r *RelationTables) GetMemberPreferenceTable() *gorm.DB {
-	return r.DbCtx.Model(&dbmodels.MemberPreference{})
+	return r.DbCtx.Model(&dbmodel.MemberPreference{})
 }
 
 // 获取成员分工表的上下文引用
 func (r *RelationTables) GetProjectLaborDivisionTable() *gorm.DB {
-	return r.DbCtx.Model(&dbmodels.ProjectLaborDivision{})
+	return r.DbCtx.Model(&dbmodel.ProjectLaborDivision{})
 }
 
 // 获取作品 tag 表的上下文引用
-func (r *RelationTables) GetWorkTagTable() *gorm.DB {
-	return r.DbCtx.Model(&dbmodels.WorkTag{})
+func (r *RelationTables) GetProjectTagTable() *gorm.DB {
+	return r.DbCtx.Model(&dbmodel.ProjectTag{})
 }

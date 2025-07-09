@@ -1,7 +1,7 @@
-package handlers
+package handler
 
 import (
-	"poplargrid/internal/api_server/dtos"
+	"poplargrid/internal/api_server/dto"
 	"poplargrid/internal/api_server/services"
 
 	"github.com/kataras/iris/v12"
@@ -58,22 +58,22 @@ func (h *ProjectHandler) ProjListPage(ctx iris.Context) {
 	}
 
 	// 成功返回项目详情列表
-	var responseSlice []*dtos.ProjectFullInfo
+	var responseSlice []*dto.ProjectFullInfo
 
 	for _, proj := range projs {
-		// 加载项目对应 work 的 tag
+		// 加载项目对应 project 的 tag
 		tags := make([]string, 0)
-		if tagList, ok := tagMap[proj.WorkId]; ok {
+		if tagList, ok := tagMap[proj.Id]; ok {
 			for _, tag := range tagList {
 				tags = append(tags, tag.Name)
 			}
 		}
 
 		// 加载项目分工成员
-		laborDivision := make([]dtos.ProjectMemberLabor, 0)
+		laborDivision := make([]dto.ProjectMemberLabor, 0)
 		if laborList, ok := laborMap[proj.Id]; ok {
 			for _, member := range laborList {
-				laborDivision = append(laborDivision, dtos.ProjectMemberLabor{
+				laborDivision = append(laborDivision, dto.ProjectMemberLabor{
 					MemberName: member.Nickname,
 					LaborRole:  member.Labors, // 这里是借用了 Member 的 Labors 字段传递分工角色
 				})
@@ -81,25 +81,13 @@ func (h *ProjectHandler) ProjListPage(ctx iris.Context) {
 		}
 
 		// 构建项目完整信息 DTO
-		responseSlice = append(responseSlice, &dtos.ProjectFullInfo{
+		responseSlice = append(responseSlice, &dto.ProjectFullInfo{
 			ProjectId: uint(proj.Id),
-			Title:     proj.FkWork.Title,
-			Team: dtos.TeamFullInfo{
-				TeamId:    uint(proj.TeamId),
-				MoetranId: proj.FkTeam.MoetranId,
-				TeamName:  proj.FkTeam.Name,
-			},
-			Workset: dtos.WorksetFullInfo{
+			Title:     proj.Title,
+			Workset: dto.WorksetFullInfo{
 				WorksetId: uint(proj.WorksetId),
 				MoetranId: proj.FkWorkset.MoetranId,
-				Title:     proj.FkWorkset.Title,
-			},
-			Work: dtos.WorkFullInfo{
-				WorkId:      uint(proj.WorkId),
-				MoetranId:   proj.FkWork.MoetranId,
-				Title:       proj.FkWork.Title,
-				Description: proj.FkWork.Description,
-				Tags:        tags,
+				Title:     proj.Title,
 			},
 			Status:        proj.Status,
 			Urgency:       proj.Urgency,
