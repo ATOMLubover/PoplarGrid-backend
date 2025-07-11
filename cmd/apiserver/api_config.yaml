@@ -3,7 +3,7 @@ server:
   # 启动模式 (比如 "debug", "release")
   mode: "debug"
   # 监听端口
-  port: 8081  
+  port: 8081 
 
 database:
   # 数据库类型，目前只支持 PostgreSQL

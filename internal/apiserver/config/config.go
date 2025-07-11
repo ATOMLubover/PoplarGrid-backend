@@ -63,7 +63,7 @@ type ApiConfig struct {
 
 var (
 	// 全局配置变量
-	config *Config = nil
+	config *Config = &Config{}
 	// 保护 config 的互斥锁
 	mtx sync.RWMutex
 

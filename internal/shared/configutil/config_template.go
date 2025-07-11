@@ -2,22 +2,16 @@ package configutil
 
 import (
 	"fmt"
-	"path/filepath"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 )
 
 // 将配置加载到 viper 实例中
 func LoadViperConfig(cfgType, relPath string) (*viper.Viper, error) {
-	// 为了方便调试，加入绝对文件路径日志
-	absPath, err := filepath.Abs(relPath)
-	if err != nil {
-		return nil, fmt.Errorf("配置文件路径解析错误：%s\n", err.Error())
-	}
-
 	v := viper.New()
 	v.SetConfigType(cfgType)
-	v.SetConfigFile(absPath)
+	v.SetConfigFile(relPath)
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("配置文件读入 viper 失败：%s", err.Error())
@@ -27,12 +21,23 @@ func LoadViperConfig(cfgType, relPath string) (*viper.Viper, error) {
 }
 
 // 将配置加载到结构体中，实现类型安全操作
-// 暂时不支持参数设置
-func LoadConfig[T any](cfg *T, cfgPath string, cfgType string) error {
+// updater 函数用于注入热更新的实现函数
+func LoadConfig[T any](cfg *T, cfgType, cfgPath string, updater func(v *viper.Viper)) error {
 	v, err := LoadViperConfig(cfgType, cfgPath)
 	if err != nil {
 		return err
 	}
 
-	return v.Unmarshal(cfg)
+	if err := v.Unmarshal(cfg); err != nil {
+		return fmt.Errorf("配置文件解析到结构体失败：%s", err.Error())
+	}
+
+	// 如果未提供 updater 函数，则跳过热更新
+	if updater != nil {
+		v.WatchConfig()
+		// 当配置文件发生变化时，调用 updater 函数
+		v.OnConfigChange(func(e fsnotify.Event) { updater(v) })
+	}
+
+	return nil
 }

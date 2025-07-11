@@ -39,6 +39,7 @@ func (Member) TableName() string {
 }
 
 // tag 基础信息
+// 将 tag 设计为各个汉化组共用的
 type Tag struct {
 	BaseModel
 
@@ -59,7 +60,7 @@ type Workset struct {
 	TeamId PrimaryKey
 	FkTeam Team `gorm:"foreignKey:TeamId"`
 
-	Name      string `gorm:"uniqueIndex;type:text;not null"`
+	Name      string `gorm:"unique;type:text;not null"`
 	MoetranId string `gorm:"uniqueIndex;type:text;not null"`
 }
 
@@ -92,14 +93,20 @@ type Project struct {
 	// 经过观察，有序号重复的地方，如果可以最好重构这部分
 	LegacyId uint `gorm:"index"`
 
-	// 所属作品集（同步尨译）
+	// 所属作品集
 	WorksetId PrimaryKey
 	FkWorkset Workset `gorm:"foreignKey:WorksetId"`
 
 	// 当前项目的状态
-	Status uint
-	// 用紧急度代替好漫无汉等
-	Urgency int16 `gorm:"type:smallint"`
+	OnTranslating bool `gorm:"not null;default:false"`
+	IsTranslated  bool `gorm:"not null;default:false"`
+	OnProoving    bool `gorm:"not null;default:false"`
+	IsProoved     bool `gorm:"not null;default:false"`
+	OnLettering   bool `gorm:"not null;default:false"`
+	IsLettered    bool `gorm:"not null;default:false"`
+	OnReviewing   bool `gorm:"not null;default:false"`
+	IsReviewed    bool `gorm:"not null;default:false"`
+	IsPublished   bool `gorm:"not null;default:false"`
 }
 
 func (Project) TableName() string {
