@@ -267,7 +267,7 @@ func (s *projectServiceImpl) CreateProject(request *dtos.CreateProjectRequest) (
 	coordinater := transaction.NewTransactionCoordinator(s.projectRepo.GetHandle())
 
 	// 在一个事务中协调数据库和调用龙译 API 的操作
-	if err := coordinater.RunInTransaction(context.Background(), func(tx *gorm.DB) (error, func()) {
+	if err := coordinater.RunInTransaction(context.Background(), func(tx *gorm.DB) (error, func() error) {
 		// 先在数据库中创建项目，如果成功 project 的 Id 和 WorksetIndex 应当被填充
 		if err := s.projectRepo.CreateProject(&project); err != nil {
 			s.logger.Error("CreateProject 调用 CreateProject 中出现错误", slog.Any("error", err))
@@ -278,12 +278,13 @@ func (s *projectServiceImpl) CreateProject(request *dtos.CreateProjectRequest) (
 		if err := s.apiClient.CreateProject(request, project.WorksetIndex); err != nil {
 			s.logger.Error("CreateProject 调用 CreateProject API 中出现错误", slog.Any("error", err))
 			// TODO：由于不确定尨译的 API 是否是幂等的，这里需要考虑补偿操作，比如删除对应项目
-			// 但在不确定尨译实现的情况下，先不处理
+			// 但在不确定尨译实现的情况下，先不处理补偿
 			return fmt.Errorf("调用龙译 API 创建项目失败：%w", err), nil
 		}
 
 		// 一切正常，则返回 nil 提交事务
 		return nil, nil
+
 	}); err != nil {
 		// 这里的 err 是上述事务中抛出的错误
 		s.logger.Error("CreateProject 事务执行失败", slog.Any("error", err))
