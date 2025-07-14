@@ -2,7 +2,7 @@ package services
 
 import (
 	"poplargrid/internal/api_server/repository"
-	"poplargrid/internal/shared/dbmodel"
+	"poplargrid/internal/shared/dbmodels"
 )
 
 // MemberService 提供成员相关的服务
@@ -20,6 +20,6 @@ func NewMemberService(
 }
 
 // GetMemberFullList 获取所有成员的完整信息
-func (s *MemberService) GetMemberFullList(offset, num int) ([]*dbmodel.Member, error) {
+func (s *MemberService) GetMemberFullList(offset, num int) ([]*dbmodels.User, error) {
 	return s.memberRepo.SelectAllToSlice(offset, num)
 }

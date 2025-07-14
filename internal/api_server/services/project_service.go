@@ -2,7 +2,7 @@ package services
 
 import (
 	"poplargrid/internal/api_server/repository"
-	"poplargrid/internal/shared/dbmodel"
+	"poplargrid/internal/shared/dbmodels"
 )
 
 // ProjectService 提供项目相关的服务
@@ -21,16 +21,16 @@ func NewProjectService(
 
 // GetProjectById 根据项目 ID 获取项目的完整信息
 // 如果不存在则返回 nil 和错误
-func (s *ProjectService) GetProjectById(projectId uint) (*dbmodel.Project, error) {
+func (s *ProjectService) GetProjectById(projectId uint) (*dbmodels.Project, error) {
 	return s.projRepo.SelectFullById(projectId)
 }
 
 // GetAllProjects 获取所有项目的完整信息
 // 返回所有项目的完整信息
 func (s *ProjectService) GetAllProjects(offset, num int) (
-	[]*dbmodel.Project,
-	map[dbmodel.PrimaryKey][]*dbmodel.Tag,
-	map[dbmodel.PrimaryKey][]*dbmodel.Member,
+	[]*dbmodels.Project,
+	map[dbmodels.PrimaryKey][]*dbmodels.Tag,
+	map[dbmodels.PrimaryKey][]*dbmodels.User,
 	error) {
 	return s.projRepo.SelectAllToSlice(offset, num)
 }

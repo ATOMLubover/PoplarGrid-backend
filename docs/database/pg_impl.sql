@@ -150,3 +150,43 @@ CREATE INDEX idx_pld_member_id ON project_labor_divisions(member_id);
 
 
 COMMIT;
+
+-- 假设你已经创建了一个新的 workset，它的 ID 是 123
+CREATE SEQUENCE projects_seq_workset_123 START 1;
+
+-- 用于动态获取并设置项目的 workset_project_index 的触发器函数
+CREATE OR REPLACE FUNCTION set_project_workset_index()
+RETURNS TRIGGER AS $$
+DECLARE
+    -- 声明一个变量来存储从 worksets 表查到的序列名称
+    v_seq_name TEXT;
+    -- 声明一个变量来存储从序列中获取的下一个值
+    v_next_val BIGINT;
+BEGIN
+    -- 1. 根据当前新插入项目（NEW）的 workset_id，去 worksets 表查找到对应的序列名称
+    SELECT project_sequence_name INTO v_seq_name
+    FROM worksets
+    WHERE id = NEW.workset_id;
+
+    -- 如果没有找到序列名称，说明 workset 数据有问题，抛出异常阻止插入
+    IF v_seq_name IS NULL THEN
+        RAISE EXCEPTION 'Sequence name not found for workset_id %', NEW.workset_id;
+    END IF;
+
+    -- 2. 动态执行 SQL：从找到的序列中获取下一个值
+    -- 注意：这里必须使用 EXECUTE，因为序列名称是变量，不能直接写在 nextval() 里
+    -- nextval('sequence_name') 是获取下一个值的函数
+    EXECUTE 'SELECT nextval(''' || v_seq_name || ''')' INTO v_next_val;
+
+    -- 3. 将获取到的下一个序列值，赋值给新插入项目记录的 workset_project_number 字段
+    NEW.workset_index := v_next_val;
+
+    -- 4. 返回 NEW，表示允许插入操作继续，并使用 NEW 中修改后的值
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER before_insert_projects_set_workset_number
+BEFORE INSERT ON projects          -- 在向 projects 表插入数据之前
+FOR EACH ROW                       -- 对每一行数据都执行
+EXECUTE FUNCTION set_project_workset_index(); -- 调用我们的函数

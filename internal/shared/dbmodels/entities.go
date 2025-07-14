@@ -1,16 +1,12 @@
-package dbmodel
+package dbmodels
 
 import (
 	"time"
 )
 
 // 成员的基本信息
-type Member struct {
+type User struct {
 	BaseModel
-
-	// 所属的汉化组
-	TeamId PrimaryKey
-	FkTeam Team `gorm:"foreignKey:TeamId"`
 
 	// 基本信息
 	Nickname     string `gorm:"uniqueIndex;size:128;not null"`
@@ -22,8 +18,6 @@ type Member struct {
 
 	// 在仪表盘中的身份
 	PoplarIsAdmin bool
-	// 负责角色
-	Labors uint
 
 	// 补充备注
 	Remark string `gorm:"type:text"`
@@ -34,38 +28,8 @@ type Member struct {
 	LastActive time.Time
 }
 
-func (Member) TableName() string {
-	return "members"
-}
-
-// tag 基础信息
-// 将 tag 设计为各个汉化组共用的
-type Tag struct {
-	BaseModel
-
-	Name        string `gorm:"uniqueIndex;size:128;not null"`
-	Description string `gorm:"size:256"`
-}
-
-func (Tag) TableName() string {
-	return "tags"
-}
-
-// 作品集（同步尨译信息）
-// 考虑到数量较少，前端可以直接加载完整列表，这里不提供除了
-// 主键和外键以外的索引
-type Workset struct {
-	BaseModel
-
-	TeamId PrimaryKey
-	FkTeam Team `gorm:"foreignKey:TeamId"`
-
-	Name      string `gorm:"unique;type:text;not null"`
-	MoetranId string `gorm:"uniqueIndex;type:text;not null"`
-}
-
-func (Workset) TableName() string {
-	return "worksets"
+func (User) TableName() string {
+	return "users"
 }
 
 // 汉化组
@@ -80,6 +44,28 @@ type Team struct {
 func (Team) TableName() string {
 	return "teams"
 }
+
+// 作品集（同步尨译信息）
+// 考虑到数量较少，前端可以直接加载完整列表，这里不提供除了
+// 主键和外键以外的索引
+type Workset struct {
+	BaseModel
+
+	TeamId PrimaryKey
+	FkTeam Team `gorm:"foreignKey:TeamId"`
+
+	Name      string `gorm:"unique;type:text;not null"`
+	MoetranId string `gorm:"uniqueIndex;type:text;not null"`
+
+	// 用于项目的组内自增序列
+	ProjectSequenceName string `gorm:"uniqueIndex;type:text;not null"`
+}
+
+func (Workset) TableName() string {
+	return "worksets"
+}
+
+const PROJ_IDX_SEQ_PREFIX = "workset_project_index_seq_"
 
 // 项目进度表
 type Project struct {
@@ -97,16 +83,20 @@ type Project struct {
 	WorksetId PrimaryKey
 	FkWorkset Workset `gorm:"foreignKey:WorksetId"`
 
-	// 当前项目的状态
-	OnTranslating bool `gorm:"not null;default:false"`
-	IsTranslated  bool `gorm:"not null;default:false"`
-	OnProoving    bool `gorm:"not null;default:false"`
-	IsProoved     bool `gorm:"not null;default:false"`
-	OnLettering   bool `gorm:"not null;default:false"`
-	IsLettered    bool `gorm:"not null;default:false"`
-	OnReviewing   bool `gorm:"not null;default:false"`
-	IsReviewed    bool `gorm:"not null;default:false"`
-	IsPublished   bool `gorm:"not null;default:false"`
+	// 项目在 workset 组内自增序列
+	WorksetIndex uint `gorm:"not null"`
+
+	// 当前项目的状态，全部拥有索引加速
+	TranslateStatus uint8 `gorm:"not null;default:0"`     // 0: 未开始, 1: 翻译中, 2: 已翻译
+	ProofStatus     uint8 `gorm:"not null;default:0"`     // 0: 未开始, 1: 校对中, 2: 已校对
+	LetterStatus    uint8 `gorm:"not null;default:0"`     // 0: 未开始, 1: 字幕制作中, 2: 已完成
+	ReviewStatus    uint8 `gorm:"not null;default:0"`     // 0: 未开始, 1: 审核中, 2: 已审核
+	IsPublished     bool  `gorm:"not null;default:false"` // 是否已发布
+
+	// 是否允许自动加入
+	AllowAutoJoin bool `gorm:"not null;default:false"`
+	// 是否为隐藏项目
+	IsHidden bool `gorm:"not null;default:false"`
 }
 
 func (Project) TableName() string {

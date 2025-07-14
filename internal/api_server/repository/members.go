@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"poplargrid/internal/shared/dbmodel"
+	"poplargrid/internal/shared/dbmodels"
 
 	"gorm.io/gorm"
 )
@@ -20,13 +20,13 @@ func NewMembersRepo(db *gorm.DB) *MembersRepo {
 
 // GetTable 获取 members 表的上下文引用
 func (r *MembersRepo) GetTable() *gorm.DB {
-	return r.DbCtx.Model(&dbmodel.Member{})
+	return r.DbCtx.Model(&dbmodels.User{})
 }
 
 // SelectFullById 根据 memver.id 获取 member 完整信息
 // 如果不存在则返回 nil 和错误
-func (r *MembersRepo) SelectFullById(memberId uint) (*dbmodel.Member, error) {
-	var member dbmodel.Member
+func (r *MembersRepo) SelectFullById(memberId uint) (*dbmodels.User, error) {
+	var member dbmodels.User
 
 	if err := r.GetTable().
 		Where("id = ?", memberId).
@@ -39,8 +39,8 @@ func (r *MembersRepo) SelectFullById(memberId uint) (*dbmodel.Member, error) {
 
 // SelectFullByNickname 根据 memeber.nickname 获取 member 完整信息
 // 如果不存在则返回 nil 和错误
-func (r *MembersRepo) SelectFullByNickname(nickname string) (*dbmodel.Member, error) {
-	var member dbmodel.Member
+func (r *MembersRepo) SelectFullByNickname(nickname string) (*dbmodels.User, error) {
+	var member dbmodels.User
 
 	if err := r.GetTable().
 		Where("nickname = ?", nickname).
@@ -52,8 +52,8 @@ func (r *MembersRepo) SelectFullByNickname(nickname string) (*dbmodel.Member, er
 }
 
 // SelectAllToSlice 获取所有成员的完整信息
-func (r *MembersRepo) SelectAllToSlice(offset, num int) ([]*dbmodel.Member, error) {
-	var members []*dbmodel.Member
+func (r *MembersRepo) SelectAllToSlice(offset, num int) ([]*dbmodels.User, error) {
+	var members []*dbmodels.User
 
 	if err := r.GetTable().
 		Select("id", "nickname", "email", "moetran_id",

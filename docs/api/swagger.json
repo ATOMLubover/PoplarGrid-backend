@@ -8,9 +8,245 @@
     },
     "host": "localhost:8081",
     "paths": {
-        "/project/list": {
+        "/member/list": {
             "get": {
                 "description": "注意当列表为空，会返回 null 而不是空数组",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "member"
+                ],
+                "summary": "获取成员列表分页",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，默认值为 1",
+                        "name": "page_serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认值为 10",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "排序方式，默认值为 id_desc，支持 id_asc | id_desc，其他输入无效",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "所属汉化组 ID",
+                        "name": "team_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.MemberBasic"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/project/labor/accept": {
+            "post": {
+                "description": "接受邀请加入项目，需提供邀请的 ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "project_labor"
+                ],
+                "summary": "接受邀请加入项目",
+                "parameters": [
+                    {
+                        "description": "接受邀请加入项目的请求体",
+                        "name": "body_params",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.AcceptInvitationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/project/labor/accept_appli": {
+            "post": {
+                "description": "接受申请加入项目，需提供申请的 ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "project_labor"
+                ],
+                "summary": "接受申请加入项目",
+                "parameters": [
+                    {
+                        "description": "接受申请加入项目的请求体",
+                        "name": "body_params",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.AcceptApplicationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/project/labor/apply": {
+            "post": {
+                "description": "申请加入项目，需提供项目 ID 和申请的职位",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "project_labor"
+                ],
+                "summary": "申请加入项目",
+                "parameters": [
+                    {
+                        "description": "申请加入项目的请求体",
+                        "name": "body_params",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ApplyProjectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/project/labor/invite": {
+            "post": {
+                "description": "邀请成员加入项目，需提供成员的 ID、项目 ID 和邀请职位",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "project_labor"
+                ],
+                "summary": "邀请成员加入项目",
+                "parameters": [
+                    {
+                        "description": "邀请成员加入项目的请求体",
+                        "name": "body_params",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.InviteMemberRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/project/labor/refuse": {
+            "post": {
+                "description": "拒绝邀请加入项目，需提供邀请的 ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "project_labor"
+                ],
+                "summary": "拒绝邀请加入项目",
+                "parameters": [
+                    {
+                        "description": "拒绝邀请加入项目的请求体",
+                        "name": "body_params",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.RefuseInvitationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/project/labor/refuse_appli": {
+            "post": {
+                "description": "拒绝申请加入项目，需提供申请的 ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "project_labor"
+                ],
+                "summary": "拒绝申请加入项目",
+                "parameters": [
+                    {
+                        "description": "拒绝申请加入项目的请求体",
+                        "name": "body_params",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.RefuseApplicationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/project/list": {
+            "get": {
+                "description": "注意当列表为空，会返回 null 而不是空数组；如果要单独查询已发布的项目列表，请使用 /project/published_list 接口",
                 "produces": [
                     "application/json"
                 ],
@@ -21,32 +257,34 @@
                 "parameters": [
                     {
                         "type": "integer",
+                        "default": 1,
                         "description": "页码，默认值为 1",
-                        "name": "pageSerial",
+                        "name": "page_serial",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "每页数量，默认值为 10",
-                        "name": "pageSize",
+                        "default": 10,
+                        "description": "每页数量，默认值为 10，最大为 100",
+                        "name": "page_size",
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "排序方式，默认值为 id_desc，支持 id_desc | update_desc，其他输入无效",
+                        "type": "integer",
+                        "description": "排序方式，0：按 ID 倒序，1：按 updated_at 倒序",
                         "name": "sort",
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "项目状态，默认为 all，支持 all | translating | translated | prooving | prooved | lettering | lettered | published，其他输入无效",
+                        "type": "integer",
+                        "description": "项目状态（位掩码），用于复合查询。例如：1表示翻译中，256表示已发布",
                         "name": "status",
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "特定标签，默认为空，表示不筛选",
-                        "name": "tag_id",
+                        "type": "integer",
+                        "description": "项目所属的作品集 ID，默认为空，表示不筛选",
+                        "name": "workset_id",
                         "in": "query"
                     }
                 ],
@@ -56,7 +294,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dto.ProjectBasic"
+                                "$ref": "#/definitions/dtos.ProjectBasic"
                             }
                         }
                     }
@@ -83,7 +321,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateProjectRequest"
+                            "$ref": "#/definitions/dtos.CreateProjectRequest"
                         }
                     }
                 ],
@@ -113,11 +351,13 @@
                 "summary": "删除项目",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "项目 ID",
-                        "name": "id",
-                        "in": "formData",
-                        "required": true
+                        "description": "要删除项目的信息",
+                        "name": "body_params",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.DeleteProjectRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -133,51 +373,9 @@
                 }
             }
         },
-        "/project/proc/status": {
+        "/project/proc/update_info": {
             "put": {
-                "description": "更新指定项目的状态，需提供项目 ID 和新的状态（之所以没有 translating 之类的状态，是因为这是翻译等一加入就自动进入的）",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project_proc"
-                ],
-                "summary": "更新项目状态",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "项目 ID",
-                        "name": "id",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "新的项目状态，只能是 translated | prooved | lettered | reviewed | published",
-                        "name": "status",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/project/proc/update": {
-            "put": {
-                "description": "更新指定的项目，需提供项目 ID 和更新的字段",
+                "description": "更新指定的项目，需提供项目 ID",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -190,33 +388,13 @@
                 "summary": "更新项目",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "项目 ID",
-                        "name": "id",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "项目标题",
-                        "name": "title",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "项目描述",
-                        "name": "description",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "标签列表",
-                        "name": "tags",
-                        "in": "formData"
+                        "description": "更新的项目信息",
+                        "name": "body_params",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.UpdateProjectRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -232,9 +410,9 @@
                 }
             }
         },
-        "/project/role/accept": {
-            "post": {
-                "description": "接受邀请加入项目，需提供邀请的 ID",
+        "/project/proc/update_status": {
+            "put": {
+                "description": "更新指定项目的状态，需提供项目 ID 和新的状态，调用一次只允许更新一个状态",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -242,16 +420,18 @@
                     "application/json"
                 ],
                 "tags": [
-                    "project_role"
+                    "project_proc"
                 ],
-                "summary": "接受邀请加入项目",
+                "summary": "更新项目状态",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "邀请的 ID",
-                        "name": "invitition_id",
-                        "in": "formData",
-                        "required": true
+                        "description": "更新项目状态的信息",
+                        "name": "body_params",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.UpdateProjectStatusRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -267,196 +447,45 @@
                 }
             }
         },
-        "/project/role/accept_appli": {
-            "post": {
-                "description": "接受申请加入项目，需提供申请的 ID",
-                "consumes": [
-                    "multipart/form-data"
-                ],
+        "/project/published_list": {
+            "get": {
+                "description": "注意当列表为空，会返回 null 而不是空数组",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "project_role"
+                    "project"
                 ],
-                "summary": "接受申请加入项目",
+                "summary": "获取已发布的项目列表分页",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "申请的 ID",
-                        "name": "application_id",
-                        "in": "formData",
+                        "type": "integer",
+                        "description": "列表查询参数",
+                        "name": "page_serial",
+                        "in": "query",
                         "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/project/role/apply": {
-            "post": {
-                "description": "申请加入项目，需提供项目 ID 和申请的职位",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project_role"
-                ],
-                "summary": "申请加入项目",
-                "parameters": [
+                    },
                     {
-                        "type": "string",
-                        "description": "项目 ID",
-                        "name": "project_id",
-                        "in": "formData",
+                        "type": "integer",
+                        "description": "每页数量，默认值为 10",
+                        "name": "page_size",
+                        "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "申请加入的职位",
-                        "name": "apply_role",
-                        "in": "formData",
-                        "required": true
+                        "description": "排序方式，默认值为 id_desc，支持 id_asc | id_desc | poplarity_desc，其他输入无效",
+                        "name": "sort",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/project/role/invite": {
-            "post": {
-                "description": "邀请成员加入项目，需提供成员的 ID",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project_role"
-                ],
-                "summary": "邀请成员加入项目",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "成员的 ID",
-                        "name": "member_id",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "邀请加入的职位",
-                        "name": "invite_role",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "项目 ID",
-                        "name": "project_id",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/project/role/refuse": {
-            "post": {
-                "description": "拒绝邀请加入项目，需提供邀请的 ID",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project_role"
-                ],
-                "summary": "拒绝邀请加入项目",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "邀请的 ID",
-                        "name": "invitition_id",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/project/role/refuse_appli": {
-            "post": {
-                "description": "拒绝申请加入项目，需提供申请的 ID",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project_role"
-                ],
-                "summary": "拒绝申请加入项目",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "申请的 ID",
-                        "name": "application_id",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.ProjectBasic"
                             }
                         }
                     }
@@ -477,7 +506,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ProjectStats"
+                            "$ref": "#/definitions/dtos.ProjectStats"
                         }
                     }
                 }
@@ -506,50 +535,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ProjectDetail"
-                        }
-                    }
-                }
-            }
-        },
-        "/tag/list": {
-            "get": {
-                "description": "注意当列表为空，会返回 null 而不是空数组",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tag"
-                ],
-                "summary": "获取标签列表分页",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "页码，默认值为 1",
-                        "name": "pageSerial",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量，默认值为 10",
-                        "name": "pageSize",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "排序方式，默认值为 id_desc，支持 id_asc | id_desc | poplarity_desc，其他输入无效",
-                        "name": "sort",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dto.TagBasic"
-                            }
+                            "$ref": "#/definitions/dtos.ProjectDetail"
                         }
                     }
                 }
@@ -569,13 +555,13 @@
                     {
                         "type": "integer",
                         "description": "页码，默认值为 1",
-                        "name": "pageSerial",
+                        "name": "page_serial",
                         "in": "query"
                     },
                     {
                         "type": "integer",
                         "description": "每页数量，默认值为 10",
-                        "name": "pageSize",
+                        "name": "page_size",
                         "in": "query"
                     },
                     {
@@ -591,7 +577,145 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dto.TeamBasic"
+                                "$ref": "#/definitions/dtos.TeamBasic"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/detail": {
+            "get": {
+                "description": "获取指定用户的详细信息，包括 ID、用户名、头像等",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "获取用户详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "user_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.UserDetail"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/list": {
+            "get": {
+                "description": "注意当列表为空，会返回 null 而不是空数组",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "获取用户列表分页",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，默认值为 1",
+                        "name": "page_serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认值为 10",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "排序方式，默认值为 id_desc，支持 id_asc | id_desc，其他输入无效",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.UserBasic"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/my/detail": {
+            "get": {
+                "description": "获取当前登录用户的详细信息，包括 ID、用户名、头像等",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_my"
+                ],
+                "summary": "获取当前用户的详细信息",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.UserDetail"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/my/projects": {
+            "get": {
+                "description": "获取当前登录用户参与的所有项目列表",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_my"
+                ],
+                "summary": "获取当前用户的项目列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.ProjectBasic"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/my/teams": {
+            "get": {
+                "description": "获取当前登录用户所属的所有汉化组列表",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_my"
+                ],
+                "summary": "获取当前用户的汉化组列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.TeamBasic"
                             }
                         }
                     }
@@ -612,14 +736,21 @@
                     {
                         "type": "integer",
                         "description": "页码，默认值为 1",
-                        "name": "pageSerial",
+                        "name": "page_serial",
                         "in": "query"
                     },
                     {
                         "type": "integer",
                         "description": "每页数量，默认值为 10",
-                        "name": "pageSize",
+                        "name": "page_size",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "所属汉化组 ID",
+                        "name": "team_id",
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "string",
@@ -634,7 +765,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dto.WorksetBasic"
+                                "$ref": "#/definitions/dtos.WorksetBasic"
                             }
                         }
                     }
@@ -643,7 +774,48 @@
         }
     },
     "definitions": {
-        "dto.CreateProjectRequest": {
+        "dtos.AcceptApplicationRequest": {
+            "type": "object",
+            "required": [
+                "application_id"
+            ],
+            "properties": {
+                "application_id": {
+                    "description": "申请的 ID",
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.AcceptInvitationRequest": {
+            "type": "object",
+            "required": [
+                "invitation_id"
+            ],
+            "properties": {
+                "invitation_id": {
+                    "description": "邀请的 ID",
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.ApplyProjectRequest": {
+            "type": "object",
+            "required": [
+                "apply_role",
+                "project_id"
+            ],
+            "properties": {
+                "apply_role": {
+                    "description": "申请加入的职位 (使用 uint 存储位掩码)",
+                    "type": "integer"
+                },
+                "project_id": {
+                    "description": "项目 ID",
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.CreateProjectRequest": {
             "type": "object",
             "required": [
                 "title",
@@ -651,18 +823,11 @@
             ],
             "properties": {
                 "description": {
-                    "description": "项目描述，最大长度 512",
+                    "description": "项目描述",
                     "type": "string"
                 },
-                "tags": {
-                    "description": "标签列表，最多 5 个标签",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "title": {
-                    "description": "项目标题，必填，最大长度 128",
+                    "description": "项目标题，必填，最大长度 40",
                     "type": "string"
                 },
                 "workset_id": {
@@ -671,52 +836,87 @@
                 }
             }
         },
-        "dto.ProjectBasic": {
+        "dtos.DeleteProjectRequest": {
+            "type": "object",
+            "required": [
+                "project_id"
+            ],
+            "properties": {
+                "project_id": {
+                    "description": "项目 ID，必填",
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.InviteMemberRequest": {
+            "type": "object",
+            "required": [
+                "invite_role",
+                "member_id",
+                "project_id"
+            ],
+            "properties": {
+                "invite_role": {
+                    "description": "邀请加入的职位 (使用 uint 存储位掩码)",
+                    "type": "integer"
+                },
+                "member_id": {
+                    "description": "成员的 ID",
+                    "type": "integer"
+                },
+                "project_id": {
+                    "description": "项目 ID",
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.MemberBasic": {
             "type": "object",
             "properties": {
+                "id": {
+                    "description": "成员 ID",
+                    "type": "integer"
+                },
+                "role": {
+                    "description": "成员在组内的职责",
+                    "type": "integer"
+                },
+                "team_id": {
+                    "description": "所属团队 ID",
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.ProjectBasic": {
+            "type": "object",
+            "properties": {
+                "allow_auto_join": {
+                    "description": "是否允许自动加入",
+                    "type": "boolean"
+                },
                 "id": {
                     "description": "项目 ID",
                     "type": "integer"
                 },
-                "is_lettered": {
-                    "description": "是否已嵌字",
-                    "type": "boolean"
-                },
-                "is_proofed": {
-                    "description": "是否已校对",
+                "is_hidden": {
+                    "description": "是否是隐藏项目",
                     "type": "boolean"
                 },
                 "is_published": {
                     "description": "是否已发布",
                     "type": "boolean"
                 },
-                "is_reviewed": {
-                    "description": "是否已审核",
-                    "type": "boolean"
-                },
-                "is_translated": {
-                    "description": "是否已翻译",
-                    "type": "boolean"
-                },
                 "legacy_id": {
                     "description": "历史遗留序号",
                     "type": "integer"
                 },
-                "on_lettering": {
-                    "description": "是否正在嵌字",
-                    "type": "boolean"
-                },
-                "on_prooving": {
-                    "description": "是否正在校对",
-                    "type": "boolean"
-                },
-                "on_reviewing": {
-                    "description": "是否正在审核",
-                    "type": "boolean"
-                },
-                "on_translating": {
-                    "description": "是否正在翻译",
-                    "type": "boolean"
+                "status": {
+                    "description": "项目状态，使用位掩码表示",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dtos.ProjectOverallStatus"
+                        }
+                    ]
                 },
                 "title": {
                     "description": "项目名称",
@@ -728,9 +928,13 @@
                 }
             }
         },
-        "dto.ProjectDetail": {
+        "dtos.ProjectDetail": {
             "type": "object",
             "properties": {
+                "allow_auto_join": {
+                    "description": "是否允许自动加入",
+                    "type": "boolean"
+                },
                 "created_at": {
                     "description": "创建时间",
                     "type": "string"
@@ -743,24 +947,12 @@
                     "description": "项目 ID",
                     "type": "integer"
                 },
-                "is_lettered": {
-                    "description": "是否已嵌字",
-                    "type": "boolean"
-                },
-                "is_proofed": {
-                    "description": "是否已校对",
+                "is_hidden": {
+                    "description": "是否是隐藏项目",
                     "type": "boolean"
                 },
                 "is_published": {
                     "description": "是否已发布",
-                    "type": "boolean"
-                },
-                "is_reviewed": {
-                    "description": "是否已审核",
-                    "type": "boolean"
-                },
-                "is_translated": {
-                    "description": "是否已翻译",
                     "type": "boolean"
                 },
                 "legacy_id": {
@@ -771,32 +963,13 @@
                     "description": "Moetran ID",
                     "type": "string"
                 },
-                "on_lettering": {
-                    "description": "是否正在嵌字",
-                    "type": "boolean"
-                },
-                "on_prooving": {
-                    "description": "是否正在校对",
-                    "type": "boolean"
-                },
-                "on_reviewing": {
-                    "description": "是否正在审核",
-                    "type": "boolean"
-                },
-                "on_translating": {
-                    "description": "是否正在翻译",
-                    "type": "boolean"
-                },
                 "status": {
-                    "description": "项目状态",
-                    "type": "integer"
-                },
-                "tags": {
-                    "description": "标签列表",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "description": "项目状态，使用位掩码表示",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dtos.ProjectOverallStatus"
+                        }
+                    ]
                 },
                 "title": {
                     "description": "项目名称",
@@ -812,7 +985,28 @@
                 }
             }
         },
-        "dto.ProjectStats": {
+        "dtos.ProjectOverallStatus": {
+            "type": "integer",
+            "enum": [
+                3,
+                12,
+                48,
+                192
+            ],
+            "x-enum-comments": {
+                "PROJECT_STATUS_LETTER_MASK": "二进制 48",
+                "PROJECT_STATUS_PROOF_MASK": "二进制 12",
+                "PROJECT_STATUS_REVIEW_MASK": "二进制 192",
+                "PROJECT_STATUS_TRANSLATE_MASK": "二进制 3"
+            },
+            "x-enum-varnames": [
+                "PROJECT_STATUS_TRANSLATE_MASK",
+                "PROJECT_STATUS_PROOF_MASK",
+                "PROJECT_STATUS_LETTER_MASK",
+                "PROJECT_STATUS_REVIEW_MASK"
+            ]
+        },
+        "dtos.ProjectStats": {
             "type": "object",
             "properties": {
                 "lettered_count": {
@@ -857,24 +1051,31 @@
                 }
             }
         },
-        "dto.TagBasic": {
+        "dtos.RefuseApplicationRequest": {
             "type": "object",
+            "required": [
+                "application_id"
+            ],
             "properties": {
-                "description": {
-                    "description": "标签描述",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "标签 ID",
+                "application_id": {
+                    "description": "申请的 ID",
                     "type": "integer"
-                },
-                "name": {
-                    "description": "标签名称",
-                    "type": "string"
                 }
             }
         },
-        "dto.TeamBasic": {
+        "dtos.RefuseInvitationRequest": {
+            "type": "object",
+            "required": [
+                "invitation_id"
+            ],
+            "properties": {
+                "invitation_id": {
+                    "description": "邀请的 ID",
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.TeamBasic": {
             "type": "object",
             "properties": {
                 "id": {
@@ -891,7 +1092,95 @@
                 }
             }
         },
-        "dto.WorksetBasic": {
+        "dtos.UpdateProjectRequest": {
+            "type": "object",
+            "required": [
+                "project_id",
+                "title"
+            ],
+            "properties": {
+                "description": {
+                    "description": "项目描述",
+                    "type": "string"
+                },
+                "project_id": {
+                    "description": "项目 ID，必填",
+                    "type": "integer"
+                },
+                "title": {
+                    "description": "项目标题，最大长度 40",
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.UpdateProjectStatusRequest": {
+            "type": "object",
+            "required": [
+                "project_id",
+                "status"
+            ],
+            "properties": {
+                "project_id": {
+                    "description": "项目 ID，必填",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "新的项目状态，必填",
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.UserBasic": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "用户 ID",
+                    "type": "integer"
+                },
+                "nickname": {
+                    "description": "昵称",
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.UserDetail": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "description": "邮箱",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "用户 ID",
+                    "type": "integer"
+                },
+                "last_active": {
+                    "description": "上次活跃时间",
+                    "type": "string"
+                },
+                "moetran_id": {
+                    "description": "Moetran ID",
+                    "type": "string"
+                },
+                "nickname": {
+                    "description": "昵称",
+                    "type": "string"
+                },
+                "poplar_is_admin": {
+                    "description": "是否是 panel 管理员",
+                    "type": "boolean"
+                },
+                "qq_number": {
+                    "description": "QQ 号",
+                    "type": "string"
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.WorksetBasic": {
             "type": "object",
             "properties": {
                 "id": {

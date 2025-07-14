@@ -71,7 +71,7 @@ run_swag_init() {
     
     if ! swag init \
     -o "$SWAG_OUTPUT_DIR" \
-    --dir "$GO_MAIN_DIR","$ROOT_DIR/internal/${SERVER_NAME}server/handler","$ROOT_DIR/internal/${SERVER_NAME}server/dto"; then
+    --dir "$GO_MAIN_DIR","$ROOT_DIR/internal/${SERVER_NAME}server/handlers","$ROOT_DIR/internal/${SERVER_NAME}server/dtos"; then
         echo "[ Swagger API 文档生成失败 ]"
         exit 1
     fi

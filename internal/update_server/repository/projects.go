@@ -2,7 +2,7 @@ package repository
 
 import (
 	"fmt"
-	"poplargrid/internal/shared/dbmodel"
+	"poplargrid/internal/shared/dbmodels"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -23,11 +23,11 @@ func NewProjectsRepo(db *gorm.DB) *ProjectsRepo {
 
 // GetTable 获取 works 表的上下文引用
 func (r *ProjectsRepo) GetTable() *gorm.DB {
-	return r.DbCtx.Model(&dbmodel.Project{})
+	return r.DbCtx.Model(&dbmodels.Project{})
 }
 
 // BulkUpsert 批量更新或者插入项目
-func (r *ProjectsRepo) BulkUpsert(inputProjects []*dbmodel.Project) error {
+func (r *ProjectsRepo) BulkUpsert(inputProjects []*dbmodels.Project) error {
 	if len(inputProjects) == 0 {
 		return nil
 	}

@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"poplargrid/internal/shared/dbmodel"
+	"poplargrid/internal/shared/dbmodels"
 
 	"gorm.io/gorm"
 )
@@ -21,12 +21,12 @@ func NewTeamsRepo(db *gorm.DB) *TeamsRepo {
 
 // GetTable 获取 teams 表的上下文引用
 func (r *TeamsRepo) GetTable() *gorm.DB {
-	return r.DbCtx.Model(&dbmodel.Team{})
+	return r.DbCtx.Model(&dbmodels.Team{})
 }
 
 // Select 获取所有汉化组的详细信息
-func (r *TeamsRepo) Select() ([]*dbmodel.Team, error) {
-	var teams []*dbmodel.Team
+func (r *TeamsRepo) Select() ([]*dbmodels.Team, error) {
+	var teams []*dbmodels.Team
 	if err := r.GetTable().
 		Find(&teams).
 		Error; err != nil {

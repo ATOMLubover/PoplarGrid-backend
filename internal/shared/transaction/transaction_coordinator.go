@@ -1,4 +1,4 @@
-package transacoord
+package transaction
 
 import (
 	"context"
@@ -22,18 +22,18 @@ func NewTransactionCoordinator(dbCtx *gorm.DB) *TransactionCoordinator {
 // RunInTransaction 执行一个事务，确保在回调函数中发生的错误会导致事务回滚
 // 回调函数 handler 接受一个 *gorm.DB 参数，表示当前事务的数据库上下文
 func (c *TransactionCoordinator) RunInTransaction(ctx context.Context, handler func(tx *gorm.DB) error) error {
-	transaction := c.dbCtx.Begin()
+	tx := c.dbCtx.Begin()
+
 	defer func() {
 		if r := recover(); r != nil {
-			transaction.Rollback()
+			tx.Rollback()
 		}
 	}()
 
-	if err := transaction.WithContext(ctx).Transaction(handler); err != nil {
-		transaction.Rollback()
+	if err := tx.WithContext(ctx).Transaction(handler); err != nil {
+		tx.Rollback()
 		return err
-
 	}
 
-	return transaction.Commit().Error
+	return tx.Commit().Error
 }

@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"poplargrid/internal/shared/dbmodel"
+	"poplargrid/internal/shared/dbmodels"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -22,11 +22,11 @@ func NewMembersRepo(db *gorm.DB) *MembersRepo {
 
 // GetTable 获取 members 表的上下文引用
 func (r *MembersRepo) GetTable() *gorm.DB {
-	return r.DbCtx.Model(&dbmodel.Member{})
+	return r.DbCtx.Model(&dbmodels.User{})
 }
 
 // BulkUpsert 批量更新或者插入成员
-func (r *MembersRepo) BulkUpsert(inputMembers []*dbmodel.Member) error {
+func (r *MembersRepo) BulkUpsert(inputMembers []*dbmodels.User) error {
 	if len(inputMembers) == 0 {
 		return nil
 	}
@@ -37,7 +37,7 @@ func (r *MembersRepo) BulkUpsert(inputMembers []*dbmodel.Member) error {
 		Clauses(clause.OnConflict{
 			Columns: []clause.Column{{Name: "moetran_id"}}, // 指定冲突字段为 moetran_id
 			DoUpdates: clause.Assignments(map[string]any{
-				"nickname":   gorm.Expr("EXCLUDED.nickname"),
+				"nickname": gorm.Expr("EXCLUDED.nickname"),
 			}),
 		}).
 		Create(&inputMembers).

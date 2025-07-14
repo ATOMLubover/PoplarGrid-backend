@@ -1,18 +1,18 @@
 package transformer
 
 import (
-	"poplargrid/internal/shared/dbmodel"
+	"poplargrid/internal/shared/dbmodels"
 	"poplargrid/internal/update_server/apidto"
 	"regexp"
 	"strconv"
 )
 
 // UsersToMembers 将尨译的用户信息转化为本地 Member 模型
-func UsersToMembers(team *dbmodel.Team, users []apidto.MoetranUser) ([]*dbmodel.Member, error) {
-	var members []*dbmodel.Member
+func UsersToMembers(team *dbmodels.Team, users []apidto.MoetranUser) ([]*dbmodels.User, error) {
+	var members []*dbmodels.User
 
 	for _, user := range users {
-		members = append(members, &dbmodel.Member{
+		members = append(members, &dbmodels.User{
 			TeamId:    team.Id, // 使用传入的 team 的 IDS
 			Nickname:  user.Name,
 			MoetranId: user.Id,
@@ -25,9 +25,9 @@ func UsersToMembers(team *dbmodel.Team, users []apidto.MoetranUser) ([]*dbmodel.
 }
 
 // ProjSetsToWorksets 将尨译的 project-set 格式转化成 Workset 格式
-func ProjSetsToWorksets(team *dbmodel.Team, projsets []apidto.MoetranProjSet) (
-	[]*dbmodel.Workset, error) {
-	var worksets []*dbmodel.Workset
+func ProjSetsToWorksets(team *dbmodels.Team, projsets []apidto.MoetranProjSet) (
+	[]*dbmodels.Workset, error) {
+	var worksets []*dbmodels.Workset
 
 	for _, projset := range projsets {
 		name := projset.Name
@@ -35,8 +35,8 @@ func ProjSetsToWorksets(team *dbmodel.Team, projsets []apidto.MoetranProjSet) (
 			name = "未分组"
 		}
 
-		worksets = append(worksets, &dbmodel.Workset{
-			BaseModel: dbmodel.BaseModel{
+		worksets = append(worksets, &dbmodels.Workset{
+			BaseModel: dbmodels.BaseModel{
 				CreatedAt: projset.CreateTime.Time,
 				UpdatedAt: projset.EditTime.Time,
 			},
@@ -51,14 +51,14 @@ func ProjSetsToWorksets(team *dbmodel.Team, projsets []apidto.MoetranProjSet) (
 
 // ProjsToWorks 从尨译的 project 信息提取出 Project 格式信息
 // workset 是辅助处理的作品集信息，为当前 projs 所在的作品集
-func ProjsToProjects(projs []apidto.MoetranProj, workset *dbmodel.Workset) (
-	[]*dbmodel.Project, error) {
+func ProjsToProjects(projs []apidto.MoetranProj, workset *dbmodels.Workset) (
+	[]*dbmodels.Project, error) {
 	// 将 MoetranProj 信息转化为 dbmodel.Project
-	var projects []*dbmodel.Project
+	var projects []*dbmodels.Project
 
 	for _, proj := range projs {
-		projects = append(projects, &dbmodel.Project{
-			BaseModel: dbmodel.BaseModel{
+		projects = append(projects, &dbmodels.Project{
+			BaseModel: dbmodels.BaseModel{
 				CreatedAt: proj.CreateTime.Time,
 				UpdatedAt: proj.EditTime.Time,
 			},
