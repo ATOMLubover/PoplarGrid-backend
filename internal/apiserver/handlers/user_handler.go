@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"poplargrid/internal/apiserver/services"
+
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 )
@@ -17,7 +19,6 @@ func RouteUserHandler(root *mvc.Application) {
 	party.Handle(handler)
 
 	// 注册路由与方法的映射（类型安全）
-	party.Router.Get("/list", handler.UserListPage)
 	party.Router.Get("/detail", handler.UserDetail)
 
 	{
@@ -33,40 +34,50 @@ func RouteUserHandler(root *mvc.Application) {
 		// 注册路由与方法的映射（类型安全）
 		myParty.Router.Get("/detail", myHandler.MyDetail)
 		myParty.Router.Get("/teams", myHandler.MyTeams)
-		myParty.Router.Get("/projects", myHandler.MyProjects)
+		myParty.Router.Get("/projects", myHandler.MyProjectList)
+		myParty.Router.Get("/invitations_sent", myHandler.MyInvitationsSent)
+		myParty.Router.Get("/invitations_received", myHandler.MyInvitationsReceived)
 	}
 }
 
 // UserHandler 处理用户相关的请求
 type UserHandler struct {
-}
-
-// UserListPage godoc
-// @Summary 	获取用户列表分页
-// @Description 注意当列表为空，会返回 null 而不是空数组
-// @Param 		page_serial query int false "页码，默认值为 1"
-// @Param 		page_size query int false "每页数量，默认值为 10"
-// @Param 		sort query string false "排序方式，默认值为 id_desc，支持 id_asc | id_desc，其他输入无效"
-// @Tags 		user
-// @Produce 	json
-// @Success	 	200 {object} []dtos.UserBasic
-// @Router 		/user/list [get]
-func (h *UserHandler) UserListPage(ctx iris.Context) {
+	UserService services.UserService
 }
 
 // UserDetail godoc
 // @Summary 	获取用户详情
-// @Description 获取指定用户的详细信息，包括 ID、用户名、头像等
+// @Description 获取指定用户的详细信息，包括 ID、昵称等
 // @Param 		user_id query int true "用户 ID"
 // @Tags 		user
 // @Produce 	json
 // @Success	 	200 {object} dtos.UserDetail
 // @Router 		/user/detail [get]
 func (h *UserHandler) UserDetail(ctx iris.Context) {
+	// 从查询参数获取用户 ID
+	userId, err := ctx.URLParamInt("user_id")
+	if err != nil || userId <= 0 {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(map[string]string{"error": "无效的用户 ID"})
+		return
+	}
+
+	// 调用服务层获取用户详情
+	userDetail, err := h.UserService.GetUserDetail(uint(userId))
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.JSON(iris.Map{"error": "获取用户详情失败"})
+		return
+	}
+
+	ctx.JSON(userDetail)
 }
 
 // UserMyHandler 处理与当前用户信息相关的路由
 type UserMyHandler struct {
+	UserService    services.UserService
+	TeamService    services.TeamService
+	ProjectService services.ProjectService
 }
 
 // MyDetail godoc
@@ -77,6 +88,23 @@ type UserMyHandler struct {
 // @Success	 	200 {object} dtos.UserDetail
 // @Router 		/user/my/detail [get]
 func (h *UserMyHandler) MyDetail(ctx iris.Context) {
+	// 从上下文获取当前用户 ID
+	userId, err := ctx.Values().GetInt("user_id")
+	if err != nil {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(map[string]string{"error": "无效的用户 ID"})
+		return
+	}
+
+	// 调用服务层获取当前用户详情
+	userDetail, err := h.UserService.GetUserDetail(uint(userId))
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.JSON(iris.Map{"error": "获取用户详情失败"})
+		return
+	}
+
+	ctx.JSON(userDetail)
 }
 
 // MyTeams godoc
@@ -87,16 +115,73 @@ func (h *UserMyHandler) MyDetail(ctx iris.Context) {
 // @Success	 	200 {object} []dtos.TeamBasic
 // @Router 		/user/my/teams [get]
 func (h *UserMyHandler) MyTeams(ctx iris.Context) {
+	// 从上下文获取当前用户 ID
+	userId, err := ctx.Values().GetInt("user_id")
+	if err != nil {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(map[string]string{"error": "无效的用户 ID"})
+		return
+	}
+
+	// 获取分页参数
+	pageSerial, _ := ctx.URLParamInt("page_serial")
+	if pageSerial <= 0 {
+		pageSerial = 1
+	}
+	pageSize, _ := ctx.URLParamInt("page_size")
+	if pageSize <= 0 || pageSize > 100 {
+		pageSize = 10
+	}
+
+	// 调用服务层获取数据
+	teams, err := h.TeamService.GetTeamBasicPageByUserId(uint(userId), pageSerial, pageSize)
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.JSON(map[string]string{"error": "获取汉化组列表失败"})
+		return
+	}
+
+	// 返回结果
+	ctx.JSON(teams)
 }
 
-// MyProjects godoc
+// MyProjectList godoc
 // @Summary 	获取当前用户的项目列表
-// @Description 获取当前登录用户参与的所有项目列表
+// @Description 获取当前登录用户参与的所有项目列表，按照 ID 倒序排列
+// @Param 		page_serial query int false "页码，默认值为 1"
+// @Param 		page_size query int false "每页数量，默认值为 10"
 // @Tags 		user_my
 // @Produce 	json
 // @Success	 	200 {object} []dtos.ProjectBasic
-// @Router 		/user/my/projects [get]
-func (h *UserMyHandler) MyProjects(ctx iris.Context) {
+// @Router 		/user/my/project_list [get]
+func (h *UserMyHandler) MyProjectList(ctx iris.Context) {
+	// 从上下文获取当前用户 ID
+	userId, err := ctx.Values().GetInt("user_id")
+	if err != nil {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(map[string]string{"error": "无效的用户 ID"})
+		return
+	}
+
+	// 获取分页参数
+	pageSerial, _ := ctx.URLParamInt("page_serial")
+	if pageSerial <= 0 {
+		pageSerial = 1
+	}
+	pageSize, _ := ctx.URLParamInt("page_size")
+	if pageSize <= 0 || pageSize > 100 {
+		pageSize = 10
+	}
+
+	// 调用服务层获取数据
+	projects, err := h.ProjectService.GetBasicPageByUserId(uint(userId), pageSerial, pageSize)
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.JSON(map[string]string{"error": "获取项目列表失败"})
+		return
+	}
+
+	ctx.JSON(projects)
 }
 
 // MyInvitationsSent godoc

@@ -7,4 +7,5 @@ type ProjectStatusQueryParams struct {
 	ProofStatus     *uint `json:"prooving"`    // 校对状态
 	LetterStatus    *uint `json:"lettering"`   // 嵌字状态
 	ReviewStatus    *uint `json:"reviewing"`   // 审核状态
+	PublishStatus   *bool `json:"published"`   // 发布状态
 }

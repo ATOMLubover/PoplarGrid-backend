@@ -4,33 +4,36 @@ import (
 	"log/slog"
 	"poplargrid/internal/apiserver/dtos"
 	"poplargrid/internal/apiserver/repos"
+	"poplargrid/internal/shared/dbmodels"
 )
 
 // TeamService 接口定义了团队服务的基本操作
 type TeamService interface {
-	// GetBasicPage 获取团队列表，支持分页
-	GetBasicPage(pageSerial, pageSize int) ([]*dtos.TeamBasic, error)
+	// GetTeamBasicPageByUserId 获取指定用户 ID 的团队列表
+	GetTeamBasicPageByUserId(userId uint, pageSerial, pageSize int) ([]*dtos.TeamBasic, error)
+	// GetMemberBasicPage 获取指定团队 ID 的成员列表，支持分页
+	GetMemberBasicPage(teamId uint, pageSerial, pageSize int) ([]*dtos.MemberBasic, error)
 }
 
 // teamServiceImpl 是 TeamService 的实现
 type teamServiceImpl struct {
-	teamRepo repos.TeamRepo
-	logger   *slog.Logger
+	teamMemberRepo repos.TeamMemberRepo
+	logger         *slog.Logger
 }
 
 // NewTeamService 创建一个新的 TeamService 实例
 func NewTeamService(
-	teamRepo repos.TeamRepo,
+	teamMemberRepo repos.TeamMemberRepo,
 ) TeamService {
 	return &teamServiceImpl{
-		teamRepo: teamRepo,
+		teamMemberRepo: teamMemberRepo,
 	}
 }
 
-// GetBasicPage 实现 TeamService 接口的 GetBasicPage 方法
-func (s *teamServiceImpl) GetBasicPage(pageSerial, pageSize int) ([]*dtos.TeamBasic, error) {
+// GetTeamBasicPageByUserId 实现 TeamService 接口的 GetTeamBasicPageByUserId 方法
+func (s *teamServiceImpl) GetTeamBasicPageByUserId(userId uint, pageSerial, pageSize int) ([]*dtos.TeamBasic, error) {
 	// 调用仓库方法获取团队列表
-	teams, err := s.teamRepo.SelectBasicPage((pageSerial-1)*pageSize, pageSize)
+	teams, err := s.teamMemberRepo.SelectTeamBasicByUserId(dbmodels.PrimaryKey(userId))
 	if err != nil {
 		s.logger.Error("GetBasicPage 调用 SelectBasicPage 中出现错误", slog.Any("error", err))
 		return nil, err
@@ -46,4 +49,28 @@ func (s *teamServiceImpl) GetBasicPage(pageSerial, pageSize int) ([]*dtos.TeamBa
 	}
 
 	return teamBasics, nil
+}
+
+// GetMemberBasicPage 实现 TeamService 接口的 GetMemberBasicPage 方法
+func (s *teamServiceImpl) GetMemberBasicPage(teamId uint, pageSerial, pageSize int) ([]*dtos.MemberBasic, error) {
+	// 调用仓库方法获取成员列表
+	members, err := s.teamMemberRepo.SelectUserBasicPage(dbmodels.PrimaryKey(teamId), (pageSerial-1)*pageSize, pageSize)
+	if err != nil {
+		s.logger.Error("GetMemberListPage 调用 SelectMemberBasicPage 中出现错误", slog.Any("error", err))
+		return nil, err
+	}
+
+	// 将 dbmodels.TeamMember 转换为 dtos.MemberBasic
+	var memberBasics []*dtos.MemberBasic
+
+	for _, member := range members {
+		memberBasics = append(memberBasics, &dtos.MemberBasic{
+			Id:       uint(member.Id),
+			UserId:   uint(member.UserId),
+			Role:     uint(member.Role),
+			Nickname: member.FkUser.Nickname,
+		})
+	}
+
+	return memberBasics, nil
 }

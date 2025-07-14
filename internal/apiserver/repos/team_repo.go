@@ -14,20 +14,20 @@ type TeamRepo interface {
 
 // teamRepoImpl 是 TeamRepo 的实现
 type teamRepoImpl struct {
-	// db 是数据库连接实例
-	db *gorm.DB
+	// handle 是数据库连接实例
+	handle *gorm.DB
 }
 
 // NewTeamRepo 创建一个新的 TeamRepo 实例
 func NewTeamRepo(db *gorm.DB) TeamRepo {
 	return &teamRepoImpl{
-		db: db,
+		handle: db,
 	}
 }
 
 // Table 限定当前操作的表名
 func (r *teamRepoImpl) Table() *gorm.DB {
-	return r.db.Table(dbmodels.Team{}.TableName())
+	return r.handle.Table(dbmodels.Team{}.TableName())
 }
 
 // SelectBasicPage 实现 TeamRepo 接口的 SelectBasicPage 方法

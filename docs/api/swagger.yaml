@@ -50,6 +50,24 @@ definitions:
     required:
     - project_id
     type: object
+  dtos.InvitationBasic:
+    properties:
+      id:
+        description: 邀请 ID
+        type: integer
+      invite_role:
+        description: 邀请的角色，使用位掩码表示
+        type: integer
+      invitee_id:
+        description: 被邀请者 ID
+        type: integer
+      inviter_id:
+        description: 邀请者 ID
+        type: integer
+      project_id:
+        description: 所属项目 ID
+        type: integer
+    type: object
   dtos.InviteMemberRequest:
     properties:
       invite_role:
@@ -66,16 +84,34 @@ definitions:
     - member_id
     - project_id
     type: object
+  dtos.LaborDivision:
+    properties:
+      member_id:
+        description: 成员 ID
+        type: integer
+      nickname:
+        description: 昵称
+        type: string
+      role:
+        description: 成员在项目中的角色，使用位掩码表示
+        type: integer
+    type: object
   dtos.MemberBasic:
     properties:
       id:
         description: 成员 ID
         type: integer
+      nickname:
+        description: 昵称
+        type: string
       role:
         description: 成员在组内的职责
         type: integer
       team_id:
         description: 所属团队 ID
+        type: integer
+      user_id:
+        description: 实际上的用户 ID
         type: integer
     type: object
   dtos.ProjectBasic:
@@ -105,6 +141,9 @@ definitions:
       workset_id:
         description: 所属作品集 ID
         type: integer
+      workset_index:
+        description: 作品集内的序号
+        type: integer
     type: object
   dtos.ProjectDetail:
     properties:
@@ -129,9 +168,6 @@ definitions:
       legacy_id:
         description: 历史遗留序号
         type: integer
-      moetran_id:
-        description: Moetran ID
-        type: string
       status:
         allOf:
         - $ref: '#/definitions/dtos.ProjectOverallStatus'
@@ -145,6 +181,9 @@ definitions:
       workset_id:
         description: 所属作品集 ID
         type: integer
+      workset_index:
+        description: 作品集内的序号
+        type: integer
     type: object
   dtos.ProjectOverallStatus:
     enum:
@@ -152,10 +191,12 @@ definitions:
     - 12
     - 48
     - 192
+    - 768
     type: integer
     x-enum-comments:
       PROJECT_STATUS_LETTER_MASK: 二进制 48
       PROJECT_STATUS_PROOF_MASK: 二进制 12
+      PROJECT_STATUS_PUBLISH_MASK: 二进制 768
       PROJECT_STATUS_REVIEW_MASK: 二进制 192
       PROJECT_STATUS_TRANSLATE_MASK: 二进制 3
     x-enum-varnames:
@@ -163,6 +204,7 @@ definitions:
     - PROJECT_STATUS_PROOF_MASK
     - PROJECT_STATUS_LETTER_MASK
     - PROJECT_STATUS_REVIEW_MASK
+    - PROJECT_STATUS_PUBLISH_MASK
   dtos.ProjectStats:
     properties:
       lettered_count:
@@ -170,6 +212,18 @@ definitions:
         type: integer
       lettering_count:
         description: 正在嵌字的项目数量
+        type: integer
+      not_lettering_count:
+        description: 未开始嵌字的项目数量
+        type: integer
+      not_prooving_count:
+        description: 未开始校对的项目数量
+        type: integer
+      not_reviewing_count:
+        description: 未开始审核的项目数量
+        type: integer
+      not_translating_count:
+        description: 未开始翻译的项目数量
         type: integer
       prooved_count:
         description: 已校对的项目数量
@@ -195,6 +249,9 @@ definitions:
       translating_count:
         description: 正在翻译的项目数量
         type: integer
+      workset_id:
+        description: 对应作品集 ID
+        type: integer
     type: object
   dtos.RefuseApplicationRequest:
     properties:
@@ -217,9 +274,6 @@ definitions:
       id:
         description: 团队 ID
         type: integer
-      moetran_id:
-        description: Moetran ID
-        type: string
       name:
         description: 团队名称
         type: string
@@ -271,9 +325,6 @@ definitions:
       last_active:
         description: 上次活跃时间
         type: string
-      moetran_id:
-        description: Moetran ID
-        type: string
       nickname:
         description: 昵称
         type: string
@@ -309,39 +360,6 @@ info:
   title: PoplarGrid 核心 API 服务器
   version: "1.0"
 paths:
-  /member/list:
-    get:
-      description: 注意当列表为空，会返回 null 而不是空数组
-      parameters:
-      - description: 页码，默认值为 1
-        in: query
-        name: page_serial
-        type: integer
-      - description: 每页数量，默认值为 10
-        in: query
-        name: page_size
-        type: integer
-      - description: 排序方式，默认值为 id_desc，支持 id_asc | id_desc，其他输入无效
-        in: query
-        name: sort
-        type: string
-      - description: 所属汉化组 ID
-        in: query
-        name: team_id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/dtos.MemberBasic'
-            type: array
-      summary: 获取成员列表分页
-      tags:
-      - member
   /project/{id}:
     get:
       description: 获取指定项目的详细信息，包括翻译、校对、嵌字、审核、发布等状态
@@ -421,6 +439,27 @@ paths:
       summary: 申请加入项目
       tags:
       - project_labor
+  /project/labor/division:
+    get:
+      description: 获取指定项目的分工信息，包括成员的角色和状态
+      parameters:
+      - description: 项目 ID，必填
+        in: query
+        name: project_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.LaborDivision'
+            type: array
+      summary: 获取指定项目的分工信息
+      tags:
+      - project_labor
   /project/labor/invite:
     post:
       consumes:
@@ -486,13 +525,11 @@ paths:
       description: 注意当列表为空，会返回 null 而不是空数组；如果要单独查询已发布的项目列表，请使用 /project/published_list
         接口
       parameters:
-      - default: 1
-        description: 页码，默认值为 1
+      - description: 页码，默认值为 1
         in: query
         name: page_serial
         type: integer
-      - default: 10
-        description: 每页数量，默认值为 10，最大为 100
+      - description: 每页数量，默认值为 10
         in: query
         name: page_size
         type: integer
@@ -500,13 +537,14 @@ paths:
         in: query
         name: sort
         type: integer
-      - description: 项目状态（位掩码），用于复合查询。例如：1表示翻译中，256表示已发布
+      - description: 项目状态（位掩码），用于复合查询，默认不筛选查询
         in: query
         name: status
         type: integer
-      - description: 项目所属的作品集 ID，默认为空，表示不筛选
+      - description: 项目所属的作品集 ID，必填
         in: query
         name: workset_id
+        required: true
         type: integer
       produces:
       - application/json
@@ -615,50 +653,7 @@ paths:
       summary: 更新项目状态
       tags:
       - project_proc
-  /project/published_list:
-    get:
-      description: 注意当列表为空，会返回 null 而不是空数组
-      parameters:
-      - description: 列表查询参数
-        in: query
-        name: page_serial
-        required: true
-        type: integer
-      - description: 每页数量，默认值为 10
-        in: query
-        name: page_size
-        required: true
-        type: integer
-      - description: 排序方式，默认值为 id_desc，支持 id_asc | id_desc | poplarity_desc，其他输入无效
-        in: query
-        name: sort
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/dtos.ProjectBasic'
-            type: array
-      summary: 获取已发布的项目列表分页
-      tags:
-      - project
-  /project/stats:
-    get:
-      description: 获取所有项目的统计信息，包括总数、翻译进行/完成、校对进行/完成、嵌字进行/完成，审核进行/完成、发布完成对应数量等
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dtos.ProjectStats'
-      summary: 获取项目统计信息
-      tags:
-      - project
-  /team/list:
+  /team/member_list:
     get:
       description: 注意当列表为空，会返回 null 而不是空数组
       parameters:
@@ -670,10 +665,11 @@ paths:
         in: query
         name: page_size
         type: integer
-      - description: 排序方式，默认值为 id_desc，支持 id_asc | id_desc，其他输入无效
+      - description: 所属汉化组 ID，必填
         in: query
-        name: sort
-        type: string
+        name: team_id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -681,9 +677,9 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/dtos.TeamBasic'
+              $ref: '#/definitions/dtos.MemberBasic'
             type: array
-      summary: 获取汉化组列表分页
+      summary: 获取汉化组成员列表分页
       tags:
       - team
   /user/detail:
@@ -746,6 +742,36 @@ paths:
       summary: 获取当前用户的详细信息
       tags:
       - user_my
+  /user/my/invitations_received:
+    get:
+      description: 获取当前登录用户收到的所有邀请列表，仅包括项目邀请
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.InvitationBasic'
+            type: array
+      summary: 获取当前用户的收到的邀请列表
+      tags:
+      - user_my
+  /user/my/invitations_sent:
+    get:
+      description: 获取当前登录用户发出的所有邀请列表，仅包括项目邀请
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.InvitationBasic'
+            type: array
+      summary: 获取当前用户的邀请列表
+      tags:
+      - user_my
   /user/my/projects:
     get:
       description: 获取当前登录用户参与的所有项目列表
@@ -793,10 +819,6 @@ paths:
         name: team_id
         required: true
         type: integer
-      - description: 排序方式，默认值为 id_desc，支持 id_asc | id_desc | poplarity_desc，其他输入无效
-        in: query
-        name: sort
-        type: string
       produces:
       - application/json
       responses:
@@ -806,7 +828,26 @@ paths:
             items:
               $ref: '#/definitions/dtos.WorksetBasic'
             type: array
-      summary: 获取工作集列表分页
+      summary: 获取工作集列表分页，按 ID 倒序
+      tags:
+      - workset
+  /workset/stats:
+    get:
+      description: 获取所有项目的统计信息，包括总数、翻译、校对、嵌字，审核、发布对应数量等
+      parameters:
+      - description: 作品集 ID，必填
+        in: query
+        name: workset_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ProjectStats'
+      summary: 获取特定作品集项目统计信息
       tags:
       - workset
 swagger: "2.0"

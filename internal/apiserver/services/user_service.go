@@ -1,0 +1,48 @@
+package services
+
+import (
+	"poplargrid/internal/apiserver/dtos"
+	"poplargrid/internal/apiserver/repos"
+	"poplargrid/internal/shared/dbmodels"
+)
+
+// UserService 接口定义了用户服务的基本操作
+type UserService interface {
+	// GetUserDetail 获取指定用户的详细信息
+	GetUserDetail(userId uint) (*dtos.UserDetail, error)
+}
+
+// userServiceImpl 是 UserService 接口的实现
+type userServiceImpl struct {
+	userRepo repos.UserRepo
+}
+
+// NewUserService 创建一个新的 UserService 实例
+func NewUserService(userRepo repos.UserRepo) UserService {
+	return &userServiceImpl{
+		userRepo: userRepo,
+	}
+}
+
+// GetUserDetail 实现 UserService 接口的方法，获取指定用户的详细信息
+func (s *userServiceImpl) GetUserDetail(userId uint) (*dtos.UserDetail, error) {
+	user, err := s.userRepo.SelectByUserId(dbmodels.PrimaryKey(userId))
+	if err != nil {
+		return nil, err
+	}
+
+	// 将 dbmodels.User 转换为 dtos.UserDetail
+	userDetail := &dtos.UserDetail{
+		UserBasic: dtos.UserBasic{
+			Id:       uint(user.Id),
+			Nickname: user.Nickname,
+		},
+		Email:         user.Email,
+		PoplarIsAdmin: user.PoplarIsAdmin,
+		Remark:        user.Remark,
+		QqNumber:      user.QqNumber,
+		LastActive:    user.LastActive.Format(dtos.DTO_TIME_FORMAT),
+	}
+
+	return userDetail, nil
+}

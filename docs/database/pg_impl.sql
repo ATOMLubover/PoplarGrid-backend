@@ -151,6 +151,10 @@ CREATE INDEX idx_pld_member_id ON project_labor_divisions(member_id);
 
 COMMIT;
 
+--------------
+-- 针对实现 workset 内递增 index 的实现
+--------------
+
 -- 假设你已经创建了一个新的 workset，它的 ID 是 123
 CREATE SEQUENCE projects_seq_workset_123 START 1;
 
@@ -190,3 +194,52 @@ CREATE TRIGGER before_insert_projects_set_workset_number
 BEFORE INSERT ON projects          -- 在向 projects 表插入数据之前
 FOR EACH ROW                       -- 对每一行数据都执行
 EXECUTE FUNCTION set_project_workset_index(); -- 调用我们的函数
+
+------------
+-- 针对 projects 进行统计的物化视图的实现
+------------
+
+-- 假设你的 projects 表和 WorksetId 字段都已存在并包含数据。
+
+-- 如果你已经创建了 project_stats_mv，需要先删除它才能重新创建，
+-- 特别是如果字段名发生了变化。
+-- DROP MATERIALIZED VIEW IF EXISTS project_stats_mv;
+
+CREATE MATERIALIZED VIEW project_stats_mv AS
+SELECT
+    p.workset_id, -- WorksetId 作为分组和查询的维度
+    COUNT(*) AS total,
+
+    -- 翻译相关统计
+    COUNT(CASE WHEN p.translate_status = 0 THEN 1 END) AS not_translating,
+    COUNT(CASE WHEN p.translate_status = 1 THEN 1 END) AS translating, -- 对应 TranslateInProgress
+    COUNT(CASE WHEN p.translate_status = 2 THEN 1 END) AS translated,  -- 对应 TranslateCompleted
+
+    -- 校对相关统计
+    COUNT(CASE WHEN p.proof_status = 0 THEN 1 END) AS not_prooving,
+    COUNT(CASE WHEN p.proof_status = 1 THEN 1 END) AS prooving,    -- 对应 ProofInProgress
+    COUNT(CASE WHEN p.proof_status = 2 THEN 1 END) AS prooved,     -- 对应 ProofCompleted
+
+    -- 排版相关统计 (原嵌字)
+    COUNT(CASE WHEN p.letter_status = 0 THEN 1 END) AS not_lettering,
+    COUNT(CASE WHEN p.letter_status = 1 THEN 1 END) AS lettering,   -- 对应 LetterInProgress
+    COUNT(CASE WHEN p.letter_status = 2 THEN 1 END) AS letterred,   -- 对应 LetterCompleted
+
+    -- 审核相关统计
+    COUNT(CASE WHEN p.review_status = 0 THEN 1 END) AS not_reviewing,
+    COUNT(CASE WHEN p.review_status = 1 THEN 1 END) AS reviewing,   -- 对应 ReviewInProgress
+    COUNT(CASE WHEN p.review_status = 2 THEN 1 END) AS reviewed,    -- 对应 ReviewCompleted
+
+    -- 发布相关统计
+    COUNT(CASE WHEN p.is_published = FALSE THEN 1 END) AS not_published,
+    COUNT(CASE WHEN p.is_published = TRUE THEN 1 END) AS published
+FROM
+    projects AS p
+WHERE
+    p.deleted_at IS NULL -- 只统计未被软删除的项目
+GROUP BY
+    p.workset_id; -- 按 WorksetId 分组
+
+-- 推荐：为物化视图创建唯一索引，以支持 CONCURRENTLY 刷新和加速查询
+-- WorksetId 是每行唯一的标识
+CREATE UNIQUE INDEX IF NOT EXISTS idx_project_stats_mv_workset_id ON project_stats_mv (workset_id);

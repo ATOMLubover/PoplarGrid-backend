@@ -20,12 +20,11 @@ func RouteProjectHandler(root *mvc.Application) {
 	projectParty.Handle(projectHandler)
 
 	// 注册路由与方法的映射（类型安全）
-	projectParty.Router.Get("/stats", projectHandler.ProjectStats)
 	projectParty.Router.Get("/list", projectHandler.ProjectListPage)
-	projectParty.Router.Get("/published_list", projectHandler.ProjectListPublishedPage)
 	projectParty.Router.Get("/detail", projectHandler.ProjectDetail)
 
-	{ // 创建 ProjectProcHandler 实例
+	{
+		// 创建 ProjectProcHandler 实例
 		procHandler := &ProjectProcHandler{}
 
 		// 注册路由组
@@ -67,22 +66,11 @@ type ProjectHandler struct {
 	ProjectService services.ProjectService
 }
 
-// ProjectStats godoc
-// @Summary 	获取项目统计信息
-// @Description 获取所有项目的统计信息，包括总数、翻译进行/完成、校对进行/完成、嵌字进行/完成，审核进行/完成、发布完成对应数量等
-// @Tags 		project
-// @Produce 	json
-// @Success	 	200 {object} dtos.ProjectStats
-// @Router 		/project/stats [get]
-func (h *ProjectHandler) ProjectStats(ctx iris.Context) {
-
-}
-
 // ProjectListPage godoc
 // @Summary     获取项目列表分页
 // @Description 注意当列表为空，会返回 null 而不是空数组；如果要单独查询已发布的项目列表，请使用 /project/published_list 接口
-// @Param       page_serial query integer false "页码，默认值为 1" default(1)
-// @Param       page_size query integer false "每页数量，默认值为 20" default(10)
+// @Param       page_serial query integer false "页码，默认值为 1"
+// @Param       page_size query integer false "每页数量，默认值为 10"
 // @Param       sort query integer false "排序方式，0：按 ID 倒序，1：按 updated_at 倒序"
 // @Param       status query integer false "项目状态（位掩码），用于复合查询，默认不筛选查询"
 // @Param       workset_id query integer true "项目所属的作品集 ID，必填"
@@ -97,8 +85,8 @@ func (h *ProjectHandler) ProjectListPage(ctx iris.Context) {
 
 	sort := ctx.URLParamInt32Default("sort", 0)
 
-	// 注意默认为 -1，表示不筛选状态，需要调用特殊的 service 函数处理
-	status := ctx.URLParamInt32Default("status", -1)
+	// 注意默认为 PROJECT_STATUS_ALL，表示不筛选状态
+	status := ctx.URLParamInt32Default("status", dtos.PROJECT_STATUS_ALL)
 
 	worksetId, err := ctx.URLParamInt("workset_id")
 	if err != nil || worksetId <= 0 {
@@ -118,19 +106,6 @@ func (h *ProjectHandler) ProjectListPage(ctx iris.Context) {
 	ctx.JSON(projects)
 }
 
-// ProjectListPublished godoc
-// @Summary 	获取已发布的项目列表分页
-// @Description 注意当列表为空，会返回 null 而不是空数组
-// @Param 		page_serial query integer true "列表查询参数"
-// @Param 		page_size query integer true "每页数量，默认值为 10"
-// @Param 		sort query string false "排序方式，默认值为 id_desc，支持 id_asc | id_desc | poplarity_desc，其他输入无效"
-// @Tags 		project
-// @Produce 	json
-// @Success	 	200 {object} []dtos.ProjectBasic
-// @Router 		/project/published_list [get]
-func (h *ProjectHandler) ProjectListPublishedPage(ctx iris.Context) {
-}
-
 // ProjectDetail godoc
 // @Summary 	获取项目详情
 // @Description 获取指定项目的详细信息，包括翻译、校对、嵌字、审核、发布等状态
@@ -140,7 +115,22 @@ func (h *ProjectHandler) ProjectListPublishedPage(ctx iris.Context) {
 // @Success	 	200 {object} dtos.ProjectDetail
 // @Router 		/project/{id} [get]
 func (h *ProjectHandler) ProjectDetail(ctx iris.Context) {
+	projectId, err := ctx.URLParamInt("id")
+	if err != nil || projectId <= 0 {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(iris.Map{"error": "id 必须是一个明确给出的正整数"})
+		return
+	}
 
+	// 调用服务层获取数据
+	project, err := h.ProjectService.GetDetailById(uint(projectId))
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.JSON(iris.Map{"error": "获取项目详情失败"})
+		return
+	}
+
+	ctx.JSON(project)
 }
 
 // ProjectProcHandler 处理与项目进度动态推进有关的路由
@@ -151,13 +141,20 @@ type ProjectProcHandler struct {
 // @Summary 	创建项目
 // @Description 创建一个新的项目，请求体暂时未确定
 // @Accept      application/json
-// @Param       request body dtos.CreateProjectRequest true "创建项目的请求体"
+// @Param       body_params body dtos.CreateProjectRequest true "创建项目的请求体"
 // @Tags 		project_proc
 // @Produce 	json
 // @Success	 	200 {object} map[string]any
 // @Router 		/project/proc/create [post]
 func (h *ProjectProcHandler) Create(ctx iris.Context) {
+	// 将请求体绑定到 CreateProjectRequest 结构体
+	var request dtos.CreateProjectRequest
 
+	if err := ctx.ReadJSON(&request); err != nil {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(iris.Map{"error": "请求体格式错误"})
+		return
+	}
 }
 
 // Delete godoc
@@ -198,6 +195,7 @@ func (h *ProjectProcHandler) UpdateStatus(ctx iris.Context) {
 
 // ProjectLaborHandler 处理项目角色相关的请求
 type ProjectLaborHandler struct {
+	ProjectService services.ProjectService
 }
 
 // InviteMember godoc
@@ -271,4 +269,31 @@ func (h *ProjectLaborHandler) AcceptAppli(ctx iris.Context) {
 // @Router      /project/labor/refuse_appli [post]
 func (h *ProjectLaborHandler) RefuseAppli(ctx iris.Context) {
 
+}
+
+// LaborDivision godoc
+// @Summary 	获取指定项目的分工信息
+// @Description 获取指定项目的分工信息，包括成员的角色和状态
+// @Param 		project_id query int true "项目 ID，必填"
+// @Tags 		project_labor
+// @Produce 	json
+// @Success	 	200 {object} []dtos.LaborDivision
+// @Router 		/project/labor/division [get]
+func (h *ProjectLaborHandler) LaborDivision(ctx iris.Context) {
+	projectId, err := ctx.URLParamInt("project_id")
+	if err != nil || projectId <= 0 {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(iris.Map{"error": "project_id 必须是一个明确给出的正整数"})
+		return
+	}
+
+	// 调用服务层获取分工信息
+	laborDivisions, err := h.ProjectService.GetLaborDivisionByProjectId(uint(projectId))
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.JSON(iris.Map{"error": "获取项目分工信息失败"})
+		return
+	}
+
+	ctx.JSON(laborDivisions)
 }

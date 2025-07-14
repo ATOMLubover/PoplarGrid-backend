@@ -14,19 +14,19 @@ type WorksetRepo interface {
 
 // worksetRepo 是 WorksetRepo 的实现
 type worksetRepo struct {
-	db *gorm.DB // 假设 dbmodels.DB 是你的数据库连接类型
+	handle *gorm.DB
 }
 
 // NewWorksetRepo 创建一个新的 WorksetRepo 实例
 func NewWorksetRepo(db *gorm.DB) WorksetRepo {
 	return &worksetRepo{
-		db: db,
+		handle: db,
 	}
 }
 
 // Table 限定当前操作的表名
 func (r *worksetRepo) Table() *gorm.DB {
-	return r.db.Table(dbmodels.Workset{}.TableName())
+	return r.handle.Table(dbmodels.Workset{}.TableName())
 }
 
 // SelectBasicPageIdDesc 实现 WorksetRepo 接口的 SelectBasicPageIdDesc 方法

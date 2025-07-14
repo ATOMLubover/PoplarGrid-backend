@@ -7,8 +7,8 @@ type ProjectLaborDivision struct {
 	ProjectId PrimaryKey
 	FkProject Project `gorm:"foreignKey:ProjectId"`
 
-	UserId PrimaryKey
-	FkUser User `gorm:"foreignKey:UserId"`
+	MemberId PrimaryKey
+	FkMember TeamMember `gorm:"foreignKey:MemberId"`
 
 	// 分工，使用掩码计算多重身份
 	LaborRole LaborMask `gorm:"not null;default:0"`
@@ -49,4 +49,8 @@ type ProjectInvitation struct {
 	FkProject Project    `gorm:"foreignKey:ProjectId"`
 
 	InviteRole LaborMask `gorm:"not null;default:0"` // 邀请的角色，使用位掩码表示
+}
+
+func (ProjectInvitation) TableName() string {
+	return "project_invitations"
 }

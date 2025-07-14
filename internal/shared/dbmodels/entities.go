@@ -14,7 +14,7 @@ type User struct {
 	PasswordHash string `gorm:"size:256;not null"`
 
 	// 接受尨译分配的 ID
-	MoetranId string `gorm:"uniqueIndex;type:text;not null"`
+	MoetranId string `gorm:"uniqueIndex;type:text"`
 
 	// 在仪表盘中的身份
 	PoplarIsAdmin bool
@@ -38,7 +38,7 @@ type Team struct {
 	BaseModel
 
 	Name      string `gorm:"unique;size:256;not null"`
-	MoetranId string `gorm:"uniqueIndex;type:text;not null"`
+	MoetranId string `gorm:"uniqueIndex;type:text"`
 }
 
 func (Team) TableName() string {
@@ -55,7 +55,7 @@ type Workset struct {
 	FkTeam Team `gorm:"foreignKey:TeamId"`
 
 	Name      string `gorm:"unique;type:text;not null"`
-	MoetranId string `gorm:"uniqueIndex;type:text;not null"`
+	MoetranId string `gorm:"uniqueIndex;type:text"`
 
 	// 用于项目的组内自增序列
 	ProjectSequenceName string `gorm:"uniqueIndex;type:text;not null"`
@@ -72,8 +72,9 @@ type Project struct {
 	BaseModel
 
 	// 内嵌作品的信息
-	Title     string `gorm:"index;type:text;not null"`
-	MoetranId string `gorm:"uniqueIndex;type:text;not null"`
+	Title       string `gorm:"index;type:text;not null"`
+	Description string `gorm:"type:text"`
+	MoetranId   string `gorm:"uniqueIndex;type:text"`
 
 	// 历史遗留序号（【】中的序号），保留对老作品的兼容
 	// 经过观察，有序号重复的地方，如果可以最好重构这部分
