@@ -41,7 +41,22 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "接受成功",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -72,7 +87,22 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "接受成功",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -103,7 +133,22 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "申请成功",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -136,6 +181,18 @@ const docTemplate = `{
                                 "$ref": "#/definitions/dtos.LaborDivision"
                             }
                         }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -166,7 +223,22 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "邀请成功",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -197,7 +269,22 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "拒绝成功",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -228,7 +315,22 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "拒绝成功",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -285,6 +387,18 @@ const docTemplate = `{
                                 "$ref": "#/definitions/dtos.ProjectBasic"
                             }
                         }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -305,7 +419,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "description": "创建项目的请求体",
-                        "name": "request",
+                        "name": "body_params",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -317,8 +431,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dtos.ProjectCreatedInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -350,12 +475,21 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "删除成功",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -387,12 +521,21 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "更新成功",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -424,12 +567,21 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "更新成功",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -459,6 +611,18 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dtos.ProjectDetail"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -504,13 +668,25 @@ const docTemplate = `{
                                 "$ref": "#/definitions/dtos.MemberBasic"
                             }
                         }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
                     }
                 }
             }
         },
         "/user/detail": {
             "get": {
-                "description": "获取指定用户的详细信息，包括 ID、用户名、头像等",
+                "description": "获取指定用户的详细信息，包括 ID、昵称等",
                 "produces": [
                     "application/json"
                 ],
@@ -533,48 +709,17 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dtos.UserDetail"
                         }
-                    }
-                }
-            }
-        },
-        "/user/list": {
-            "get": {
-                "description": "注意当列表为空，会返回 null 而不是空数组",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "获取用户列表分页",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "页码，默认值为 1",
-                        "name": "page_serial",
-                        "in": "query"
                     },
-                    {
-                        "type": "integer",
-                        "description": "每页数量，默认值为 10",
-                        "name": "page_size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "排序方式，默认值为 id_desc，支持 id_asc | id_desc，其他输入无效",
-                        "name": "sort",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
+                    "400": {
+                        "description": "无效的请求参数",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dtos.UserBasic"
-                            }
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -595,6 +740,18 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dtos.UserDetail"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -619,6 +776,18 @@ const docTemplate = `{
                                 "$ref": "#/definitions/dtos.InvitationBasic"
                             }
                         }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -642,13 +811,25 @@ const docTemplate = `{
                                 "$ref": "#/definitions/dtos.InvitationBasic"
                             }
                         }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
                     }
                 }
             }
         },
-        "/user/my/projects": {
+        "/user/my/project_list": {
             "get": {
-                "description": "获取当前登录用户参与的所有项目列表",
+                "description": "获取当前登录用户参与的所有项目列表，按照 ID 倒序排列",
                 "produces": [
                     "application/json"
                 ],
@@ -656,14 +837,40 @@ const docTemplate = `{
                     "user_my"
                 ],
                 "summary": "获取当前用户的项目列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，默认值为 1",
+                        "name": "page_serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认值为 10",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dtos.ProjectBasic"
+                                "$ref": "#/definitions/dtos.MyProjectBasic"
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -688,6 +895,18 @@ const docTemplate = `{
                                 "$ref": "#/definitions/dtos.TeamBasic"
                             }
                         }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -701,7 +920,7 @@ const docTemplate = `{
                 "tags": [
                     "workset"
                 ],
-                "summary": "获取工作集列表分页，按 ID 倒序",
+                "summary": "获取特定汉化组的工作集列表分页，按 ID 倒序",
                 "parameters": [
                     {
                         "type": "integer",
@@ -732,6 +951,18 @@ const docTemplate = `{
                                 "$ref": "#/definitions/dtos.WorksetBasic"
                             }
                         }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -760,6 +991,18 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dtos.ProjectStats"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -815,12 +1058,20 @@ const docTemplate = `{
                 "workset_id"
             ],
             "properties": {
+                "allow_auto_join": {
+                    "description": "是否允许自动加入，默认为 false",
+                    "type": "boolean"
+                },
                 "description": {
                     "description": "项目描述",
                     "type": "string"
                 },
+                "is_hidden": {
+                    "description": "是否隐藏项目，默认为 false",
+                    "type": "boolean"
+                },
                 "title": {
-                    "description": "项目标题，必填，最大长度 40",
+                    "description": "项目标题，必填",
                     "type": "string"
                 },
                 "workset_id": {
@@ -856,12 +1107,24 @@ const docTemplate = `{
                     "description": "被邀请者 ID",
                     "type": "integer"
                 },
+                "invitee_nickname": {
+                    "description": "被邀请者昵称",
+                    "type": "string"
+                },
                 "inviter_id": {
                     "description": "邀请者 ID",
                     "type": "integer"
                 },
+                "inviter_nickname": {
+                    "description": "邀请者昵称",
+                    "type": "string"
+                },
                 "project_id": {
                     "description": "所属项目 ID",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "邀请状态，0 pending, 1 accepted, 2 rejected",
                     "type": "integer"
                 }
             }
@@ -930,6 +1193,59 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.MyProjectBasic": {
+            "type": "object",
+            "properties": {
+                "allow_auto_join": {
+                    "description": "是否允许自动加入",
+                    "type": "boolean"
+                },
+                "id": {
+                    "description": "项目 ID",
+                    "type": "integer"
+                },
+                "is_hidden": {
+                    "description": "是否是隐藏项目",
+                    "type": "boolean"
+                },
+                "is_published": {
+                    "description": "是否已发布",
+                    "type": "boolean"
+                },
+                "legacy_id": {
+                    "description": "历史遗留序号",
+                    "type": "integer"
+                },
+                "moetran_id": {
+                    "description": "龙译 ID",
+                    "type": "string"
+                },
+                "role": {
+                    "description": "成员在项目中的角色，使用掩码计算多重身份",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "项目状态，使用位掩码表示",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dtos.ProjectOverallStatus"
+                        }
+                    ]
+                },
+                "title": {
+                    "description": "项目名称",
+                    "type": "string"
+                },
+                "workset_id": {
+                    "description": "所属作品集 ID",
+                    "type": "integer"
+                },
+                "workset_index": {
+                    "description": "作品集内的序号",
+                    "type": "integer"
+                }
+            }
+        },
         "dtos.ProjectBasic": {
             "type": "object",
             "properties": {
@@ -953,6 +1269,10 @@ const docTemplate = `{
                     "description": "历史遗留序号",
                     "type": "integer"
                 },
+                "moetran_id": {
+                    "description": "龙译 ID",
+                    "type": "string"
+                },
                 "status": {
                     "description": "项目状态，使用位掩码表示",
                     "allOf": [
@@ -971,6 +1291,23 @@ const docTemplate = `{
                 },
                 "workset_index": {
                     "description": "作品集内的序号",
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.ProjectCreatedInfo": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "description": "响应消息",
+                    "type": "string"
+                },
+                "moetran_id": {
+                    "description": "龙译项目 ID",
+                    "type": "string"
+                },
+                "project_id": {
+                    "description": "创建的项目 ID",
                     "type": "integer"
                 }
             }
@@ -1005,6 +1342,10 @@ const docTemplate = `{
                 "legacy_id": {
                     "description": "历史遗留序号",
                     "type": "integer"
+                },
+                "moetran_id": {
+                    "description": "龙译 ID",
+                    "type": "string"
                 },
                 "status": {
                     "description": "项目状态，使用位掩码表示",
@@ -1174,7 +1515,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "title": {
-                    "description": "项目标题，最大长度 40",
+                    "description": "项目标题",
                     "type": "string"
                 }
             }
@@ -1193,19 +1534,6 @@ const docTemplate = `{
                 "status": {
                     "description": "新的项目状态，必填",
                     "type": "integer"
-                }
-            }
-        },
-        "dtos.UserBasic": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "description": "用户 ID",
-                    "type": "integer"
-                },
-                "nickname": {
-                    "description": "昵称",
-                    "type": "string"
                 }
             }
         },
@@ -1249,10 +1577,6 @@ const docTemplate = `{
                     "description": "作品集 ID",
                     "type": "integer"
                 },
-                "moetran_id": {
-                    "description": "Moetran ID",
-                    "type": "string"
-                },
                 "name": {
                     "description": "作品集名称",
                     "type": "string"
@@ -1260,6 +1584,26 @@ const docTemplate = `{
                 "team_id": {
                     "description": "所属团队 ID",
                     "type": "integer"
+                }
+            }
+        },
+        "handlers.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "detail": {
+                    "description": "可选，在 service 层发生错误时提供详细信息",
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.SuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
                 }
             }
         }

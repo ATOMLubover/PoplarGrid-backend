@@ -1,10 +1,11 @@
 package dtos
 
-// ProjectBasic 定义了获取项目的进本信息
+// ProjectBasic 定义了获取项目的基本信息
 type ProjectBasic struct {
-	Id       uint   `json:"id"`        // 项目 ID
-	Title    string `json:"title"`     // 项目名称
-	LegacyId uint   `json:"legacy_id"` // 历史遗留序号
+	Id        uint   `json:"id"`         // 项目 ID
+	Title     string `json:"title"`      // 项目名称
+	LegacyId  uint   `json:"legacy_id"`  // 历史遗留序号
+	MoetranId string `json:"moetran_id"` // 龙译 ID
 
 	WorksetId    uint `json:"workset_id"`    // 所属作品集 ID
 	WorksetIndex uint `json:"workset_index"` // 作品集内的序号
@@ -18,17 +19,16 @@ type ProjectBasic struct {
 
 // ProjectDetail 定义了获取项目的详细信息
 type ProjectDetail struct {
-	ProjectBasic
-	Description string `json:"description"` // 项目描述
-	CreatedAt   string `json:"created_at"`  // 创建时间
-	UpdatedAt   string `json:"updated_at"`  // 更新时间
+	ProjectBasic `json:",inline"` // 嵌入 ProjectBasic 的字段
+	Description  string           `json:"description"` // 项目描述
+	CreatedAt    string           `json:"created_at"`  // 创建时间
+	UpdatedAt    string           `json:"updated_at"`  // 更新时间
 }
 
 // MyProjectBasic 定义了获取用户参与的项目的基本信息
 type MyProjectBasic struct {
-	ProjectBasic
-	MemberId uint `json:"member_id"` // 成员 ID
-	Role     uint `json:"role"`      // 成员在项目中的角色，使用掩码计算多重身份
+	ProjectBasic `json:",inline"` // 嵌入 ProjectBasic 的字段
+	Role         uint             `json:"role"` // 成员在项目中的角色，使用掩码计算多重身份
 }
 
 // ProjectStats 定义了项目整体的一些统计情况
@@ -95,11 +95,24 @@ type MemberBasic struct {
 
 // InvitationBasic 定义了邀请的基本信息
 type InvitationBasic struct {
-	Id         uint `json:"id"`          // 邀请 ID
-	InviterId  uint `json:"inviter_id"`  // 邀请者 ID
-	InviteeId  uint `json:"invitee_id"`  // 被邀请者 ID
-	ProjectId  uint `json:"project_id"`  // 所属项目 ID
-	InviteRole uint `json:"invite_role"` // 邀请的角色，使用位掩码表示
+	Id              uint   `json:"id"`               // 邀请 ID
+	InviterId       uint   `json:"inviter_id"`       // 邀请者 ID
+	InviterNickname string `json:"inviter_nickname"` // 邀请者昵称
+	InviteeId       uint   `json:"invitee_id"`       // 被邀请者 ID
+	InviteeNickname string `json:"invitee_nickname"` // 被邀请者昵称
+	ProjectId       uint   `json:"project_id"`       // 所属项目 ID
+	InviteRole      uint   `json:"invite_role"`      // 邀请的角色，使用位掩码表示
+	Status          int    `json:"status"`           // 邀请状态，0 pending, 1 accepted, 2 rejected
+}
+
+// ApplicationBasic 定义了申请的基本信息
+type ApplicationBasic struct {
+	Id          uint   `json:"id"`           // 申请 ID
+	ApplicantId uint   `json:"applicant_id"` // 申请者 ID
+	ProjectId   uint   `json:"project_id"`   // 所属项目 ID
+	Nickname    string `json:"nickname"`     // 申请者昵称
+	Role        uint   `json:"role"`         // 申请的角色，使用位掩码表示
+	Status      int    `json:"status"`       // 申请状态，0 pending, 1 accepted, 2 rejected
 }
 
 // LaborDivision 定义了项目成员的分工信息
@@ -107,4 +120,11 @@ type LaborDivision struct {
 	MemberId uint   `json:"member_id"` // 成员 ID
 	Nickname string `json:"nickname"`  // 昵称
 	Role     uint   `json:"role"`      // 成员在项目中的角色，使用位掩码表示
+}
+
+// ProjectCreatedInfo 定义了创建项目的响应结构体
+type ProjectCreatedInfo struct {
+	Message   string `json:"message"`    // 响应消息
+	ProjectId uint   `json:"project_id"` // 创建的项目 ID
+	MoetranId string `json:"moetran_id"` // 龙译项目 ID
 }

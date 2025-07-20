@@ -29,11 +29,17 @@ definitions:
     type: object
   dtos.CreateProjectRequest:
     properties:
+      allow_auto_join:
+        description: 是否允许自动加入，默认为 false
+        type: boolean
       description:
         description: 项目描述
         type: string
+      is_hidden:
+        description: 是否隐藏项目，默认为 false
+        type: boolean
       title:
-        description: 项目标题，必填，最大长度 40
+        description: 项目标题，必填
         type: string
       workset_id:
         description: 作品集 ID，必填
@@ -61,11 +67,20 @@ definitions:
       invitee_id:
         description: 被邀请者 ID
         type: integer
+      invitee_nickname:
+        description: 被邀请者昵称
+        type: string
       inviter_id:
         description: 邀请者 ID
         type: integer
+      inviter_nickname:
+        description: 邀请者昵称
+        type: string
       project_id:
         description: 所属项目 ID
+        type: integer
+      status:
+        description: 邀请状态，0 pending, 1 accepted, 2 rejected
         type: integer
     type: object
   dtos.InviteMemberRequest:
@@ -114,6 +129,43 @@ definitions:
         description: 实际上的用户 ID
         type: integer
     type: object
+  dtos.MyProjectBasic:
+    properties:
+      allow_auto_join:
+        description: 是否允许自动加入
+        type: boolean
+      id:
+        description: 项目 ID
+        type: integer
+      is_hidden:
+        description: 是否是隐藏项目
+        type: boolean
+      is_published:
+        description: 是否已发布
+        type: boolean
+      legacy_id:
+        description: 历史遗留序号
+        type: integer
+      moetran_id:
+        description: 龙译 ID
+        type: string
+      role:
+        description: 成员在项目中的角色，使用掩码计算多重身份
+        type: integer
+      status:
+        allOf:
+        - $ref: '#/definitions/dtos.ProjectOverallStatus'
+        description: 项目状态，使用位掩码表示
+      title:
+        description: 项目名称
+        type: string
+      workset_id:
+        description: 所属作品集 ID
+        type: integer
+      workset_index:
+        description: 作品集内的序号
+        type: integer
+    type: object
   dtos.ProjectBasic:
     properties:
       allow_auto_join:
@@ -131,6 +183,9 @@ definitions:
       legacy_id:
         description: 历史遗留序号
         type: integer
+      moetran_id:
+        description: 龙译 ID
+        type: string
       status:
         allOf:
         - $ref: '#/definitions/dtos.ProjectOverallStatus'
@@ -143,6 +198,18 @@ definitions:
         type: integer
       workset_index:
         description: 作品集内的序号
+        type: integer
+    type: object
+  dtos.ProjectCreatedInfo:
+    properties:
+      message:
+        description: 响应消息
+        type: string
+      moetran_id:
+        description: 龙译项目 ID
+        type: string
+      project_id:
+        description: 创建的项目 ID
         type: integer
     type: object
   dtos.ProjectDetail:
@@ -168,6 +235,9 @@ definitions:
       legacy_id:
         description: 历史遗留序号
         type: integer
+      moetran_id:
+        description: 龙译 ID
+        type: string
       status:
         allOf:
         - $ref: '#/definitions/dtos.ProjectOverallStatus'
@@ -287,7 +357,7 @@ definitions:
         description: 项目 ID，必填
         type: integer
       title:
-        description: 项目标题，最大长度 40
+        description: 项目标题
         type: string
     required:
     - project_id
@@ -304,15 +374,6 @@ definitions:
     required:
     - project_id
     - status
-    type: object
-  dtos.UserBasic:
-    properties:
-      id:
-        description: 用户 ID
-        type: integer
-      nickname:
-        description: 昵称
-        type: string
     type: object
   dtos.UserDetail:
     properties:
@@ -343,15 +404,25 @@ definitions:
       id:
         description: 作品集 ID
         type: integer
-      moetran_id:
-        description: Moetran ID
-        type: string
       name:
         description: 作品集名称
         type: string
       team_id:
         description: 所属团队 ID
         type: integer
+    type: object
+  handlers.ErrorResponse:
+    properties:
+      detail:
+        description: 可选，在 service 层发生错误时提供详细信息
+        type: string
+      error:
+        type: string
+    type: object
+  handlers.SuccessResponse:
+    properties:
+      message:
+        type: string
     type: object
 host: localhost:8081
 info:
@@ -376,6 +447,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dtos.ProjectDetail'
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 获取项目详情
       tags:
       - project
@@ -395,7 +474,17 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 接受成功
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 接受邀请加入项目
       tags:
       - project_labor
@@ -415,7 +504,17 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 接受成功
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 接受申请加入项目
       tags:
       - project_labor
@@ -435,7 +534,17 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 申请成功
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 申请加入项目
       tags:
       - project_labor
@@ -457,6 +566,14 @@ paths:
             items:
               $ref: '#/definitions/dtos.LaborDivision'
             type: array
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 获取指定项目的分工信息
       tags:
       - project_labor
@@ -476,7 +593,17 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 邀请成功
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 邀请成员加入项目
       tags:
       - project_labor
@@ -496,7 +623,17 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 拒绝成功
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 拒绝邀请加入项目
       tags:
       - project_labor
@@ -516,7 +653,17 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 拒绝成功
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 拒绝申请加入项目
       tags:
       - project_labor
@@ -555,6 +702,14 @@ paths:
             items:
               $ref: '#/definitions/dtos.ProjectBasic'
             type: array
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 获取项目列表分页
       tags:
       - project
@@ -566,7 +721,7 @@ paths:
       parameters:
       - description: 创建项目的请求体
         in: body
-        name: request
+        name: body_params
         required: true
         schema:
           $ref: '#/definitions/dtos.CreateProjectRequest'
@@ -576,8 +731,15 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dtos.ProjectCreatedInfo'
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 创建项目
       tags:
       - project_proc
@@ -597,11 +759,17 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 删除成功
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 删除项目
       tags:
       - project_proc
@@ -621,11 +789,17 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 更新成功
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 更新项目
       tags:
       - project_proc
@@ -645,11 +819,17 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 更新成功
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 更新项目状态
       tags:
       - project_proc
@@ -679,12 +859,20 @@ paths:
             items:
               $ref: '#/definitions/dtos.MemberBasic'
             type: array
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 获取汉化组成员列表分页
       tags:
       - team
   /user/detail:
     get:
-      description: 获取指定用户的详细信息，包括 ID、用户名、头像等
+      description: 获取指定用户的详细信息，包括 ID、昵称等
       parameters:
       - description: 用户 ID
         in: query
@@ -698,35 +886,15 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dtos.UserDetail'
-      summary: 获取用户详情
-      tags:
-      - user
-  /user/list:
-    get:
-      description: 注意当列表为空，会返回 null 而不是空数组
-      parameters:
-      - description: 页码，默认值为 1
-        in: query
-        name: page_serial
-        type: integer
-      - description: 每页数量，默认值为 10
-        in: query
-        name: page_size
-        type: integer
-      - description: 排序方式，默认值为 id_desc，支持 id_asc | id_desc，其他输入无效
-        in: query
-        name: sort
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
+        "400":
+          description: 无效的请求参数
           schema:
-            items:
-              $ref: '#/definitions/dtos.UserBasic'
-            type: array
-      summary: 获取用户列表分页
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: 获取用户详情
       tags:
       - user
   /user/my/detail:
@@ -739,6 +907,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dtos.UserDetail'
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 获取当前用户的详细信息
       tags:
       - user_my
@@ -754,6 +930,14 @@ paths:
             items:
               $ref: '#/definitions/dtos.InvitationBasic'
             type: array
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 获取当前用户的收到的邀请列表
       tags:
       - user_my
@@ -769,12 +953,29 @@ paths:
             items:
               $ref: '#/definitions/dtos.InvitationBasic'
             type: array
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 获取当前用户的邀请列表
       tags:
       - user_my
-  /user/my/projects:
+  /user/my/project_list:
     get:
-      description: 获取当前登录用户参与的所有项目列表
+      description: 获取当前登录用户参与的所有项目列表，按照 ID 倒序排列
+      parameters:
+      - description: 页码，默认值为 1
+        in: query
+        name: page_serial
+        type: integer
+      - description: 每页数量，默认值为 10
+        in: query
+        name: page_size
+        type: integer
       produces:
       - application/json
       responses:
@@ -782,8 +983,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/dtos.ProjectBasic'
+              $ref: '#/definitions/dtos.MyProjectBasic'
             type: array
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 获取当前用户的项目列表
       tags:
       - user_my
@@ -799,6 +1008,14 @@ paths:
             items:
               $ref: '#/definitions/dtos.TeamBasic'
             type: array
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 获取当前用户的汉化组列表
       tags:
       - user_my
@@ -828,7 +1045,15 @@ paths:
             items:
               $ref: '#/definitions/dtos.WorksetBasic'
             type: array
-      summary: 获取工作集列表分页，按 ID 倒序
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: 获取特定汉化组的工作集列表分页，按 ID 倒序
       tags:
       - workset
   /workset/stats:
@@ -847,6 +1072,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dtos.ProjectStats'
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: 获取特定作品集项目统计信息
       tags:
       - workset

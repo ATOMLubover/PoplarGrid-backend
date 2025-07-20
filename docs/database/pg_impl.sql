@@ -88,7 +88,7 @@ CREATE INDEX idx_tags_deleted_at ON tags(deleted_at);
 CREATE TABLE projects (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
+    updated_at TIMESTANDZ(3) NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ(3) NULL,
     
     -- Restored fields from the Go model
@@ -99,15 +99,25 @@ CREATE TABLE projects (
     legacy_id INTEGER NULL,
     workset_id INTEGER NOT NULL REFERENCES worksets(id) ON DELETE CASCADE,
     status INTEGER NOT NULL,
-    urgency SMALLINT NOT NULL,
-
-    -- Add unique constraints as defined in the Go model's gorm tags
-    -- CONSTRAINT unique_projects_title_legacy_id_workset_id UNIQUE (moetran_id, workset_id),
-    CONSTRAINT unique_projects_moetran_id UNIQUE (moetran_id)
+    urgency SMALLINT NOT NULL
 );
+
+-- 现有索引保持不变
 CREATE INDEX idx_projects_deleted_at ON projects(deleted_at);
 CREATE INDEX idx_projects_legacy_id ON projects(legacy_id);
-CREATE INDEX idx_projects_title ON projects(title);
+CREATE INDEX idx_projects_title ON projects(title); -- This is a non-unique index and can be kept
+
+-- New: Create a unique index for the 'title' field of active (non-deleted) projects.
+-- This ensures that the 'title' is unique only for projects that have not been soft-deleted.
+-- Note: Partial unique indexes with a WHERE clause cannot be defined directly as an inline CONSTRAINT
+-- within the CREATE TABLE statement in PostgreSQL.
+CREATE UNIQUE INDEX unique_active_projects_title ON projects (title) WHERE deleted_at IS NULL;
+
+-- New: Create a unique index for the 'moetran_id' field of active (non-deleted) projects.
+-- This ensures that the 'moetran_id' is unique only for projects that have not been soft-deleted.
+-- Note: Partial unique indexes with a WHERE clause cannot be defined directly as an inline CONSTRAINT
+-- within the CREATE TABLE statement in PostgreSQL.
+CREATE UNIQUE INDEX unique_active_projects_moetran_id ON projects (moetran_id) WHERE deleted_at IS NULL;
 
 
 -- Table: member_preferences

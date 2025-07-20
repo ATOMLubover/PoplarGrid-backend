@@ -160,10 +160,10 @@ func (r *ProjectsRepo) sMapLaborDiv(
 	// key 为 projectId，value 为该项目的所有分工成员
 	laborMap := make(map[dbmodels.PrimaryKey][]*dbmodels.User)
 	for _, pld := range plds {
-		if pld.FkMember.Id != 0 {
+		if pld.FkUser.Id != 0 {
 			// 确保 Member 被成功加载
-			pld.FkMember.Labors = pld.LaborRole
-			laborMap[pld.ProjectId] = append(laborMap[pld.ProjectId], &pld.FkMember)
+			pld.FkUser.Labors = pld.LaborRole
+			laborMap[pld.ProjectId] = append(laborMap[pld.ProjectId], &pld.FkUser)
 		}
 	}
 

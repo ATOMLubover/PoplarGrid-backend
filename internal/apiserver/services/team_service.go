@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"log/slog"
 	"poplargrid/internal/apiserver/dtos"
 	"poplargrid/internal/apiserver/repos"
@@ -36,7 +37,7 @@ func (s *teamServiceImpl) GetTeamBasicPageByUserId(userId uint, pageSerial, page
 	teams, err := s.teamMemberRepo.SelectTeamBasicByUserId(dbmodels.PrimaryKey(userId))
 	if err != nil {
 		s.logger.Error("GetBasicPage 调用 SelectBasicPage 中出现错误", slog.Any("error", err))
-		return nil, err
+		return nil, errors.New("无法获取指定用户的团队列表")
 	}
 
 	// 将 dbmodels.Team 转换为 dtos.TeamBasic

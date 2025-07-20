@@ -36,6 +36,8 @@ type WorksetHandler struct {
 // @Tags 		workset
 // @Produce 	json
 // @Success	 	200 {object} []dtos.WorksetBasic
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
 // @Router 		/workset/list [get]
 func (h *WorksetHandler) WorksetListPage(ctx iris.Context) {
 	// 获取分页参数
@@ -46,7 +48,9 @@ func (h *WorksetHandler) WorksetListPage(ctx iris.Context) {
 	teamId, err := ctx.URLParamInt("team_id")
 	if err != nil || teamId <= 0 {
 		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(iris.Map{"error": "team_id 必须是一个明确给出的正整数"})
+		ctx.JSON(ErrorResponse{
+			Error: "team_id 必须是一个明确给出的正整数",
+		})
 		return
 	}
 
@@ -54,7 +58,10 @@ func (h *WorksetHandler) WorksetListPage(ctx iris.Context) {
 	worksets, err := h.WorksetService.GetBasicPage(pageSerial, pageSize)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(iris.Map{"error": "获取工作集列表失败"})
+		ctx.JSON(ErrorResponse{
+			Error:  "获取工作集列表失败",
+			Detail: err.Error(),
+		})
 		return
 	}
 
@@ -68,13 +75,17 @@ func (h *WorksetHandler) WorksetListPage(ctx iris.Context) {
 // @Tags 		workset
 // @Produce 	json
 // @Success	 	200 {object} dtos.ProjectStats
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
 // @Router 		/workset/stats [get]
 func (h *WorksetHandler) ProjectStats(ctx iris.Context) {
 	// 获取 workset_id 参数
 	worksetId, err := ctx.URLParamInt("workset_id")
 	if err != nil || worksetId <= 0 {
 		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(iris.Map{"error": "workset_id 必须是一个明确给出的正整数"})
+		ctx.JSON(ErrorResponse{
+			Error: "workset_id 必须是一个明确给出的正整数",
+		})
 		return
 	}
 
@@ -82,7 +93,10 @@ func (h *WorksetHandler) ProjectStats(ctx iris.Context) {
 	stats, err := h.WorksetService.GetProjectStats(uint(worksetId))
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(iris.Map{"error": "获取项目总体统计信息失败"})
+		ctx.JSON(ctx.JSON(ErrorResponse{
+			Error:  "获取特定作品集的项目统计信息失败",
+			Detail: err.Error(),
+		}))
 		return
 	}
 

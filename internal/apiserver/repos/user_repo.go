@@ -12,6 +12,8 @@ var kUserBasicFields = []string{
 	"nickname",
 	"created_at",
 	"last_active",
+	"moetran_id",
+	"moetran_auth",
 }
 
 // UserRepo 接口定义了用户仓库的基本操作

@@ -10,55 +10,34 @@ import (
 
 // RouteProjectHandler 注册项目相关的路由
 func RouteProjectHandler(root *mvc.Application) {
-	// 创建 ProjectHandler 实例
+	// 创建 handler 实例
 	projectHandler := &ProjectHandler{}
+	projectProcHandler := &ProjectProcHandler{}
+	projectLaborHandler := &ProjectLaborHandler{}
 
-	// 注册路由组
-	projectParty := root.Party("/project")
+	// 注册路由组和 handler
+	projectParty := root.
+		Party("/projects").
+		Handle(projectHandler).
+		Handle(projectProcHandler).
+		Handle(projectLaborHandler)
 
-	// 注册 handler
-	projectParty.Handle(projectHandler)
+	// // 注册 handler
+	// projectParty.Handle(projectHandler)
+	// projectParty.Handle(projectProcHandler)
+	// projectParty.Handle(projectLaborHandler)
 
-	// 注册路由与方法的映射（类型安全）
-	projectParty.Router.Get("/list", projectHandler.ProjectListPage)
-	projectParty.Router.Get("/detail", projectHandler.ProjectDetail)
+	// 注册路由与方法间的映射（静态安全）
+	projectParty.Router.Get("", projectHandler.ProjectListPage)
+	projectParty.Router.Get("/{id:uint}", projectHandler.ProjectDetail)
 
-	{
-		// 创建 ProjectProcHandler 实例
-		procHandler := &ProjectProcHandler{}
+	projectParty.Router.Post("", projectProcHandler.Create)
 
-		// 注册路由组
-		procParty := projectParty.Party("/proc")
+	projectParty.Router.Delete("/{id:uint}", projectProcHandler.Delete)
 
-		// 注册 handler
-		procParty.Handle(procHandler)
+	projectParty.Router.Patch("/{id:uint}", projectProcHandler.UpdateInfo)
 
-		// 注册路由与方法的映射（类型安全）
-		procParty.Router.Post("/create", procHandler.Create)
-		procParty.Router.Delete("/delete", procHandler.Delete)
-		procParty.Router.Put("/update_info", procHandler.UpdateInfo)
-		procParty.Router.Put("/update_status", procHandler.UpdateStatus)
-	}
-
-	{
-		// 创建 ProjectLaborHandler 实例
-		laborHandler := &ProjectLaborHandler{}
-
-		// 注册路由组
-		laborParty := projectParty.Party("/role")
-
-		// 注册 handler
-		laborParty.Handle(laborHandler)
-
-		// 注册路由与方法的映射（类型安全）
-		laborParty.Router.Post("/invite", laborHandler.Invite)
-		laborParty.Router.Post("/accept_appli", laborHandler.AcceptAppli)
-		laborParty.Router.Post("/refuse_appli", laborHandler.RefuseAppli)
-
-		laborParty.Router.Post("/apply", laborHandler.Apply)
-		laborParty.Router.Post("/accept", laborHandler.Accept)
-		laborParty.Router.Post("/refuse", laborHandler.Refuse)
-	}
+	projectParty.Router.Get("/{id:uint}/labors", projectLaborHandler.LaborDivision)
 }
 
 // ProjectHandler 处理项目相关的请求
@@ -67,17 +46,19 @@ type ProjectHandler struct {
 }
 
 // ProjectListPage godoc
-// @Summary     获取项目列表分页
-// @Description 注意当列表为空，会返回 null 而不是空数组；如果要单独查询已发布的项目列表，请使用 /project/published_list 接口
+// @Summary     获取项目列表分页 (按作品集筛选)
+// @Description 根据作品集 ID 获取项目列表，支持分页、排序和状态筛选。当列表为空时，会返回 null 而不是空数组。
 // @Param       page_serial query integer false "页码，默认值为 1"
 // @Param       page_size query integer false "每页数量，默认值为 10"
 // @Param       sort query integer false "排序方式，0：按 ID 倒序，1：按 updated_at 倒序"
 // @Param       status query integer false "项目状态（位掩码），用于复合查询，默认不筛选查询"
-// @Param       workset_id query integer true "项目所属的作品集 ID，必填"
+// @Param       workset_id query integer true "项目所属的作品集 ID"
 // @Tags        project
 // @Produce     json
 // @Success     200 {object} []dtos.ProjectBasic
-// @Router      /project/list [get]
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Router      /projects [get]
 func (h *ProjectHandler) ProjectListPage(ctx iris.Context) {
 	pageSerial := ctx.URLParamInt32Default("page_serial", 1)
 
@@ -88,32 +69,72 @@ func (h *ProjectHandler) ProjectListPage(ctx iris.Context) {
 	// 注意默认为 PROJECT_STATUS_ALL，表示不筛选状态
 	status := ctx.URLParamInt32Default("status", dtos.PROJECT_STATUS_ALL)
 
-	worksetId, err := ctx.URLParamInt("workset_id")
-	if err != nil || worksetId <= 0 {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(iris.Map{"error": "workset_id 必须是一个明确给出的正整数"})
-		return
-	}
+	worksetId := ctx.URLParamIntDefault("workset_id", 0)
 
-	// 调用服务层获取数据
+	// 如果提供了 workset_id，则查询该作品集下的项目列表
 	projects, err := h.ProjectService.GetBasicPageWithParams(uint(worksetId), int(pageSerial), int(pageSize), int(sort), dtos.ProjectOverallStatus(status))
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(iris.Map{"error": "获取项目列表失败"})
+		ctx.JSON(ErrorResponse{
+			Error:  "获取项目列表失败",
+			Detail: err.Error(),
+		})
 		return
 	}
-
 	ctx.JSON(projects)
+
 }
+
+// // ProjectListPageByUserId godoc
+// // @Summary 	获取用户参与的项目列表分页，默认按照 ID 倒序排列
+// // @Description 注意当列表为空，会返回 null 而不是空数组
+// // @Param 		page_serial query integer false "页码，默认值为 1"
+// // @Param 		page_size query integer false "每页数量，默认值为 10"
+// // @Param 		user_id query integer true "用户 ID"
+// // @Tags 		project
+// // @Produce 	json
+// // @Success	 	200 {object} []dtos.MyProjectBasic
+// // @Failure     400 {object} ErrorResponse "无效的请求参数"
+// // @Failure     500 {object} ErrorResponse "服务器内部错误"
+// // @Router 		/projects/list_by_user [get]
+// func (h *ProjectHandler) ProjectListPageByUserId(ctx iris.Context) {
+// 	pageSerial := ctx.URLParamInt32Default("page_serial", 1)
+
+// 	pageSize := ctx.URLParamInt32Default("page_size", 10)
+
+// 	userId, err := ctx.URLParamInt("user_id")
+// 	if err != nil || userId <= 0 {
+// 		ctx.StatusCode(iris.StatusBadRequest)
+// 		ctx.JSON(ErrorResponse{
+// 			Error: "user_id 必须是一个明确给出的正整数",
+// 		})
+// 		return
+// 	}
+
+// 	// 调用服务层获取数据
+// 	projects, err := h.ProjectService.GetBasicPageByUserId(uint(userId), int(pageSerial), int(pageSize))
+// 	if err != nil {
+// 		ctx.StatusCode(iris.StatusInternalServerError)
+// 		ctx.JSON(ErrorResponse{
+// 			Error:  "获取用户参与的项目列表失败",
+// 			Detail: err.Error(),
+// 		})
+// 		return
+// 	}
+
+// 	ctx.JSON(projects)
+// }
 
 // ProjectDetail godoc
 // @Summary 	获取项目详情
 // @Description 获取指定项目的详细信息，包括翻译、校对、嵌字、审核、发布等状态
-// @Param 		id query string true "项目 ID"
+// @Param 		id path integer true "项目 ID"
 // @Tags 		project
 // @Produce 	json
 // @Success	 	200 {object} dtos.ProjectDetail
-// @Router 		/project/{id} [get]
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Router 		/projects/{id} [get]
 func (h *ProjectHandler) ProjectDetail(ctx iris.Context) {
 	projectId, err := ctx.URLParamInt("id")
 	if err != nil || projectId <= 0 {
@@ -126,7 +147,10 @@ func (h *ProjectHandler) ProjectDetail(ctx iris.Context) {
 	project, err := h.ProjectService.GetDetailById(uint(projectId))
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(iris.Map{"error": "获取项目详情失败"})
+		ctx.JSON(ErrorResponse{
+			Error:  "获取单个项目详情失败",
+			Detail: err.Error(),
+		})
 		return
 	}
 
@@ -135,18 +159,31 @@ func (h *ProjectHandler) ProjectDetail(ctx iris.Context) {
 
 // ProjectProcHandler 处理与项目进度动态推进有关的路由
 type ProjectProcHandler struct {
+	ProjectService services.ProjectService
 }
 
 // Create godoc
 // @Summary 	创建项目
-// @Description 创建一个新的项目，请求体暂时未确定
+// @Description 创建一个新的项目
 // @Accept      application/json
 // @Param       body_params body dtos.CreateProjectRequest true "创建项目的请求体"
 // @Tags 		project_proc
 // @Produce 	json
-// @Success	 	200 {object} map[string]any
-// @Router 		/project/proc/create [post]
+// @Success	 	200 {object} dtos.ProjectCreatedInfo
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Router 		/projects [post]
 func (h *ProjectProcHandler) Create(ctx iris.Context) {
+	// 读取上下文中的 user_id
+	userId, err := ctx.Values().GetUint("user_id")
+	if err != nil {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(ErrorResponse{
+			Error: "未提取到有效 user_id",
+		})
+		return
+	}
+
 	// 将请求体绑定到 CreateProjectRequest 结构体
 	var request dtos.CreateProjectRequest
 
@@ -155,42 +192,107 @@ func (h *ProjectProcHandler) Create(ctx iris.Context) {
 		ctx.JSON(iris.Map{"error": "请求体格式错误"})
 		return
 	}
+
+	// 调用服务层创建项目
+	info, err := h.ProjectService.CreateProject(&dtos.CreateProjectInfo{
+		Title:         request.Title,
+		Description:   request.Description,
+		WorksetId:     request.WorksetId,
+		CreatorUserId: userId,
+		AllowAutoJoin: request.AllowAutoJoin,
+		IsHidden:      request.IsHidden,
+	})
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.JSON(ErrorResponse{
+			Error:  "创建项目失败",
+			Detail: err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(info)
 }
 
 // Delete godoc
 // @Summary 	删除项目
 // @Description 删除指定的项目，需提供项目 ID
-// @Accept      multipart/form-data
-// @Param       body_params body dtos.DeleteProjectRequest true "要删除项目的信息"
+// @Param       id path integer true "项目 ID"
 // @Tags 		project_proc
 // @Produce 	json
-// @Success	 	200 {object} map[string]string
-// @Router 		/project/proc/delete [delete]
+// @Success	 	200 {object} SuccessResponse "删除成功"
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Router 		/projects/{id} [delete]
 func (h *ProjectProcHandler) Delete(ctx iris.Context) {
+	projectId, err := ctx.URLParamInt("id")
+	if err != nil || projectId <= 0 {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(ErrorResponse{
+			Error: "无法获得有效的 project_id",
+		})
+		return
+	}
+
+	// 调用服务层删除项目
+	if err := h.ProjectService.DeleteProjectById(uint(projectId)); err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.JSON(ErrorResponse{
+			Error:  "删除项目失败",
+			Detail: err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(SuccessResponse{
+		Message: "项目删除成功",
+	})
 }
 
 // Update godoc
 // @Summary 	更新项目
 // @Description 更新指定的项目，需提供项目 ID
-// @Accept      multipart/form-data
+// @Accept      application/json
+// @Param       id path integer true "项目 ID"
 // @Param       body_params body dtos.UpdateProjectRequest true "更新的项目信息"
 // @Tags 		project_proc
 // @Produce 	json
-// @Success	 	200 {object} map[string]string
-// @Router 		/project/proc/update_info [put]
+// @Success	 	200 {object} SuccessResponse "更新成功"
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Router 		/projects/{id} [patch]
 func (h *ProjectProcHandler) UpdateInfo(ctx iris.Context) {
-}
+	projectId, err := ctx.URLParamInt("id")
+	if err != nil || projectId <= 0 {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(ErrorResponse{
+			Error: "无法获得有效的 project_id",
+		})
+		return
+	}
 
-// UpdateStatus godoc
-// @Summary 	更新项目状态
-// @Description 更新指定项目的状态，需提供项目 ID 和新的状态，调用一次只允许更新一个状态
-// @Accept      multipart/form-data
-// @Param       body_params body dtos.UpdateProjectStatusRequest true "更新项目状态的信息"
-// @Tags 		project_proc
-// @Produce 	json
-// @Success	 	200 {object} map[string]string
-// @Router 		/project/proc/update_status [put]
-func (h *ProjectProcHandler) UpdateStatus(ctx iris.Context) {
+	var request dtos.UpdateProjectRequest
+	if err := ctx.ReadJSON(&request); err != nil {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(ErrorResponse{
+			Error: "请求体格式错误",
+		})
+		return
+	}
+
+	// 调用服务层更新项目
+	if err := h.ProjectService.UpdateProjectInfo(uint(projectId), &request); err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.JSON(ErrorResponse{
+			Error:  "更新项目失败",
+			Detail: err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(SuccessResponse{
+		Message: "项目更新成功",
+	})
 }
 
 // ProjectLaborHandler 处理项目角色相关的请求
@@ -198,92 +300,23 @@ type ProjectLaborHandler struct {
 	ProjectService services.ProjectService
 }
 
-// InviteMember godoc
-// @Summary     邀请成员加入项目
-// @Description 邀请成员加入项目，需提供成员的 ID、项目 ID 和邀请职位
-// @Accept      application/json
-// @Param       body_params body dtos.InviteMemberRequest true "邀请成员加入项目的请求体"
-// @Tags        project_labor
-// @Produce     json
-// @Success     200
-// @Router      /project/labor/invite [post]
-func (h *ProjectLaborHandler) Invite(ctx iris.Context) {
-}
-
-// Accept godoc
-// @Summary     接受邀请加入项目
-// @Description 接受邀请加入项目，需提供邀请的 ID
-// @Accept      application/json
-// @Param       body_params body dtos.AcceptInvitationRequest true "接受邀请加入项目的请求体"
-// @Tags        project_labor
-// @Produce     json
-// @Success     200
-// @Router      /project/labor/accept [post]
-func (h *ProjectLaborHandler) Accept(ctx iris.Context) {
-}
-
-// Refuse godoc
-// @Summary     拒绝邀请加入项目
-// @Description 拒绝邀请加入项目，需提供邀请的 ID
-// @Accept      application/json
-// @Param       body_params body dtos.RefuseInvitationRequest true "拒绝邀请加入项目的请求体"
-// @Tags        project_labor
-// @Produce     json
-// @Success     200
-// @Router      /project/labor/refuse [post]
-func (h *ProjectLaborHandler) Refuse(ctx iris.Context) {
-}
-
-// Apply godoc
-// @Summary     申请加入项目
-// @Description 申请加入项目，需提供项目 ID 和申请的职位
-// @Accept      application/json
-// @Param       body_params body dtos.ApplyProjectRequest true "申请加入项目的请求体"
-// @Tags        project_labor
-// @Produce     json
-// @Success     200
-// @Router      /project/labor/apply [post]
-func (h *ProjectLaborHandler) Apply(ctx iris.Context) {
-}
-
-// AcceptAppli godoc
-// @Summary     接受申请加入项目
-// @Description 接受申请加入项目，需提供申请的 ID
-// @Accept      application/json
-// @Param       body_params body dtos.AcceptApplicationRequest true "接受申请加入项目的请求体"
-// @Tags        project_labor
-// @Produce     json
-// @Success     200
-// @Router      /project/labor/accept_appli [post]
-func (h *ProjectLaborHandler) AcceptAppli(ctx iris.Context) {
-}
-
-// RefuseAppli godoc
-// @Summary     拒绝申请加入项目
-// @Description 拒绝申请加入项目，需提供申请的 ID
-// @Accept      application/json
-// @Param       body_params body dtos.RefuseApplicationRequest true "拒绝申请加入项目的请求体"
-// @Tags        project_labor
-// @Produce     json
-// @Success     200
-// @Router      /project/labor/refuse_appli [post]
-func (h *ProjectLaborHandler) RefuseAppli(ctx iris.Context) {
-
-}
-
 // LaborDivision godoc
 // @Summary 	获取指定项目的分工信息
 // @Description 获取指定项目的分工信息，包括成员的角色和状态
-// @Param 		project_id query int true "项目 ID，必填"
+// @Param 		id path uint true "项目 ID"
 // @Tags 		project_labor
 // @Produce 	json
 // @Success	 	200 {object} []dtos.LaborDivision
-// @Router 		/project/labor/division [get]
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Router 		/projects/{id}/labors [get]
 func (h *ProjectLaborHandler) LaborDivision(ctx iris.Context) {
 	projectId, err := ctx.URLParamInt("project_id")
 	if err != nil || projectId <= 0 {
 		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(iris.Map{"error": "project_id 必须是一个明确给出的正整数"})
+		ctx.JSON(ErrorResponse{
+			Error: "无法获得有效的 project_id",
+		})
 		return
 	}
 
@@ -291,7 +324,10 @@ func (h *ProjectLaborHandler) LaborDivision(ctx iris.Context) {
 	laborDivisions, err := h.ProjectService.GetLaborDivisionByProjectId(uint(projectId))
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(iris.Map{"error": "获取项目分工信息失败"})
+		ctx.JSON(ErrorResponse{
+			Error:  "获取项目分工信息失败",
+			Detail: err.Error(),
+		})
 		return
 	}
 

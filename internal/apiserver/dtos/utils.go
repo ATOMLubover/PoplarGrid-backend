@@ -1,7 +1,9 @@
 package dtos
 
+import "time"
+
 // 在传输时使用的标准时间格式
-const DTO_TIME_FORMAT = "2006-01-02 15:04:05"
+const DTO_TIME_FORMAT = time.DateTime
 
 // ProjectOverallStatus 是项目所有状态的位掩码类型别名
 type ProjectOverallStatus uint

@@ -1,6 +1,7 @@
 package repos
 
 import (
+	"errors"
 	"poplargrid/internal/apiserver/dtos"
 	"poplargrid/internal/shared/dbmodels"
 
@@ -11,14 +12,18 @@ import (
 var kProjectBasicFields = []string{
 	"id",
 	"title",
+
 	"legacy_id",
+	"moetran_id",
 	"workset_id",
 	"workset_index",
+
 	"translate_status",
 	"proof_status",
 	"letter_status",
 	"review_status",
 	"is_published",
+
 	"allow_auto_join",
 	"created_at",
 	"updated_at",
@@ -37,7 +42,16 @@ type ProjectRepo interface {
 	SelectById(id dbmodels.PrimaryKey) (*dbmodels.Project, error)
 
 	// CreateProject 创建一个新的项目，如果成功则 project 参数的 Id、WorksetIndex 字段会被填充
+	// 同时 workset 和相关的 team 信息会被递归加载
 	CreateProject(project *dbmodels.Project) error
+
+	// UpdateMoetranId 更新项目的 MoetranId 字段
+	UpdateMoetranId(projectId dbmodels.PrimaryKey, moetranId string) error
+	// SaveInfo 更新项目的基本信息
+	SaveInfo(project *dbmodels.Project) error
+
+	// DeleteById 删除指定 ID 的项目
+	DeleteById(id dbmodels.PrimaryKey) error
 }
 
 // projectRepoImpl 是 ProjectRepo 的实现
@@ -122,9 +136,84 @@ func (r *projectRepoImpl) SelectById(id dbmodels.PrimaryKey) (*dbmodels.Project,
 	return &project, nil
 }
 
+// CreateProject 实现 ProjectRepo 接口的 CreateProject 方法
+func (r *projectRepoImpl) CreateProject(project *dbmodels.Project) error {
+	if project == nil {
+		return errors.New("project 不能为 nil")
+	}
+
+	// 先尝试插入新项目，这会导致相关的 trigger 和 function 被触发
+	if err := r.Table().Create(project).Error; err != nil {
+		return err
+	}
+
+	// 随后尝试获取对应的 workset_index
+	// 递归加载 workset 信息和 team 信息
+	if err := r.Table().
+		Preload("FkWorkset", func(db *gorm.DB) {
+			db.
+				Preload("FkTeam", func(db *gorm.DB) {
+					db.Select("id", "moetran_id")
+				}).
+				Select("id", "moetran_id")
+		}).
+		Where("id = ?", project.Id).
+		Find(project).
+		Error; err != nil {
+		return err
+	}
+
+	// 在这里 workset_index 应当被填充
+	return nil
+}
+
+// UpdateMoetranId 实现 ProjectRepo 接口的 UpdateMoetranId 方法
+func (r *projectRepoImpl) UpdateMoetranId(projectId dbmodels.PrimaryKey, moetranId string) error {
+	// 执行更新操作
+	if err := r.Table().
+		Where("id = ?", projectId).
+		Update("moetran_id", moetranId).
+		Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SaveInfo 实现 ProjectRepo 接口的 SaveInfo 方法
+func (r *projectRepoImpl) SaveInfo(project *dbmodels.Project) error {
+	if project == nil {
+		return errors.New("project 不能为 nil")
+	}
+
+	// 执行更新操作
+	if err := r.Table().
+		// 这里使用 Save 方法会自动处理主键和更新字段，利用零值保护简化
+		Save(project).
+		Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteById 实现 ProjectRepo 接口的 DeleteById 方法
+func (r *projectRepoImpl) DeleteById(id dbmodels.PrimaryKey) error {
+	// 执行删除操作
+	if err := r.Table().
+		Where("id = ?", id).
+		// 这里会触发软删除
+		Delete(&dbmodels.Project{}).
+		Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // ================ 辅助函数 ================
 
-// buildQueryWithParams 通过查询参数为 query 构建 WHERE 子句
+// buildQueryWithParams 通过查询参数 query 构建 WHERE 子句
 func (r *projectRepoImpl) buildQueryWithParams(base *gorm.DB, queryParams *dtos.ProjectStatusQueryParams) *gorm.DB {
 	if queryParams == nil {
 		return base
@@ -147,24 +236,4 @@ func (r *projectRepoImpl) buildQueryWithParams(base *gorm.DB, queryParams *dtos.
 	}
 
 	return base
-}
-
-// CreateProject 实现 ProjectRepo 接口的 CreateProject 方法
-func (r *projectRepoImpl) CreateProject(project *dbmodels.Project) error {
-	// 先尝试插入新项目，这会导致相关的 trigger 和 function 被触发
-	if err := r.Table().Create(project).Error; err != nil {
-		return err
-	}
-
-	// 随后尝试获取对应的 workset_index
-	if err := r.Table().
-		Select("id", "workset_index").
-		Where("id = ?", project.Id).
-		Find(project).
-		Error; err != nil {
-		return err
-	}
-
-	// 在这里 workset_index 应当被填充
-	return nil
 }

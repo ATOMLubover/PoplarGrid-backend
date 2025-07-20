@@ -3133,3 +3133,381 @@ https://api.moetran.com/v1/teams/64aac7d91b30e3645d7f96c6/users?page=1&limit=18&
         "signature": ""
     }
 ]
+
+[
+    {
+        "create_time": "2023-01-31T02:25:40.654000",
+        "id": "63d87c24b8bebd75ff934264",
+        "level": 400,
+        "name": "\u7ba1\u7406\u5458",
+        "permissions": [
+            {
+                "id": 1,
+                "intro": "",
+                "name": "\u8bbf\u95ee\u9879\u76ee"
+            },
+            {
+                "id": 5,
+                "intro": "",
+                "name": "\u5220\u9664\u9879\u76ee"
+            },
+            {
+                "id": 10,
+                "intro": "",
+                "name": "\u8bbe\u7f6e\u9879\u76ee"
+            },
+            {
+                "id": 101,
+                "intro": "",
+                "name": "\u5ba1\u6838\u7528\u6237\u52a0\u5165\u7533\u8bf7"
+            },
+            {
+                "id": 105,
+                "intro": "\u9080\u8bf7\u65f6\u4ec5\u53ef\u8bbe\u7f6e\u6bd4\u81ea\u5df1\u89d2\u8272\u7b49\u7ea7\u4f4e\u7684\u7528\u6237",
+                "name": "\u9080\u8bf7\u7528\u6237"
+            },
+            {
+                "id": 110,
+                "intro": "\u4ec5\u53ef\u5220\u9664\u6bd4\u81ea\u5df1\u89d2\u8272\u7b49\u7ea7\u4f4e\u7684\u7528\u6237",
+                "name": "\u5220\u9664\u7528\u6237"
+            },
+            {
+                "id": 115,
+                "intro": "\u4ec5\u53ef\u4fee\u6539\u6bd4\u81ea\u5df1\u89d2\u8272\u7b49\u7ea7\u4f4e\u7684\u89d2\u8272",
+                "name": "\u4fee\u6539\u7528\u6237\u89d2\u8272"
+            },
+            {
+                "id": 120,
+                "intro": "",
+                "name": "\u4fee\u6539\u7528\u6237\u5907\u6ce8"
+            },
+            {
+                "id": 1010,
+                "intro": "",
+                "name": "\u5b8c\u7ed3\u9879\u76ee"
+            },
+            {
+                "id": 1020,
+                "intro": "",
+                "name": "\u4e0a\u4f20\u56fe\u7247"
+            },
+            {
+                "id": 1030,
+                "intro": "",
+                "name": "\u79fb\u52a8\u6587\u4ef6"
+            },
+            {
+                "id": 1040,
+                "intro": "",
+                "name": "\u4fee\u6539\u56fe\u7247\u540d\u79f0"
+            },
+            {
+                "id": 1050,
+                "intro": "",
+                "name": "\u5220\u9664\u56fe\u7247"
+            },
+            {
+                "id": 1060,
+                "intro": "",
+                "name": "\u5bfc\u51fa\u7ffb\u8bd1"
+            },
+            {
+                "id": 1080,
+                "intro": "",
+                "name": "\u65b0\u5efa\u56fe\u7247\u6807\u8bb0"
+            },
+            {
+                "id": 1090,
+                "intro": "",
+                "name": "\u79fb\u52a8\u56fe\u7247\u6807\u8bb0"
+            },
+            {
+                "id": 1100,
+                "intro": "",
+                "name": "\u5220\u9664\u56fe\u7247\u6807\u8bb0"
+            },
+            {
+                "id": 1110,
+                "intro": "",
+                "name": "\u65b0\u589e\u7ffb\u8bd1"
+            },
+            {
+                "id": 1120,
+                "intro": "",
+                "name": "\u5220\u9664\u4ed6\u4eba\u7ffb\u8bd1"
+            },
+            {
+                "id": 1130,
+                "intro": "",
+                "name": "\u6821\u5bf9\u7ffb\u8bd1"
+            },
+            {
+                "id": 1140,
+                "intro": "\u5c06\u67d0\u6761\u7ffb\u8bd1\u6307\u5b9a\u5bfc\u51fa\u9879",
+                "name": "\u9009\u5b9a\u7ffb\u8bd1"
+            },
+            {
+                "id": 1150,
+                "intro": "",
+                "name": "\u65b0\u589e\u76ee\u6807\u8bed\u8a00"
+            },
+            {
+                "id": 1160,
+                "intro": "",
+                "name": "\u4fee\u6539\u76ee\u6807\u8bed\u8a00"
+            },
+            {
+                "id": 1170,
+                "intro": "",
+                "name": "\u5220\u9664\u76ee\u6807\u8bed\u8a00"
+            }
+        ],
+        "system": true,
+        "system_code": "admin"
+    },
+    {
+        "create_time": "2023-01-31T02:25:40.661000",
+        "id": "63d87c24b8bebd75ff934265",
+        "level": 300,
+        "name": "\u76d1\u7406",
+        "permissions": [
+            {
+                "id": 1,
+                "intro": "",
+                "name": "\u8bbf\u95ee\u9879\u76ee"
+            },
+            {
+                "id": 101,
+                "intro": "",
+                "name": "\u5ba1\u6838\u7528\u6237\u52a0\u5165\u7533\u8bf7"
+            },
+            {
+                "id": 105,
+                "intro": "\u9080\u8bf7\u65f6\u4ec5\u53ef\u8bbe\u7f6e\u6bd4\u81ea\u5df1\u89d2\u8272\u7b49\u7ea7\u4f4e\u7684\u7528\u6237",
+                "name": "\u9080\u8bf7\u7528\u6237"
+            },
+            {
+                "id": 110,
+                "intro": "\u4ec5\u53ef\u5220\u9664\u6bd4\u81ea\u5df1\u89d2\u8272\u7b49\u7ea7\u4f4e\u7684\u7528\u6237",
+                "name": "\u5220\u9664\u7528\u6237"
+            },
+            {
+                "id": 115,
+                "intro": "\u4ec5\u53ef\u4fee\u6539\u6bd4\u81ea\u5df1\u89d2\u8272\u7b49\u7ea7\u4f4e\u7684\u89d2\u8272",
+                "name": "\u4fee\u6539\u7528\u6237\u89d2\u8272"
+            },
+            {
+                "id": 120,
+                "intro": "",
+                "name": "\u4fee\u6539\u7528\u6237\u5907\u6ce8"
+            },
+            {
+                "id": 1020,
+                "intro": "",
+                "name": "\u4e0a\u4f20\u56fe\u7247"
+            },
+            {
+                "id": 1030,
+                "intro": "",
+                "name": "\u79fb\u52a8\u6587\u4ef6"
+            },
+            {
+                "id": 1040,
+                "intro": "",
+                "name": "\u4fee\u6539\u56fe\u7247\u540d\u79f0"
+            },
+            {
+                "id": 1050,
+                "intro": "",
+                "name": "\u5220\u9664\u56fe\u7247"
+            },
+            {
+                "id": 1060,
+                "intro": "",
+                "name": "\u5bfc\u51fa\u7ffb\u8bd1"
+            },
+            {
+                "id": 1080,
+                "intro": "",
+                "name": "\u65b0\u5efa\u56fe\u7247\u6807\u8bb0"
+            },
+            {
+                "id": 1090,
+                "intro": "",
+                "name": "\u79fb\u52a8\u56fe\u7247\u6807\u8bb0"
+            },
+            {
+                "id": 1100,
+                "intro": "",
+                "name": "\u5220\u9664\u56fe\u7247\u6807\u8bb0"
+            },
+            {
+                "id": 1110,
+                "intro": "",
+                "name": "\u65b0\u589e\u7ffb\u8bd1"
+            },
+            {
+                "id": 1120,
+                "intro": "",
+                "name": "\u5220\u9664\u4ed6\u4eba\u7ffb\u8bd1"
+            },
+            {
+                "id": 1130,
+                "intro": "",
+                "name": "\u6821\u5bf9\u7ffb\u8bd1"
+            },
+            {
+                "id": 1140,
+                "intro": "\u5c06\u67d0\u6761\u7ffb\u8bd1\u6307\u5b9a\u5bfc\u51fa\u9879",
+                "name": "\u9009\u5b9a\u7ffb\u8bd1"
+            }
+        ],
+        "system": true,
+        "system_code": "coordinator"
+    },
+    {
+        "create_time": "2023-01-31T02:25:40.672000",
+        "id": "63d87c24b8bebd75ff934266",
+        "level": 200,
+        "name": "\u6821\u5bf9",
+        "permissions": [
+            {
+                "id": 1,
+                "intro": "",
+                "name": "\u8bbf\u95ee\u9879\u76ee"
+            },
+            {
+                "id": 1060,
+                "intro": "",
+                "name": "\u5bfc\u51fa\u7ffb\u8bd1"
+            },
+            {
+                "id": 1080,
+                "intro": "",
+                "name": "\u65b0\u5efa\u56fe\u7247\u6807\u8bb0"
+            },
+            {
+                "id": 1090,
+                "intro": "",
+                "name": "\u79fb\u52a8\u56fe\u7247\u6807\u8bb0"
+            },
+            {
+                "id": 1100,
+                "intro": "",
+                "name": "\u5220\u9664\u56fe\u7247\u6807\u8bb0"
+            },
+            {
+                "id": 1110,
+                "intro": "",
+                "name": "\u65b0\u589e\u7ffb\u8bd1"
+            },
+            {
+                "id": 1130,
+                "intro": "",
+                "name": "\u6821\u5bf9\u7ffb\u8bd1"
+            },
+            {
+                "id": 1140,
+                "intro": "\u5c06\u67d0\u6761\u7ffb\u8bd1\u6307\u5b9a\u5bfc\u51fa\u9879",
+                "name": "\u9009\u5b9a\u7ffb\u8bd1"
+            }
+        ],
+        "system": true,
+        "system_code": "proofreader"
+    },
+    {
+        "create_time": "2023-01-31T02:25:40.678000",
+        "id": "63d87c24b8bebd75ff934267",
+        "level": 200,
+        "name": "\u7ffb\u8bd1",
+        "permissions": [
+            {
+                "id": 1,
+                "intro": "",
+                "name": "\u8bbf\u95ee\u9879\u76ee"
+            },
+            {
+                "id": 1060,
+                "intro": "",
+                "name": "\u5bfc\u51fa\u7ffb\u8bd1"
+            },
+            {
+                "id": 1080,
+                "intro": "",
+                "name": "\u65b0\u5efa\u56fe\u7247\u6807\u8bb0"
+            },
+            {
+                "id": 1090,
+                "intro": "",
+                "name": "\u79fb\u52a8\u56fe\u7247\u6807\u8bb0"
+            },
+            {
+                "id": 1100,
+                "intro": "",
+                "name": "\u5220\u9664\u56fe\u7247\u6807\u8bb0"
+            },
+            {
+                "id": 1110,
+                "intro": "",
+                "name": "\u65b0\u589e\u7ffb\u8bd1"
+            }
+        ],
+        "system": true,
+        "system_code": "translator"
+    },
+    {
+        "create_time": "2023-01-31T02:25:40.690000",
+        "id": "63d87c24b8bebd75ff934268",
+        "level": 200,
+        "name": "\u5d4c\u5b57",
+        "permissions": [
+            {
+                "id": 1,
+                "intro": "",
+                "name": "\u8bbf\u95ee\u9879\u76ee"
+            },
+            {
+                "id": 1060,
+                "intro": "",
+                "name": "\u5bfc\u51fa\u7ffb\u8bd1"
+            },
+            {
+                "id": 1080,
+                "intro": "",
+                "name": "\u65b0\u5efa\u56fe\u7247\u6807\u8bb0"
+            },
+            {
+                "id": 1090,
+                "intro": "",
+                "name": "\u79fb\u52a8\u56fe\u7247\u6807\u8bb0"
+            },
+            {
+                "id": 1100,
+                "intro": "",
+                "name": "\u5220\u9664\u56fe\u7247\u6807\u8bb0"
+            }
+        ],
+        "system": true,
+        "system_code": "picture_editor"
+    },
+    {
+        "create_time": "2023-01-31T02:25:40.694000",
+        "id": "63d87c24b8bebd75ff934269",
+        "level": 100,
+        "name": "\u89c1\u4e60\u7ffb\u8bd1",
+        "permissions": [
+            {
+                "id": 1,
+                "intro": "",
+                "name": "\u8bbf\u95ee\u9879\u76ee"
+            },
+            {
+                "id": 1110,
+                "intro": "",
+                "name": "\u65b0\u589e\u7ffb\u8bd1"
+            }
+        ],
+        "system": true,
+        "system_code": "supporter"
+    }
+]

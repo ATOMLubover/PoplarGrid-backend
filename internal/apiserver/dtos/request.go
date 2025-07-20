@@ -2,27 +2,20 @@ package dtos
 
 // CreateProjectRequest 定义了创建项目的请求体
 type CreateProjectRequest struct {
-	Title       string `json:"title" binding:"required"`      // 项目标题，必填，最大长度 40
+	Title       string `json:"title" binding:"required"`      // 项目标题，必填
 	WorksetId   uint   `json:"workset_id" binding:"required"` // 作品集 ID，必填
 	Description string `json:"description"`                   // 项目描述
+
+	AllowAutoJoin bool `json:"allow_auto_join"` // 是否允许自动加入，默认为 false
+	IsHidden      bool `json:"is_hidden"`       // 是否隐藏项目，默认为 false
 }
 
 // UpdateProjectRequest 定义了更新项目的请求体
 type UpdateProjectRequest struct {
-	ProjectId   uint   `json:"project_id" binding:"required"`    // 项目 ID，必填
-	Title       string `json:"title" binding:"required, max:40"` // 项目标题，最大长度 40
-	Description string `json:"description"`                      // 项目描述
-}
-
-// UpdateProjectStatusRequest 定义了更新项目状态的请求体
-type UpdateProjectStatusRequest struct {
-	ProjectId uint `json:"project_id" binding:"required"` // 项目 ID，必填
-	Status    uint `json:"status" binding:"required"`     // 新的项目状态，必填
-}
-
-// DeleteProjectRequest 定义了要删除的项目状态的请求体
-type DeleteProjectRequest struct {
-	ProjectId uint `json:"project_id" binding:"required"` // 项目 ID，必填
+	ProjectId   uint   `json:"project_id" binding:"required"` // 项目 ID，必填
+	Title       string `json:"title" binding:"required"`      // 项目标题
+	Description string `json:"description"`                   // 项目描述
+	Status      uint   `json:"status"`                        // 项目状态，使用位掩码表示
 }
 
 // InviteMemberRequest 定义了邀请成员加入项目的请求体

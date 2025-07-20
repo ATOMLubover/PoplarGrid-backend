@@ -13,13 +13,11 @@ func RouteTeamHandler(root *mvc.Application) {
 	handler := &TeamHandler{}
 
 	// 注册路由组
-	party := root.Party("/team")
-
-	// 注册 handler
-	party.Handle(handler)
+	teamParty := root.Party("/teams").
+		Handle(handler)
 
 	// 注册路由与方法的映射（类型安全）
-	party.Router.Get("/member_list", handler.MemberListPage)
+	teamParty.Router.Get("", handler.MemberListPage)
 }
 
 // TeamHandler 处理汉化组信息相关的请求
@@ -36,7 +34,9 @@ type TeamHandler struct {
 // @Tags 		team
 // @Produce 	json
 // @Success	 	200 {object} []dtos.MemberBasic
-// @Router 		/team/member_list [get]
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Router 		/teams [get]
 func (h *TeamHandler) MemberListPage(ctx iris.Context) {
 	// 获取分页参数
 	pageSerial := ctx.URLParamIntDefault("page_serial", 1)
@@ -46,7 +46,9 @@ func (h *TeamHandler) MemberListPage(ctx iris.Context) {
 	teamId, err := ctx.URLParamInt("team_id")
 	if err != nil || teamId <= 0 {
 		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(iris.Map{"error": "team_id 必须是一个明确给出的正整数"})
+		ctx.JSON(ErrorResponse{
+			Error: "team_id 必须是一个明确给出的正整数",
+		})
 		return
 	}
 
@@ -54,7 +56,10 @@ func (h *TeamHandler) MemberListPage(ctx iris.Context) {
 	members, err := h.TeamService.GetMemberBasicPage(uint(teamId), pageSerial, pageSize)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(iris.Map{"error": "获取成员列表失败"})
+		ctx.JSON(ErrorResponse{
+			Error:  "获取特定汉化组的成员基础信息列表失败",
+			Detail: err.Error(),
+		})
 		return
 	}
 

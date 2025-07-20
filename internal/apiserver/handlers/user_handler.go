@@ -52,13 +52,17 @@ type UserHandler struct {
 // @Tags 		user
 // @Produce 	json
 // @Success	 	200 {object} dtos.UserDetail
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
 // @Router 		/user/detail [get]
 func (h *UserHandler) UserDetail(ctx iris.Context) {
 	// 从查询参数获取用户 ID
 	userId, err := ctx.URLParamInt("user_id")
 	if err != nil || userId <= 0 {
 		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(map[string]string{"error": "无效的用户 ID"})
+		ctx.JSON(ErrorResponse{
+			Error: "无法获得有效的 user_id",
+		})
 		return
 	}
 
@@ -66,7 +70,10 @@ func (h *UserHandler) UserDetail(ctx iris.Context) {
 	userDetail, err := h.UserService.GetUserDetail(uint(userId))
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(iris.Map{"error": "获取用户详情失败"})
+		ctx.JSON(ErrorResponse{
+			Error:  "获取特定用户详情失败",
+			Detail: err.Error(),
+		})
 		return
 	}
 
@@ -86,13 +93,17 @@ type UserMyHandler struct {
 // @Tags 		user_my
 // @Produce 	json
 // @Success	 	200 {object} dtos.UserDetail
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
 // @Router 		/user/my/detail [get]
 func (h *UserMyHandler) MyDetail(ctx iris.Context) {
 	// 从上下文获取当前用户 ID
 	userId, err := ctx.Values().GetInt("user_id")
 	if err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(map[string]string{"error": "无效的用户 ID"})
+		ctx.JSON(ErrorResponse{
+			Error: "无法提取有效的 user_id",
+		})
 		return
 	}
 
@@ -100,7 +111,10 @@ func (h *UserMyHandler) MyDetail(ctx iris.Context) {
 	userDetail, err := h.UserService.GetUserDetail(uint(userId))
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(iris.Map{"error": "获取用户详情失败"})
+		ctx.JSON(ErrorResponse{
+			Error:  "获取当前用户详情失败",
+			Detail: err.Error(),
+		})
 		return
 	}
 
@@ -113,13 +127,17 @@ func (h *UserMyHandler) MyDetail(ctx iris.Context) {
 // @Tags 		user_my
 // @Produce 	json
 // @Success	 	200 {object} []dtos.TeamBasic
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
 // @Router 		/user/my/teams [get]
 func (h *UserMyHandler) MyTeams(ctx iris.Context) {
 	// 从上下文获取当前用户 ID
 	userId, err := ctx.Values().GetInt("user_id")
 	if err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(map[string]string{"error": "无效的用户 ID"})
+		ctx.JSON(ErrorResponse{
+			Error: "无法提取有效的 user_id",
+		})
 		return
 	}
 
@@ -129,7 +147,7 @@ func (h *UserMyHandler) MyTeams(ctx iris.Context) {
 		pageSerial = 1
 	}
 	pageSize, _ := ctx.URLParamInt("page_size")
-	if pageSize <= 0 || pageSize > 100 {
+	if pageSize <= 0 || pageSize > 50 {
 		pageSize = 10
 	}
 
@@ -137,7 +155,10 @@ func (h *UserMyHandler) MyTeams(ctx iris.Context) {
 	teams, err := h.TeamService.GetTeamBasicPageByUserId(uint(userId), pageSerial, pageSize)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(map[string]string{"error": "获取汉化组列表失败"})
+		ctx.JSON(ErrorResponse{
+			Error:  "获取当前用户所属的汉化组列表失败",
+			Detail: err.Error(),
+		})
 		return
 	}
 
@@ -152,7 +173,9 @@ func (h *UserMyHandler) MyTeams(ctx iris.Context) {
 // @Param 		page_size query int false "每页数量，默认值为 10"
 // @Tags 		user_my
 // @Produce 	json
-// @Success	 	200 {object} []dtos.ProjectBasic
+// @Success	 	200 {object} []dtos.MyProjectBasic
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
 // @Router 		/user/my/project_list [get]
 func (h *UserMyHandler) MyProjectList(ctx iris.Context) {
 	// 从上下文获取当前用户 ID
@@ -177,7 +200,7 @@ func (h *UserMyHandler) MyProjectList(ctx iris.Context) {
 	projects, err := h.ProjectService.GetBasicPageByUserId(uint(userId), pageSerial, pageSize)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(map[string]string{"error": "获取项目列表失败"})
+		ctx.JSON(map[string]string{"error": "获取当前用户的项目列表失败"})
 		return
 	}
 
@@ -190,6 +213,8 @@ func (h *UserMyHandler) MyProjectList(ctx iris.Context) {
 // @Tags 		user_my
 // @Produce 	json
 // @Success	 	200 {object} []dtos.InvitationBasic
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
 // @Router 		/user/my/invitations_sent [get]
 func (h *UserMyHandler) MyInvitationsSent(ctx iris.Context) {
 }
@@ -200,6 +225,8 @@ func (h *UserMyHandler) MyInvitationsSent(ctx iris.Context) {
 // @Tags 		user_my
 // @Produce 	json
 // @Success	 	200 {object} []dtos.InvitationBasic
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
 // @Router 		/user/my/invitations_received [get]
 func (h *UserMyHandler) MyInvitationsReceived(ctx iris.Context) {
 }

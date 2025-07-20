@@ -2,13 +2,15 @@ package dbmodels
 
 // 项目分工表
 type ProjectLaborDivision struct {
+	BaseModel
+
 	Id PrimaryKey `gorm:"primaryKey;autoIncrement;not null"`
 
 	ProjectId PrimaryKey
 	FkProject Project `gorm:"foreignKey:ProjectId"`
 
-	MemberId PrimaryKey
-	FkMember TeamMember `gorm:"foreignKey:MemberId"`
+	UserId PrimaryKey
+	FkUser User `gorm:"foreignKey:UserId"`
 
 	// 分工，使用掩码计算多重身份
 	LaborRole LaborMask `gorm:"not null;default:0"`
@@ -20,6 +22,8 @@ func (ProjectLaborDivision) TableName() string {
 
 // 成员在汉化组中的身份
 type TeamMember struct {
+	BaseModel
+
 	Id PrimaryKey `gorm:"primaryKey;autoIncrement;not null"`
 
 	UserId PrimaryKey `gorm:"index"`
@@ -48,9 +52,29 @@ type ProjectInvitation struct {
 	ProjectId PrimaryKey `gorm:"index"`
 	FkProject Project    `gorm:"foreignKey:ProjectId"`
 
-	InviteRole LaborMask `gorm:"not null;default:0"` // 邀请的角色，使用位掩码表示
+	TargetRole LaborMask `gorm:"not null;default:0"` // 邀请的角色，使用位掩码表示
+
+	Status int `gorm:"not null;default:0"` // 邀请状态，0 pending, 1 accepted, 2 rejected
 }
 
 func (ProjectInvitation) TableName() string {
 	return "project_invitations"
+}
+
+// ProjectApplication 项目申请表
+type ProjectApplication struct {
+	Id PrimaryKey `gorm:"primaryKey;autoIncrement;not null"`
+
+	ApplicantId PrimaryKey `gorm:"index"`
+	FkApplicant User       `gorm:"foreignKey:ApplicantId"`
+	ProjectId   PrimaryKey `gorm:"index"`
+	FkProject   Project    `gorm:"foreignKey:ProjectId"`
+
+	TargetRole LaborMask `gorm:"not null;default:0"` // 申请的角色，使用位掩码表示
+
+	Status int `gorm:"not null;default:0"` // 申请状态，0 pending, 1 accepted, 2 rejected
+}
+
+func (ProjectApplication) TableName() string {
+	return "project_applications"
 }

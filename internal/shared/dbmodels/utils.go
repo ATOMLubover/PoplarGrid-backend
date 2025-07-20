@@ -23,7 +23,7 @@ type BaseModel struct {
 
 // 职责掩码位移常量
 const (
-	LABOR_CREATOR_SHIFT      = iota // 负责人 - 位移 0
+	LABOR_DIRECTOR_SHIFT     = iota // 负责人/组内管理员 - 位移 0
 	LABOR_PRINCIPAL_SHIFT           // 监制 - 位移 1
 	LABOR_SRC_PROV_SHIFT            // 图源 - 位移 2
 	LABOR_CLEANER_SHIFT             // 美工 - 位移 3
@@ -40,7 +40,7 @@ type LaborMask uint
 
 // 各职责对应的掩码常量 (通过左移位移量生成)
 const (
-	LABOR_CREATOR_MASK      LaborMask = 1 << LABOR_CREATOR_SHIFT
+	LABOR_CREATOR_MASK      LaborMask = 1 << LABOR_DIRECTOR_SHIFT
 	LABOR_PRINCIPAL_MASK    LaborMask = 1 << LABOR_PRINCIPAL_SHIFT
 	LABOR_SRC_PROV_MASK     LaborMask = 1 << LABOR_SRC_PROV_SHIFT
 	LABOR_CLEANER_MASK      LaborMask = 1 << LABOR_CLEANER_SHIFT
@@ -53,18 +53,18 @@ const (
 )
 
 // HasRole 检查 LaborMask 是否包含某个职责
-func (plm LaborMask) HasRole(roleMask LaborMask) bool {
-	return (plm & roleMask) != 0
+func (m LaborMask) HasRole(roleMask LaborMask) bool {
+	return (m & roleMask) != 0
 }
 
 // AddRole 为 LaborMask 添加一个职责
-func (plm *LaborMask) AddRole(roleMask LaborMask) {
-	*plm |= roleMask
+func (m *LaborMask) AddRole(roleMask LaborMask) {
+	*m |= roleMask
 }
 
 // RemoveRole 从 LaborMask 中移除一个职责
-func (plm *LaborMask) RemoveRole(roleMask LaborMask) {
-	*plm &= ^roleMask
+func (m *LaborMask) RemoveRole(roleMask LaborMask) {
+	*m &= ^roleMask
 }
 
 // NewLaborMask 根据多个职责掩码创建一个新的复合掩码

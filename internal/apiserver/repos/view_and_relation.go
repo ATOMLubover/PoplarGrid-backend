@@ -3,6 +3,7 @@ package repos
 import (
 	"poplargrid/internal/shared/dbmodels"
 
+	"github.com/kataras/iris/v12/x/errors"
 	"gorm.io/gorm"
 )
 
@@ -59,8 +60,12 @@ type LaborRepo interface {
 	// SelectByProjectId 获取指定项目 ID 的成员分工列表
 	SelectByProjectId(projectId dbmodels.PrimaryKey) ([]*dbmodels.ProjectLaborDivision, error)
 
-	// SelectProjectBasicPageIdDescByUserId 获取用户参与的项目列表，按 ID 倒序，支持分页
-	SelectProjectBasicPageIdDescByUserId(userId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.Project, error)
+	// SelectProjectPageByUserId 获取用户参与的项目列表，按 ID 倒序，支持分页
+	// 注意：这个函数会预加载递归的 FkTeam 的信息
+	SelectProjectPageByUserId(userId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.ProjectLaborDivision, error)
+
+	// CreateLaborDivision 创建一个新的成员分工记录
+	CreateLaborDivision(labor *dbmodels.ProjectLaborDivision) error
 }
 
 // laborRepoImpl 是 LaborRepo 的实现
@@ -80,13 +85,9 @@ func (r *laborRepoImpl) SelectByProjectId(projectId dbmodels.PrimaryKey) ([]*dbm
 	var labors []*dbmodels.ProjectLaborDivision
 
 	if err := r.handle.Model(&dbmodels.ProjectLaborDivision{}).
-		// 这里使用递归的 Preload 来加载成员和用户信息
-		Preload("FkMember", func(dbMem *gorm.DB) *gorm.DB {
-			return dbMem.
-				Select("id", "user_id"). // Member 只需要 id、user_id
-				Preload("FkMember.FkUser", func(dbUser *gorm.DB) *gorm.DB {
-					return dbUser.Select("id, nickname") // User 只需要 id、nickname
-				})
+		// 这里使用 Preload 来加载用户信息
+		Preload("FkUser", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "nickname") // User 只需要 id、nickname
 		}).
 		Where("project_id = ?", projectId).
 		Find(&labors).
@@ -97,32 +98,33 @@ func (r *laborRepoImpl) SelectByProjectId(projectId dbmodels.PrimaryKey) ([]*dbm
 	return labors, nil
 }
 
-// SelectProjectBasicPageIdDescByUserId 实现 LaborRepo 接口的 SelectProjectBasicPageIdDescByUserId 方法
-func (r *laborRepoImpl) SelectProjectBasicPageIdDescByUserId(userId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.Project, error) {
-	var projects []*dbmodels.Project
+// SelectProjectPageByUserId 实现 LaborRepo 接口的 SelectProjectPageByUserId 方法
+func (r *laborRepoImpl) SelectProjectPageByUserId(userId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.ProjectLaborDivision, error) {
+	var labors []*dbmodels.ProjectLaborDivision
 
-	// 为每个字段前加上表名限定
-	var selectFields []string
-
-	for _, field := range kProjectBasicFields {
-		selectFields = append(selectFields, "projects."+field)
-	}
-
-	if err := r.handle.Model(&dbmodels.Project{}).
-		Select(selectFields).
-		// 使用 INNER JOIN 连接 project_labor_divisions 表，选出指定用户参与的项目
-		// 如果用户没有参与任何项目，则不会返回任何结果
-		Joins("JOIN project_labor_divisions ON project_labor_divisions.project_id = projects.id").
-		Where("project_labor_divisions.user_id = ?", userId).
-		Order("projects.id DESC").
-		Offset(offset).
-		Limit(limit).
-		Find(&projects).
+	if err := r.handle.Model(&dbmodels.ProjectLaborDivision{}).
+		// 预加载 FkProject 关联的 Project 信息
+		Preload("FkProject", func(db *gorm.DB) *gorm.DB {
+			return db.Select(kProjectBasicFields)
+		}).
+		Select("id", "project_id", "labor_role").
+		Order("id DESC"). // 按 ID 倒序，也就是按加入时间新到旧
+		Find(&labors).
 		Error; err != nil {
 		return nil, err
 	}
 
-	return projects, nil
+	return labors, nil
+}
+
+// CreateLaborDivision 实现 LaborRepo 接口的 CreateLaborDivision 方法
+func (r *laborRepoImpl) CreateLaborDivision(labor *dbmodels.ProjectLaborDivision) error {
+	if labor == nil {
+		return errors.New("labor 不能为 nil")
+	}
+
+	return r.handle.Model(&dbmodels.ProjectLaborDivision{}).
+		Create(labor).Error
 }
 
 // TeamMemberRepo 接口定义了成员仓库的基本操作

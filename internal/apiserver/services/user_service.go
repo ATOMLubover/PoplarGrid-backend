@@ -1,6 +1,8 @@
 package services
 
 import (
+	"errors"
+	"log/slog"
 	"poplargrid/internal/apiserver/dtos"
 	"poplargrid/internal/apiserver/repos"
 	"poplargrid/internal/shared/dbmodels"
@@ -15,6 +17,7 @@ type UserService interface {
 // userServiceImpl 是 UserService 接口的实现
 type userServiceImpl struct {
 	userRepo repos.UserRepo
+	logger   *slog.Logger
 }
 
 // NewUserService 创建一个新的 UserService 实例
@@ -28,7 +31,10 @@ func NewUserService(userRepo repos.UserRepo) UserService {
 func (s *userServiceImpl) GetUserDetail(userId uint) (*dtos.UserDetail, error) {
 	user, err := s.userRepo.SelectByUserId(dbmodels.PrimaryKey(userId))
 	if err != nil {
-		return nil, err
+		s.logger.Error("GetUserDetail 调用 SelectByUserId 中出现错误",
+			slog.Uint64("user_id", uint64(userId)),
+			slog.Any("error", err))
+		return nil, errors.New("无法读取到指定 user 的详细信息")
 	}
 
 	// 将 dbmodels.User 转换为 dtos.UserDetail
