@@ -93,26 +93,37 @@ type MemberBasic struct {
 	Role     uint   `json:"role"`     // 成员在组内的职责
 }
 
+// InnerProject 定义了内嵌携带的简单项目信息
+type InnerProject struct {
+	Id           uint                 `json:"project_id"`    // 所属项目 ID
+	Title        string               `json:"project_title"` // 项目标题
+	WorksetId    uint                 `json:"workset_id"`    // 所属作品
+	WorksetIndex uint                 `json:"workset_index"` // 作品集内的序号
+	Status       ProjectOverallStatus `json:"status"`        // 项目状态，使用位
+}
+
 // InvitationBasic 定义了邀请的基本信息
 type InvitationBasic struct {
-	Id              uint   `json:"id"`               // 邀请 ID
-	InviterId       uint   `json:"inviter_id"`       // 邀请者 ID
-	InviterNickname string `json:"inviter_nickname"` // 邀请者昵称
+	Id        uint `json:"id"`         // 邀请 ID
+	InviterId uint `json:"inviter_id"` // 邀请者 ID
+	// InviterNickname string `json:"inviter_nickname"` // 邀请者昵称
 	InviteeId       uint   `json:"invitee_id"`       // 被邀请者 ID
 	InviteeNickname string `json:"invitee_nickname"` // 被邀请者昵称
-	ProjectId       uint   `json:"project_id"`       // 所属项目 ID
 	InviteRole      uint   `json:"invite_role"`      // 邀请的角色，使用位掩码表示
 	Status          int    `json:"status"`           // 邀请状态，0 pending, 1 accepted, 2 rejected
+
+	Project InnerProject `json:"project"` // 所属项目的基本信息
 }
 
 // ApplicationBasic 定义了申请的基本信息
 type ApplicationBasic struct {
 	Id          uint   `json:"id"`           // 申请 ID
 	ApplicantId uint   `json:"applicant_id"` // 申请者 ID
-	ProjectId   uint   `json:"project_id"`   // 所属项目 ID
 	Nickname    string `json:"nickname"`     // 申请者昵称
 	Role        uint   `json:"role"`         // 申请的角色，使用位掩码表示
 	Status      int    `json:"status"`       // 申请状态，0 pending, 1 accepted, 2 rejected
+
+	Project InnerProject `json:"project"` // 所属项目的基本信息
 }
 
 // LaborDivision 定义了项目成员的分工信息

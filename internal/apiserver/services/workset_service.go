@@ -12,8 +12,8 @@ type WorksetService interface {
 	// GetBasicPageIdDesc 获取作品集列表，按 ID 倒序
 	GetBasicPage(pageSerial, pageSize int) ([]*dtos.WorksetBasic, error)
 
-	// GetProjectStats 获取特定作品集的项目统计信息
-	GetProjectStats(worksetId uint) (*dtos.ProjectStats, error)
+	// GetProjectStatsByWorksetId 获取特定作品集的项目统计信息
+	GetProjectStatsByWorksetId(worksetId uint) (*dtos.ProjectStats, error)
 }
 
 // worksetServiceImpl 是 WorksetService 的实现
@@ -58,8 +58,8 @@ func (s *worksetServiceImpl) GetBasicPage(pageSerial, pageSize int) ([]*dtos.Wor
 	return worksetBasics, nil
 }
 
-// GetProjectStats 实现 WorksetService 接口的 GetProjectStats 方法
-func (s *worksetServiceImpl) GetProjectStats(worksetId uint) (*dtos.ProjectStats, error) {
+// GetProjectStatsByWorksetId 实现 WorksetService 接口的 GetProjectStatsByWorksetId 方法
+func (s *worksetServiceImpl) GetProjectStatsByWorksetId(worksetId uint) (*dtos.ProjectStats, error) {
 	// 调用仓库方法获取项目统计信息
 	stats, err := s.materialView.SelectProjectStats(dbmodels.PrimaryKey(worksetId))
 	if err != nil {

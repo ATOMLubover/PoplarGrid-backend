@@ -15,159 +15,33 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/project/labor/accept": {
-            "post": {
-                "description": "接受邀请加入项目，需提供邀请的 ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project_labor"
-                ],
-                "summary": "接受邀请加入项目",
-                "parameters": [
-                    {
-                        "description": "接受邀请加入项目的请求体",
-                        "name": "body_params",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.AcceptInvitationRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "接受成功",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.SuccessResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/project/labor/accept_appli": {
-            "post": {
-                "description": "接受申请加入项目，需提供申请的 ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project_labor"
-                ],
-                "summary": "接受申请加入项目",
-                "parameters": [
-                    {
-                        "description": "接受申请加入项目的请求体",
-                        "name": "body_params",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.AcceptApplicationRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "接受成功",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.SuccessResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/project/labor/apply": {
-            "post": {
-                "description": "申请加入项目，需提供项目 ID 和申请的职位",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project_labor"
-                ],
-                "summary": "申请加入项目",
-                "parameters": [
-                    {
-                        "description": "申请加入项目的请求体",
-                        "name": "body_params",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ApplyProjectRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "申请成功",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.SuccessResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/project/labor/division": {
+        "/invitations": {
             "get": {
-                "description": "获取指定项目的分工信息，包括成员的角色和状态",
+                "description": "根据分页参数获取用户发送的邀请列表，支持分页和排序。当列表为空时，会返回 null 而不是空数组。",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "project_labor"
+                    "invitation"
                 ],
-                "summary": "获取指定项目的分工信息",
+                "summary": "获取当前用户的邀请（发出或者收到）列表，支持分页",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "项目 ID，必填",
-                        "name": "project_id",
+                        "description": "页码，默认值为 1",
+                        "name": "page_serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认值为 10",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "邀请类型，0：发送的邀请，1：收到的邀请",
+                        "name": "kind",
                         "in": "query",
                         "required": true
                     }
@@ -178,7 +52,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dtos.LaborDivision"
+                                "$ref": "#/definitions/dtos.InvitationBasic"
                             }
                         }
                     },
@@ -195,24 +69,19 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/project/labor/invite": {
+            },
             "post": {
-                "description": "邀请成员加入项目，需提供成员的 ID、项目 ID 和邀请职位",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "创建一个新的邀请，邀请用户加入项目",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "project_labor"
+                    "invitation"
                 ],
-                "summary": "邀请成员加入项目",
+                "summary": "创建一个新的邀请",
                 "parameters": [
                     {
-                        "description": "邀请成员加入项目的请求体",
+                        "description": "邀请参数",
                         "name": "body_params",
                         "in": "body",
                         "required": true,
@@ -223,7 +92,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "邀请成功",
+                        "description": "邀请创建成功",
                         "schema": {
                             "$ref": "#/definitions/handlers.SuccessResponse"
                         }
@@ -243,108 +112,16 @@ const docTemplate = `{
                 }
             }
         },
-        "/project/labor/refuse": {
-            "post": {
-                "description": "拒绝邀请加入项目，需提供邀请的 ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project_labor"
-                ],
-                "summary": "拒绝邀请加入项目",
-                "parameters": [
-                    {
-                        "description": "拒绝邀请加入项目的请求体",
-                        "name": "body_params",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.RefuseInvitationRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "拒绝成功",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.SuccessResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/project/labor/refuse_appli": {
-            "post": {
-                "description": "拒绝申请加入项目，需提供申请的 ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project_labor"
-                ],
-                "summary": "拒绝申请加入项目",
-                "parameters": [
-                    {
-                        "description": "拒绝申请加入项目的请求体",
-                        "name": "body_params",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.RefuseApplicationRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "拒绝成功",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.SuccessResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/project/list": {
+        "/projects": {
             "get": {
-                "description": "注意当列表为空，会返回 null 而不是空数组；如果要单独查询已发布的项目列表，请使用 /project/published_list 接口",
+                "description": "根据作品集 ID 获取项目列表，支持分页、排序和状态筛选。当列表为空时，会返回 null 而不是空数组。",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "project"
                 ],
-                "summary": "获取项目列表分页",
+                "summary": "获取项目列表分页 (按作品集筛选)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -372,7 +149,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "项目所属的作品集 ID，必填",
+                        "description": "项目所属的作品集 ID",
                         "name": "workset_id",
                         "in": "query",
                         "required": true
@@ -401,11 +178,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/project/proc/create": {
+            },
             "post": {
-                "description": "创建一个新的项目，请求体暂时未确定",
+                "description": "创建一个新的项目",
                 "consumes": [
                     "application/json"
                 ],
@@ -449,12 +224,48 @@ const docTemplate = `{
                 }
             }
         },
-        "/project/proc/delete": {
+        "/projects/{id}": {
+            "get": {
+                "description": "获取指定项目的详细信息，包括翻译、校对、嵌字、审核、发布等状态",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "project"
+                ],
+                "summary": "获取项目详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "项目 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ProjectDetail"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "description": "删除指定的项目，需提供项目 ID",
-                "consumes": [
-                    "multipart/form-data"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -464,13 +275,11 @@ const docTemplate = `{
                 "summary": "删除项目",
                 "parameters": [
                     {
-                        "description": "要删除项目的信息",
-                        "name": "body_params",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.DeleteProjectRequest"
-                        }
+                        "type": "integer",
+                        "description": "项目 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -493,13 +302,11 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/project/proc/update_info": {
-            "put": {
+            },
+            "patch": {
                 "description": "更新指定的项目，需提供项目 ID",
                 "consumes": [
-                    "multipart/form-data"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -509,6 +316,13 @@ const docTemplate = `{
                 ],
                 "summary": "更新项目",
                 "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "项目 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
                     {
                         "description": "更新的项目信息",
                         "name": "body_params",
@@ -541,68 +355,22 @@ const docTemplate = `{
                 }
             }
         },
-        "/project/proc/update_status": {
-            "put": {
-                "description": "更新指定项目的状态，需提供项目 ID 和新的状态，调用一次只允许更新一个状态",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project_proc"
-                ],
-                "summary": "更新项目状态",
-                "parameters": [
-                    {
-                        "description": "更新项目状态的信息",
-                        "name": "body_params",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.UpdateProjectStatusRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "更新成功",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.SuccessResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/project/{id}": {
+        "/projects/{id}/labors": {
             "get": {
-                "description": "获取指定项目的详细信息，包括翻译、校对、嵌字、审核、发布等状态",
+                "description": "获取指定项目的分工信息，包括成员的角色和状态",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "project"
+                    "project_labor"
                 ],
-                "summary": "获取项目详情",
+                "summary": "获取指定项目的分工信息",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "项目 ID",
                         "name": "id",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -610,7 +378,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dtos.ProjectDetail"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.LaborDivision"
+                            }
                         }
                     },
                     "400": {
@@ -628,7 +399,56 @@ const docTemplate = `{
                 }
             }
         },
-        "/team/member_list": {
+        "/teams": {
+            "get": {
+                "description": "根据分页参数获取汉化组列表，支持分页和排序。当列表为空时，会返回 null 而不是空数组。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "team"
+                ],
+                "summary": "获取当前用户的汉化组列表分页",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，默认值为 1",
+                        "name": "page_serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认值为 10",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.TeamBasic"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/teams/{id}/members": {
             "get": {
                 "description": "注意当列表为空，会返回 null 而不是空数组",
                 "produces": [
@@ -654,8 +474,8 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "所属汉化组 ID，必填",
-                        "name": "team_id",
-                        "in": "query",
+                        "name": "id",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -684,9 +504,65 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/detail": {
+        "/users/{id}/applications_sent": {
             "get": {
-                "description": "获取指定用户的详细信息，包括 ID、昵称等",
+                "description": "根据分页参数获取用户发送的申请列表，支持分页和排序\\n当列表为空时，会返回 null 而不是空数组\\n如果 id 不是当前登录的用户 ID，则返回 400 错误",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "application"
+                ],
+                "summary": "获取当前用户的申请列表，支持分页",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，默认值为 1",
+                        "name": "page_serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认值为 10",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "用户 ID，必填",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.ApplicationBasic"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}/detail": {
+            "get": {
+                "description": "获取指定用户的详细信息，包括 ID、昵称、QQ 等",
                 "produces": [
                     "application/json"
                 ],
@@ -698,8 +574,8 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "用户 ID",
-                        "name": "user_id",
-                        "in": "query",
+                        "name": "id",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -725,118 +601,16 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/my/detail": {
+        "/users/{id}/invitations": {
             "get": {
-                "description": "获取当前登录用户的详细信息，包括 ID、用户名、头像等",
+                "description": "根据分页参数获取用户发送的邀请列表，支持分页和排序\\n当列表为空时，会返回 null 而不是空数组\\n如果 id 不是当前登录的用户 ID，则返回 400 错误",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "user_my"
+                    "invitation"
                 ],
-                "summary": "获取当前用户的详细信息",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.UserDetail"
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/my/invitations_received": {
-            "get": {
-                "description": "获取当前登录用户收到的所有邀请列表，仅包括项目邀请",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user_my"
-                ],
-                "summary": "获取当前用户的收到的邀请列表",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dtos.InvitationBasic"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/my/invitations_sent": {
-            "get": {
-                "description": "获取当前登录用户发出的所有邀请列表，仅包括项目邀请",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user_my"
-                ],
-                "summary": "获取当前用户的邀请列表",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dtos.InvitationBasic"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/my/project_list": {
-            "get": {
-                "description": "获取当前登录用户参与的所有项目列表，按照 ID 倒序排列",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user_my"
-                ],
-                "summary": "获取当前用户的项目列表",
+                "summary": "获取当前用户的邀请（发出或者收到）列表，支持分页",
                 "parameters": [
                     {
                         "type": "integer",
@@ -849,6 +623,76 @@ const docTemplate = `{
                         "description": "每页数量，默认值为 10",
                         "name": "page_size",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "用户 ID，必填",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "邀请类型，0：发送的邀请，1：收到的邀请",
+                        "name": "kind",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.InvitationBasic"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}/projects": {
+            "get": {
+                "description": "获取指定用户参与的所有项目列表，支持分页和排序",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "获取用户参与的项目列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，默认值为 1",
+                        "name": "page_serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认值为 10",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -876,16 +720,37 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/my/teams": {
+        "/users/{id}/teams": {
             "get": {
-                "description": "获取当前登录用户所属的所有汉化组列表",
+                "description": "获取指定用户参与的所有汉化组列表，支持分页和排序",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "user_my"
+                    "user"
                 ],
-                "summary": "获取当前用户的汉化组列表",
+                "summary": "获取当前用户参与的汉化组列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，默认值为 1",
+                        "name": "page_serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认值为 10",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1010,43 +875,31 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dtos.AcceptApplicationRequest": {
+        "dtos.ApplicationBasic": {
             "type": "object",
-            "required": [
-                "application_id"
-            ],
             "properties": {
-                "application_id": {
-                    "description": "申请的 ID",
-                    "type": "integer"
-                }
-            }
-        },
-        "dtos.AcceptInvitationRequest": {
-            "type": "object",
-            "required": [
-                "invitation_id"
-            ],
-            "properties": {
-                "invitation_id": {
-                    "description": "邀请的 ID",
-                    "type": "integer"
-                }
-            }
-        },
-        "dtos.ApplyProjectRequest": {
-            "type": "object",
-            "required": [
-                "apply_role",
-                "project_id"
-            ],
-            "properties": {
-                "apply_role": {
-                    "description": "申请加入的职位 (使用 uint 存储位掩码)",
+                "applicant_id": {
+                    "description": "申请者 ID",
                     "type": "integer"
                 },
+                "id": {
+                    "description": "申请 ID",
+                    "type": "integer"
+                },
+                "nickname": {
+                    "description": "申请者昵称",
+                    "type": "string"
+                },
                 "project_id": {
-                    "description": "项目 ID",
+                    "description": "所属项目 ID",
+                    "type": "integer"
+                },
+                "role": {
+                    "description": "申请的角色，使用位掩码表示",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "申请状态，0 pending, 1 accepted, 2 rejected",
                     "type": "integer"
                 }
             }
@@ -1076,18 +929,6 @@ const docTemplate = `{
                 },
                 "workset_id": {
                     "description": "作品集 ID，必填",
-                    "type": "integer"
-                }
-            }
-        },
-        "dtos.DeleteProjectRequest": {
-            "type": "object",
-            "required": [
-                "project_id"
-            ],
-            "properties": {
-                "project_id": {
-                    "description": "项目 ID，必填",
                     "type": "integer"
                 }
             }
@@ -1462,30 +1303,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dtos.RefuseApplicationRequest": {
-            "type": "object",
-            "required": [
-                "application_id"
-            ],
-            "properties": {
-                "application_id": {
-                    "description": "申请的 ID",
-                    "type": "integer"
-                }
-            }
-        },
-        "dtos.RefuseInvitationRequest": {
-            "type": "object",
-            "required": [
-                "invitation_id"
-            ],
-            "properties": {
-                "invitation_id": {
-                    "description": "邀请的 ID",
-                    "type": "integer"
-                }
-            }
-        },
         "dtos.TeamBasic": {
             "type": "object",
             "properties": {
@@ -1514,26 +1331,13 @@ const docTemplate = `{
                     "description": "项目 ID，必填",
                     "type": "integer"
                 },
+                "status": {
+                    "description": "项目状态，使用位掩码表示",
+                    "type": "integer"
+                },
                 "title": {
                     "description": "项目标题",
                     "type": "string"
-                }
-            }
-        },
-        "dtos.UpdateProjectStatusRequest": {
-            "type": "object",
-            "required": [
-                "project_id",
-                "status"
-            ],
-            "properties": {
-                "project_id": {
-                    "description": "项目 ID，必填",
-                    "type": "integer"
-                },
-                "status": {
-                    "description": "新的项目状态，必填",
-                    "type": "integer"
                 }
             }
         },
@@ -1602,6 +1406,9 @@ const docTemplate = `{
         "handlers.SuccessResponse": {
             "type": "object",
             "properties": {
+                "detail": {
+                    "description": "可选，提供额外的成功信息"
+                },
                 "message": {
                     "type": "string"
                 }

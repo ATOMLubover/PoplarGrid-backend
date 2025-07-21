@@ -13,11 +13,13 @@ func RouteTeamHandler(root *mvc.Application) {
 	handler := &TeamHandler{}
 
 	// 注册路由组
-	teamParty := root.Party("/teams").
+	teamParty := root.
+		Party("/teams").
 		Handle(handler)
 
 	// 注册路由与方法的映射（类型安全）
-	teamParty.Router.Get("", handler.MemberListPage)
+	teamParty.Router.Get("", handler.TeamListPage)
+	teamParty.Router.Get("/{id:uint}/members", handler.MemberListPage)
 }
 
 // TeamHandler 处理汉化组信息相关的请求
@@ -25,35 +27,74 @@ type TeamHandler struct {
 	TeamService services.TeamService
 }
 
+// TeamListPage godoc
+// @Summary 	获取当前用户的汉化组列表分页
+// @Description 根据分页参数获取汉化组列表，支持分页和排序。当列表为空时，会返回 null 而不是空数组。
+// @Param 		page_serial query int false "页码，默认值为 1"
+// @Param 		page_size query int false "每页数量，默认值为 10"
+// @Tags 		team
+// @Produce 	json
+// @Success	 	200 {object} []dtos.TeamBasic
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Router 		/teams [get]
+func (h *TeamHandler) TeamListPage(ctx iris.Context) {
+	// 从上下文中获取当前用户 ID
+	userId, err := ctx.Values().GetUint("user_id")
+	if err != nil || userId <= 0 {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(ErrorResponse{
+			Error: "无法获取有效的 user_id",
+		})
+		return
+	}
+
+	// 获取分页参数
+	pageSerial := ctx.URLParamIntDefault("page_serial", 1)
+	pageSize := ctx.URLParamIntDefault("page_size", 10)
+
+	// 调用服务层获取数据
+	teams, err := h.TeamService.GetBasicPageByUserId(userId, pageSerial, pageSize)
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.JSON(ErrorResponse{
+			Error:  "获取汉化组列表失败",
+			Detail: err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(teams)
+}
+
 // MemberListPage godoc
 // @Summary 	获取汉化组成员列表分页
 // @Description 注意当列表为空，会返回 null 而不是空数组
 // @Param 		page_serial query int false "页码，默认值为 1"
 // @Param 		page_size query int false "每页数量，默认值为 10"
-// @Param 		team_id query int true "所属汉化组 ID，必填"
+// @Param 		id path int true "所属汉化组 ID，必填"
 // @Tags 		team
 // @Produce 	json
 // @Success	 	200 {object} []dtos.MemberBasic
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
 // @Failure     500 {object} ErrorResponse "服务器内部错误"
-// @Router 		/teams [get]
+// @Router 		/teams/{id}/members [get]
 func (h *TeamHandler) MemberListPage(ctx iris.Context) {
 	// 获取分页参数
 	pageSerial := ctx.URLParamIntDefault("page_serial", 1)
-
 	pageSize := ctx.URLParamIntDefault("page_size", 10)
 
-	teamId, err := ctx.URLParamInt("team_id")
+	teamId, err := ctx.Params().GetUint("id")
 	if err != nil || teamId <= 0 {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
-			Error: "team_id 必须是一个明确给出的正整数",
+			Error: "无法获取有效的 team_id",
 		})
 		return
 	}
 
 	// 调用服务层获取数据
-	members, err := h.TeamService.GetMemberBasicPage(uint(teamId), pageSerial, pageSize)
+	members, err := h.TeamService.GetMemberBasicPage(teamId, pageSerial, pageSize)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ErrorResponse{

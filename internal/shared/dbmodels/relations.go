@@ -13,7 +13,10 @@ type ProjectLaborDivision struct {
 	FkUser User `gorm:"foreignKey:UserId"`
 
 	// 分工，使用掩码计算多重身份
-	LaborRole LaborMask `gorm:"not null;default:0"`
+	LaborRole LaborMask `gorm:"not null"`
+	// 负责人/审核人
+	PrincipalId PrimaryKey `gorm:"index;not null"`
+	FkPrincipal User       `gorm:"foreignKey:PrincipalId"`
 }
 
 func (ProjectLaborDivision) TableName() string {

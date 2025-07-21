@@ -61,7 +61,7 @@ type LaborRepo interface {
 	SelectByProjectId(projectId dbmodels.PrimaryKey) ([]*dbmodels.ProjectLaborDivision, error)
 
 	// SelectProjectPageByUserId 获取用户参与的项目列表，按 ID 倒序，支持分页
-	// 注意：这个函数会预加载递归的 FkTeam 的信息
+	// 注意：这个函数会预加载递归的 FkProject 的信息
 	SelectProjectPageByUserId(userId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.ProjectLaborDivision, error)
 
 	// CreateLaborDivision 创建一个新的成员分工记录

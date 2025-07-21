@@ -10,8 +10,8 @@ import (
 
 // TeamService 接口定义了团队服务的基本操作
 type TeamService interface {
-	// GetTeamBasicPageByUserId 获取指定用户 ID 的团队列表
-	GetTeamBasicPageByUserId(userId uint, pageSerial, pageSize int) ([]*dtos.TeamBasic, error)
+	// GetBasicPageByUserId 获取指定用户 ID 的团队列表
+	GetBasicPageByUserId(userId uint, pageSerial, pageSize int) ([]*dtos.TeamBasic, error)
 	// GetMemberBasicPage 获取指定团队 ID 的成员列表，支持分页
 	GetMemberBasicPage(teamId uint, pageSerial, pageSize int) ([]*dtos.MemberBasic, error)
 }
@@ -31,8 +31,8 @@ func NewTeamService(
 	}
 }
 
-// GetTeamBasicPageByUserId 实现 TeamService 接口的 GetTeamBasicPageByUserId 方法
-func (s *teamServiceImpl) GetTeamBasicPageByUserId(userId uint, pageSerial, pageSize int) ([]*dtos.TeamBasic, error) {
+// GetBasicPageByUserId 实现 TeamService 接口的 GetBasicPageByUserId 方法
+func (s *teamServiceImpl) GetBasicPageByUserId(userId uint, pageSerial, pageSize int) ([]*dtos.TeamBasic, error) {
 	// 调用仓库方法获取团队列表
 	teams, err := s.teamMemberRepo.SelectTeamBasicByUserId(dbmodels.PrimaryKey(userId))
 	if err != nil {

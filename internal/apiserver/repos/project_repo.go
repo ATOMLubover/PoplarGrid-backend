@@ -10,33 +10,31 @@ import (
 
 // project 所需基础字段
 var kProjectBasicFields = []string{
-	"id",
-	"title",
+	"projects.id",
+	"projects.title",
 
-	"legacy_id",
-	"moetran_id",
-	"workset_id",
-	"workset_index",
+	"projects.legacy_id",
+	"projects.moetran_id",
+	"projects.workset_id",
+	"projects.workset_index",
 
-	"translate_status",
-	"proof_status",
-	"letter_status",
-	"review_status",
-	"is_published",
+	"projects.translate_status",
+	"projects.proof_status",
+	"projects.letter_status",
+	"projects.review_status",
+	"projects.is_published",
 
-	"allow_auto_join",
-	"created_at",
-	"updated_at",
+	"projects.allow_auto_join",
+	"projects.created_at",
+	"projects.updated_at",
 }
 
 // ProjectRepo 接口定义了项目仓库的基本操作
 type ProjectRepo interface {
 	Repo
 
-	// SelectBasicPageIdDescWithParam 按 ID 倒序获取项目列表，支持分页以及复合条件查询
-	SelectBasicPageIdDescWithParam(worksetId dbmodels.PrimaryKey, offset, limit int, queryParams *dtos.ProjectStatusQueryParams) ([]*dbmodels.Project, error)
-	// SelectBasicPageUpdatedAtDescWithParam 按更新时间倒序获取项目列表，支持分页以及复合条件查询
-	SelectBasicPageUpdatedAtDescWithParam(worksetId dbmodels.PrimaryKey, offset, limit int, queryParams *dtos.ProjectStatusQueryParams) ([]*dbmodels.Project, error)
+	// SelectBasicPageWithParam 按 ID 倒序获取项目列表，支持分页以及复合条件查询
+	SelectBasicPageWithParam(offset, limit int, queryParams *dtos.ProjectSearchParams) ([]*dbmodels.Project, error)
 
 	// SelectById 获取指定 ID 的项目的全部信息
 	SelectById(id dbmodels.PrimaryKey) (*dbmodels.Project, error)
@@ -78,8 +76,8 @@ func (r *projectRepoImpl) GetHandle() *gorm.DB {
 	return r.handle
 }
 
-// SelectBasicPageIdDescWithParam 实现 ProjectRepo 接口的 SelectBasicPageIdDescWithParam 方法
-func (r *projectRepoImpl) SelectBasicPageIdDescWithParam(worksetId dbmodels.PrimaryKey, offset, limit int, queryParams *dtos.ProjectStatusQueryParams) ([]*dbmodels.Project, error) {
+// SelectBasicPageWithParam 实现 ProjectRepo 接口的 SelectBasicPageIdDescWithParam 方法
+func (r *projectRepoImpl) SelectBasicPageWithParam(offset, limit int, queryParams *dtos.ProjectSearchParams) ([]*dbmodels.Project, error) {
 	var projects []*dbmodels.Project
 
 	// 构建查询条件
@@ -87,31 +85,7 @@ func (r *projectRepoImpl) SelectBasicPageIdDescWithParam(worksetId dbmodels.Prim
 
 	// 最后进行查询
 	if err := query.
-		Where("workset_id = ?", worksetId).
 		Select(kProjectBasicFields).
-		Order("id DESC").
-		Limit(limit).
-		Offset(offset).
-		Find(&projects).
-		Error; err != nil {
-		return nil, err
-	}
-
-	return projects, nil
-}
-
-// SelectBasicPageUpdatedAtDescWithParam 实现 ProjectRepo 接口的 SelectBasicPageUpdatedAtDescWithParam 方法
-func (r *projectRepoImpl) SelectBasicPageUpdatedAtDescWithParam(worksetId dbmodels.PrimaryKey, offset, limit int, queryParams *dtos.ProjectStatusQueryParams) ([]*dbmodels.Project, error) {
-	var projects []*dbmodels.Project
-
-	// 构建查询条件
-	query := r.buildQueryWithParams(r.Table(), queryParams)
-
-	// 最后进行查询
-	if err := query.
-		Where("workset_id = ?", worksetId).
-		Select(kProjectBasicFields).
-		Order("updated_at DESC").
 		Limit(limit).
 		Offset(offset).
 		Find(&projects).
@@ -214,25 +188,53 @@ func (r *projectRepoImpl) DeleteById(id dbmodels.PrimaryKey) error {
 // ================ 辅助函数 ================
 
 // buildQueryWithParams 通过查询参数 query 构建 WHERE 子句
-func (r *projectRepoImpl) buildQueryWithParams(base *gorm.DB, queryParams *dtos.ProjectStatusQueryParams) *gorm.DB {
+func (r *projectRepoImpl) buildQueryWithParams(base *gorm.DB, queryParams *dtos.ProjectSearchParams) *gorm.DB {
 	if queryParams == nil {
 		return base
 	}
 
-	if queryParams.TranslateStatus != nil {
-		base = base.Where("translate_status = ?", *queryParams.TranslateStatus)
+	// 先确定是否需要根据 user 查询
+	if queryParams.UserId != nil {
+		// 如果需要根据 user 查询，则需要根据 labor 表使用 inner join
+		base = base.
+			Joins("INNER JOIN project_labor_divisions ON project_labor_divisions.project_id = projects.id").
+			Where("project_labor_divisions.user_id = ?", queryParams.UserId)
 	}
-	if queryParams.ProofStatus != nil {
-		base = base.Where("proof_status = ?", *queryParams.ProofStatus)
+
+	// 如果不需要根据 user 查询，则进行普通查询
+	// 先添加工作集 ID 的查询条件
+	if queryParams.WorksetId != nil {
+		base = base.Where("workset_id = ?", *queryParams.WorksetId)
 	}
-	if queryParams.LetterStatus != nil {
-		base = base.Where("letter_status = ?", *queryParams.LetterStatus)
+
+	// 添加 sort 条件
+	switch queryParams.Sort {
+	case dtos.SORT_ID_DESC:
+		base = base.Order("id DESC")
+	case dtos.SORT_UPDATED_AT_DESC:
+		base = base.Order("updated_at DESC")
+	default:
+		// 默认按 ID 倒序
+		base = base.Order("id DESC")
 	}
-	if queryParams.ReviewStatus != nil {
-		base = base.Where("review_status = ?", *queryParams.ReviewStatus)
-	}
-	if queryParams.PublishStatus != nil {
-		base = base.Where("is_published = ?", *queryParams.PublishStatus)
+
+	// 添加状态查询条件
+	if queryParams.Status != nil {
+		if queryParams.Status.TranslateStatus != nil {
+			base = base.Where("translate_status = ?", *queryParams.Status.TranslateStatus)
+		}
+		if queryParams.Status.ProofStatus != nil {
+			base = base.Where("proof_status = ?", *queryParams.Status.ProofStatus)
+		}
+		if queryParams.Status.LetterStatus != nil {
+			base = base.Where("letter_status = ?", *queryParams.Status.LetterStatus)
+		}
+		if queryParams.Status.ReviewStatus != nil {
+			base = base.Where("review_status = ?", *queryParams.Status.ReviewStatus)
+		}
+		if queryParams.Status.PublishStatus != nil {
+			base = base.Where("is_published = ?", *queryParams.Status.PublishStatus)
+		}
 	}
 
 	return base

@@ -118,3 +118,28 @@ func NewUserInfoExtractMiddleware() IrisMiddleware {
 		}
 	}
 }
+
+// NewCheckUserIdMiddleware 生成一个检查 user_id 的中间件
+func NewCheckUserIdMiddleware() IrisMiddleware {
+	return func(ctx iris.Context) {
+		// 从上下文中获取 user_id
+		userId, err := ctx.Values().GetUint("user_id")
+		if err != nil || userId <= 0 {
+			ctx.StopWithJSON(iris.StatusBadRequest, ErrorResponse{
+				Error: "无法获取有效的 user_id",
+			})
+			return
+		}
+
+		// 从路径参数获取 user_id 并进行验证
+		pathUserId, err := ctx.Params().GetUint("id")
+		if err != nil || pathUserId != userId {
+			ctx.StopWithJSON(iris.StatusBadRequest, ErrorResponse{
+				Error: "无效的 user_id，必须与当前登录用户 ID 匹配",
+			})
+		}
+
+		// 继续处理请求
+		ctx.Next()
+	}
+}

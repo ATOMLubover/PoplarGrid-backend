@@ -19,7 +19,8 @@ func RouteWorksetHandler(root *mvc.Application) {
 	party.Handle(handler)
 
 	// 注册路由与方法的映射（类型安全）
-	party.Router.Get("/list", handler.WorksetListPage)
+	party.Router.Get("", handler.WorksetListPage)
+	party.Router.Get("/{id:uint}/stats", handler.ProjectStats)
 }
 
 // WorksetHandler 处理工作集相关的请求
@@ -38,11 +39,10 @@ type WorksetHandler struct {
 // @Success	 	200 {object} []dtos.WorksetBasic
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
 // @Failure     500 {object} ErrorResponse "服务器内部错误"
-// @Router 		/workset/list [get]
+// @Router 		/worksets [get]
 func (h *WorksetHandler) WorksetListPage(ctx iris.Context) {
 	// 获取分页参数
 	pageSerial := ctx.URLParamIntDefault("page_serial", 1)
-
 	pageSize := ctx.URLParamIntDefault("page_size", 10)
 
 	teamId, err := ctx.URLParamInt("team_id")
@@ -71,16 +71,16 @@ func (h *WorksetHandler) WorksetListPage(ctx iris.Context) {
 // ProjectStats godoc
 // @Summary 	获取特定作品集项目统计信息
 // @Description 获取所有项目的统计信息，包括总数、翻译、校对、嵌字，审核、发布对应数量等
-// @Param 		workset_id query int true "作品集 ID，必填"
+// @Param 		id path int true "作品集 ID"
 // @Tags 		workset
 // @Produce 	json
 // @Success	 	200 {object} dtos.ProjectStats
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
 // @Failure     500 {object} ErrorResponse "服务器内部错误"
-// @Router 		/workset/stats [get]
+// @Router 		/worksets/{id}/stats [get]
 func (h *WorksetHandler) ProjectStats(ctx iris.Context) {
 	// 获取 workset_id 参数
-	worksetId, err := ctx.URLParamInt("workset_id")
+	worksetId, err := ctx.Params().GetUint("id")
 	if err != nil || worksetId <= 0 {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
@@ -90,7 +90,7 @@ func (h *WorksetHandler) ProjectStats(ctx iris.Context) {
 	}
 
 	// 调用服务层获取统计数据
-	stats, err := h.WorksetService.GetProjectStats(uint(worksetId))
+	stats, err := h.WorksetService.GetProjectStatsByWorksetId(worksetId)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ctx.JSON(ErrorResponse{

@@ -52,6 +52,7 @@ type ProjectHandler struct {
 // @Param       page_size query integer false "每页数量，默认值为 10"
 // @Param       sort query integer false "排序方式，0：按 ID 倒序，1：按 updated_at 倒序"
 // @Param       status query integer false "项目状态（位掩码），用于复合查询，默认不筛选查询"
+// @Param       user_id query integer false "用户 ID，默认不筛选用户"
 // @Param       workset_id query integer true "项目所属的作品集 ID"
 // @Tags        project
 // @Produce     json
@@ -61,7 +62,6 @@ type ProjectHandler struct {
 // @Router      /projects [get]
 func (h *ProjectHandler) ProjectListPage(ctx iris.Context) {
 	pageSerial := ctx.URLParamInt32Default("page_serial", 1)
-
 	pageSize := ctx.URLParamInt32Default("page_size", 10)
 
 	sort := ctx.URLParamInt32Default("sort", 0)
@@ -71,8 +71,12 @@ func (h *ProjectHandler) ProjectListPage(ctx iris.Context) {
 
 	worksetId := ctx.URLParamIntDefault("workset_id", 0)
 
-	// 如果提供了 workset_id，则查询该作品集下的项目列表
-	projects, err := h.ProjectService.GetBasicPageWithParams(uint(worksetId), int(pageSerial), int(pageSize), int(sort), dtos.ProjectOverallStatus(status))
+	userId := ctx.URLParamIntDefault("user_id", 0)
+
+	// 根据参数调用服务层获取数据
+	projects, err := h.ProjectService.GetBasicPageWithParams(
+		uint(worksetId), int(pageSerial), int(pageSize), int(sort),
+		uint(userId), dtos.ProjectOverallStatus(status))
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ErrorResponse{
@@ -136,15 +140,17 @@ func (h *ProjectHandler) ProjectListPage(ctx iris.Context) {
 // @Failure     500 {object} ErrorResponse "服务器内部错误"
 // @Router 		/projects/{id} [get]
 func (h *ProjectHandler) ProjectDetail(ctx iris.Context) {
-	projectId, err := ctx.URLParamInt("id")
+	projectId, err := ctx.Params().GetUint("id")
 	if err != nil || projectId <= 0 {
 		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(iris.Map{"error": "id 必须是一个明确给出的正整数"})
+		ctx.JSON(ErrorResponse{
+			Error: "无法获得有效的 project_id",
+		})
 		return
 	}
 
 	// 调用服务层获取数据
-	project, err := h.ProjectService.GetDetailById(uint(projectId))
+	project, err := h.ProjectService.GetDetail(projectId)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ErrorResponse{
@@ -225,7 +231,7 @@ func (h *ProjectProcHandler) Create(ctx iris.Context) {
 // @Failure     500 {object} ErrorResponse "服务器内部错误"
 // @Router 		/projects/{id} [delete]
 func (h *ProjectProcHandler) Delete(ctx iris.Context) {
-	projectId, err := ctx.URLParamInt("id")
+	projectId, err := ctx.Params().GetUint("id")
 	if err != nil || projectId <= 0 {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
@@ -235,7 +241,7 @@ func (h *ProjectProcHandler) Delete(ctx iris.Context) {
 	}
 
 	// 调用服务层删除项目
-	if err := h.ProjectService.DeleteProjectById(uint(projectId)); err != nil {
+	if err := h.ProjectService.DeleteProject(projectId); err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ErrorResponse{
 			Error:  "删除项目失败",
@@ -262,7 +268,7 @@ func (h *ProjectProcHandler) Delete(ctx iris.Context) {
 // @Failure     500 {object} ErrorResponse "服务器内部错误"
 // @Router 		/projects/{id} [patch]
 func (h *ProjectProcHandler) UpdateInfo(ctx iris.Context) {
-	projectId, err := ctx.URLParamInt("id")
+	projectId, err := ctx.Params().GetUint("id")
 	if err != nil || projectId <= 0 {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
@@ -281,7 +287,7 @@ func (h *ProjectProcHandler) UpdateInfo(ctx iris.Context) {
 	}
 
 	// 调用服务层更新项目
-	if err := h.ProjectService.UpdateProjectInfo(uint(projectId), &request); err != nil {
+	if err := h.ProjectService.UpdateProject(projectId, &request); err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ErrorResponse{
 			Error:  "更新项目失败",
@@ -321,7 +327,7 @@ func (h *ProjectLaborHandler) LaborDivision(ctx iris.Context) {
 	}
 
 	// 调用服务层获取分工信息
-	laborDivisions, err := h.ProjectService.GetLaborDivisionByProjectId(uint(projectId))
+	laborDivisions, err := h.ProjectService.GetLaborDivision(uint(projectId))
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ErrorResponse{
