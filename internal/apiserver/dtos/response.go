@@ -1,5 +1,13 @@
 package dtos
 
+// MemberLabor 定义了项目成员的分工信息
+type MemberLabor struct {
+	UserId     uint   `json:"user_id"`     // 用户 ID
+	Nickname   string `json:"nickname"`    // 昵称
+	LaborRole  uint   `json:"labor_role"`  // 成员在项目中的角色，使用位掩码表示
+	JoinedTime string `json:"joined_time"` // 加入的
+}
+
 // ProjectBasic 定义了获取项目的基本信息
 type ProjectBasic struct {
 	Id        uint   `json:"id"`         // 项目 ID
@@ -15,6 +23,8 @@ type ProjectBasic struct {
 
 	AllowAutoJoin bool `json:"allow_auto_join"` // 是否允许自动加入
 	IsHidden      bool `json:"is_hidden"`       // 是否是隐藏项目
+
+	Labors *[]MemberLabor `json:"labors,omitempty"` // 补充的成员分工信息
 }
 
 // ProjectDetail 定义了获取项目的详细信息
@@ -25,13 +35,13 @@ type ProjectDetail struct {
 	UpdatedAt    string           `json:"updated_at"`  // 更新时间
 }
 
-// MyProjectBasic 定义了获取用户参与的项目的基本信息
-type MyProjectBasic struct {
-	ProjectBasic `json:",inline"` // 嵌入 ProjectBasic 的字段
-	PrincipalId  uint             `json:"principal_id"` // 项目的负责人 ID
-	Role         uint             `json:"role"`         // 成员在项目中的角色，使用掩码计算多重身份
-	JoinedTime   string           `json:"joined_time"`  // 加入的时间
-}
+// // MyProjectBasic 定义了获取用户参与的项目的基本信息
+// type MyProjectBasic struct {
+// 	ProjectBasic `json:",inline"` // 嵌入 ProjectBasic 的字段
+// 	PrincipalId  uint             `json:"principal_id"` // 项目的负责人 ID
+// 	Role         uint             `json:"role"`         // 成员在项目中的角色，使用掩码计算多重身份
+// 	JoinedTime   string           `json:"joined_time"`  // 加入的时间
+// }
 
 // ProjectStats 定义了项目整体的一些统计情况
 type ProjectStats struct {

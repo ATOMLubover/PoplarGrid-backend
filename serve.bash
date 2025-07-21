@@ -19,10 +19,13 @@ fi
 SERVER_NAME="$1" # 服务器的文件夹名和最终可执行文件的名字
 
 # 变量宏定义
-BIN_DIR="$ROOT_DIR/bin" # 二进制文件输出目录
-GO_MAIN_DIR="$ROOT_DIR/cmd/${SERVER_NAME}server" # main.go 所在目录
-GO_OUT="$BIN_DIR/$SERVER_NAME" # 编译输出的二进制文件路径
-SWAG_OUTPUT_DIR="$ROOT_DIR/docs/$SERVER_NAME" # 定义 Swagger 文档的输出目录
+BIN_DIR="$ROOT_DIR/bin"                             # 二进制文件输出目录
+GO_MAIN_DIR="$ROOT_DIR/cmd/${SERVER_NAME}server"    # main.go 所在目录
+GO_OUT="$BIN_DIR/$SERVER_NAME"                      # 编译输出的二进制文件路径
+SWAG_OUTPUT_DIR="$ROOT_DIR/docs/$SERVER_NAME"       # 定义 Swagger 文档的输出目录
+CONFIG_FILE_NAME="${SERVER_NAME}_config.yaml"       # 配置文件名
+CONFIG_SOURCE_PATH="$GO_MAIN_DIR/$CONFIG_FILE_NAME" # 配置文件源路径
+CONFIG_DEST_PATH="$BIN_DIR/$CONFIG_FILE_NAME"       # 配置文件目标路径 (软链接)
 
 # 先确保输出目录存在
 mkdir -p "$BIN_DIR" || exit 1
@@ -97,6 +100,26 @@ compile_server() {
     fi
     
     echo "[ 编译成功，二进制文件输出路径：$GO_OUT ]"
+
+    if [[ ! -f "$CONFIG_SOURCE_PATH" ]]; then
+        echo "[ 警告：未找到配置文件 '$CONFIG_SOURCE_PATH'，跳过创建软链接。 ]"
+    else
+        echo "[ 准备将配置文件 '$CONFIG_FILE_NAME' 以软链接形式复制到 '$BIN_DIR' ]"
+        # 移除旧的软链接或文件（如果存在）
+        if [[ -L "$CONFIG_DEST_PATH" ]]; then
+            rm "$CONFIG_DEST_PATH"
+        elif [[ -f "$CONFIG_DEST_PATH" ]]; then
+            echo "[ 警告：目标目录 '$BIN_DIR' 中存在同名文件 '$CONFIG_FILE_NAME'，将被覆盖。 ]"
+            rm "$CONFIG_DEST_PATH"
+        fi
+
+        # 创建新的软链接
+        if ! ln -s "$CONFIG_SOURCE_PATH" "$CONFIG_DEST_PATH"; then
+            echo "[ 错误：创建配置文件软链接失败。 ]"
+            exit 1
+        fi
+        echo "[ 配置文件软链接创建成功：$CONFIG_DEST_PATH -> $CONFIG_SOURCE_PATH ]"
+    fi
     
     # 返回到脚本根目录
     cd "$ROOT_DIR" || exit 1

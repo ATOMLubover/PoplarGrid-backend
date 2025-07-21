@@ -61,10 +61,12 @@ func (m *materialViewImpl) RefreshProjectStats() error {
 type LaborRepo interface {
 	// SelectByProjectId 获取指定项目 ID 的成员分工列表
 	SelectByProjectId(projectId dbmodels.PrimaryKey) ([]*dbmodels.ProjectLaborDivision, error)
+	// SelectByUserId 获取指定用户 ID 的成员分工列表
+	// 这会预加载 FkUser 关联的 User 信息
+	SelectByUserId(userId dbmodels.PrimaryKey, projectIds []dbmodels.PrimaryKey) ([]*dbmodels.ProjectLaborDivision, error)
 
-	// SelectProjectPageByUserId 获取用户参与的项目列表，按 ID 倒序，支持分页
-	// 注意：这个函数会预加载递归的 FkProject 的信息
-	SelectProjectPageByUserId(userId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.ProjectLaborDivision, error)
+	// // SelectProjectPageByUserId 获取用户参与的项目列表，按 ID 倒序，支持分页
+	// SelectProjectPageByUserId(userId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.ProjectLaborDivision, error)
 
 	// CreateLaborDivision 创建一个新的成员分工记录
 	CreateLaborDivision(labor *dbmodels.ProjectLaborDivision) error
@@ -100,17 +102,15 @@ func (r *laborRepoImpl) SelectByProjectId(projectId dbmodels.PrimaryKey) ([]*dbm
 	return labors, nil
 }
 
-// SelectProjectPageByUserId 实现 LaborRepo 接口的 SelectProjectPageByUserId 方法
-func (r *laborRepoImpl) SelectProjectPageByUserId(userId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.ProjectLaborDivision, error) {
+// SelectByUserId 实现 LaborRepo 接口的 SelectByUserId 方法
+func (r *laborRepoImpl) SelectByUserId(userId dbmodels.PrimaryKey, projectIds []dbmodels.PrimaryKey) ([]*dbmodels.ProjectLaborDivision, error) {
 	var labors []*dbmodels.ProjectLaborDivision
 
 	if err := r.handle.Model(&dbmodels.ProjectLaborDivision{}).
-		// 预加载 FkProject 关联的 Project 信息
-		Preload("FkProject", func(db *gorm.DB) *gorm.DB {
-			return db.Select(kProjectBasicFields)
+		Preload("FkUser", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "nickname") // User 只需要 id、nickname
 		}).
-		Select("id", "project_id", "labor_role").
-		Order("id DESC"). // 按 ID 倒序，也就是按加入时间新到旧
+		Where("user_id = ? AND project_id IN (?)", userId, projectIds).
 		Find(&labors).
 		Error; err != nil {
 		return nil, err
@@ -118,6 +118,25 @@ func (r *laborRepoImpl) SelectProjectPageByUserId(userId dbmodels.PrimaryKey, of
 
 	return labors, nil
 }
+
+// // SelectProjectPageByUserId 实现 LaborRepo 接口的 SelectProjectPageByUserId 方法
+// func (r *laborRepoImpl) SelectProjectPageByUserId(userId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.ProjectLaborDivision, error) {
+// 	var labors []*dbmodels.ProjectLaborDivision
+
+// 	if err := r.handle.Model(&dbmodels.ProjectLaborDivision{}).
+// 		// 预加载 FkProject 关联的 Project 信息
+// 		Preload("FkProject", func(db *gorm.DB) *gorm.DB {
+// 			return db.Select(kProjectBasicFields)
+// 		}).
+// 		Select("id", "project_id", "labor_role").
+// 		Order("id DESC"). // 按 ID 倒序，也就是按加入时间新到旧
+// 		Find(&labors).
+// 		Error; err != nil {
+// 		return nil, err
+// 	}
+
+// 	return labors, nil
+// }
 
 // CreateLaborDivision 实现 LaborRepo 接口的 CreateLaborDivision 方法
 func (r *laborRepoImpl) CreateLaborDivision(labor *dbmodels.ProjectLaborDivision) error {

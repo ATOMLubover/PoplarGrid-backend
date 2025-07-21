@@ -211,7 +211,7 @@
                 "tags": [
                     "project"
                 ],
-                "summary": "获取项目列表分页 (按作品集筛选)",
+                "summary": "获取项目列表分页",
                 "parameters": [
                     {
                         "type": "integer",
@@ -227,7 +227,7 @@
                     },
                     {
                         "type": "integer",
-                        "description": "排序方式，0：按 ID 倒序，1：按 updated_at 倒序",
+                        "description": "排序方式，0：按 ID 倒序，1：按 updated_at 倒序，默认按 ID 倒序",
                         "name": "sort",
                         "in": "query"
                     },
@@ -433,50 +433,6 @@
                         "description": "更新成功",
                         "schema": {
                             "$ref": "#/definitions/handlers.SuccessResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/projects/{id}/labors": {
-            "get": {
-                "description": "获取指定项目的分工信息，包括成员的角色和状态",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "project_labor"
-                ],
-                "summary": "获取指定项目的分工信息",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "项目 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dtos.LaborDivision"
-                            }
                         }
                     },
                     "400": {
@@ -780,7 +736,7 @@
         },
         "/users/{id}/projects": {
             "get": {
-                "description": "获取指定用户参与的所有项目列表，支持分页",
+                "description": "获取指定用户参与的所有项目列表，支持分页和复合查询",
                 "produces": [
                     "application/json"
                 ],
@@ -803,6 +759,18 @@
                     },
                     {
                         "type": "integer",
+                        "description": "项目状态（位掩码），用于复合查询，默认不筛选查询",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "项目所属的作品集 ID，默认不筛选作品集",
+                        "name": "workset_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
                         "description": "用户 ID",
                         "name": "id",
                         "in": "path",
@@ -815,7 +783,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dtos.MyProjectBasic"
+                                "$ref": "#/definitions/dtos.ProjectBasic"
                             }
                         }
                     },
@@ -1156,23 +1124,6 @@
                 }
             }
         },
-        "dtos.LaborDivision": {
-            "type": "object",
-            "properties": {
-                "member_id": {
-                    "description": "成员 ID",
-                    "type": "integer"
-                },
-                "nickname": {
-                    "description": "昵称",
-                    "type": "string"
-                },
-                "role": {
-                    "description": "成员在项目中的角色，使用位掩码表示",
-                    "type": "integer"
-                }
-            }
-        },
         "dtos.MemberBasic": {
             "type": "object",
             "properties": {
@@ -1198,63 +1149,23 @@
                 }
             }
         },
-        "dtos.MyProjectBasic": {
+        "dtos.MemberLabor": {
             "type": "object",
             "properties": {
-                "allow_auto_join": {
-                    "description": "是否允许自动加入",
-                    "type": "boolean"
-                },
-                "id": {
-                    "description": "项目 ID",
-                    "type": "integer"
-                },
-                "is_hidden": {
-                    "description": "是否是隐藏项目",
-                    "type": "boolean"
-                },
-                "is_published": {
-                    "description": "是否已发布",
-                    "type": "boolean"
-                },
                 "joined_time": {
-                    "description": "加入的时间",
+                    "description": "加入的",
                     "type": "string"
                 },
-                "legacy_id": {
-                    "description": "历史遗留序号",
+                "labor_role": {
+                    "description": "成员在项目中的角色，使用位掩码表示",
                     "type": "integer"
                 },
-                "moetran_id": {
-                    "description": "龙译 ID",
+                "nickname": {
+                    "description": "昵称",
                     "type": "string"
                 },
-                "principal_id": {
-                    "description": "项目的负责人 ID",
-                    "type": "integer"
-                },
-                "role": {
-                    "description": "成员在项目中的角色，使用掩码计算多重身份",
-                    "type": "integer"
-                },
-                "status": {
-                    "description": "项目状态，使用位掩码表示",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/dtos.ProjectOverallStatus"
-                        }
-                    ]
-                },
-                "title": {
-                    "description": "项目名称",
-                    "type": "string"
-                },
-                "workset_id": {
-                    "description": "所属作品集 ID",
-                    "type": "integer"
-                },
-                "workset_index": {
-                    "description": "作品集内的序号",
+                "user_id": {
+                    "description": "用户 ID",
                     "type": "integer"
                 }
             }
@@ -1277,6 +1188,13 @@
                 "is_published": {
                     "description": "是否已发布",
                     "type": "boolean"
+                },
+                "labors": {
+                    "description": "补充的成员分工信息",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.MemberLabor"
+                    }
                 },
                 "legacy_id": {
                     "description": "历史遗留序号",
@@ -1351,6 +1269,13 @@
                 "is_published": {
                     "description": "是否已发布",
                     "type": "boolean"
+                },
+                "labors": {
+                    "description": "补充的成员分工信息",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.MemberLabor"
+                    }
                 },
                 "legacy_id": {
                     "description": "历史遗留序号",

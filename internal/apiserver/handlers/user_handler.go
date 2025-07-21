@@ -36,6 +36,16 @@ type UserHandler struct {
 	InvAppService  services.LaborService
 }
 
+// func (h *UserHandler) BeforeActivation(b mvc.BeforeActivation) {
+// 	b.Handle("GET", "/{id:uint}/teams", "TeamListPage")
+// 	b.Handle("GET", "/{id:uint}/invitations", "InvitationListPage")
+// 	b.Handle("GET", "/{id:uint}/detail", "UserDetail")
+// 	b.Handle("GET", "/{id:uint}/projects", "ProjectListPage")
+
+// 	// 注册控制器特定的中间件
+// 	b.Router().Use(NewCheckUserIdMiddleware())
+// }
+
 // UserDetail godoc
 // @Summary 	获取用户详情
 // @Description 获取指定用户的详细信息，包括 ID、昵称、QQ 等
@@ -114,13 +124,15 @@ func (h *UserHandler) TeamListPage(ctx iris.Context) {
 
 // ProjectListPage godoc
 // @Summary 	获取用户参与的项目列表
-// @Description 获取指定用户参与的所有项目列表，支持分页
-// @Param 		page_serial query int false "页码，默认值为 1"
-// @Param 		page_size query int false "每页数量，默认值为 10"
+// @Description 获取指定用户参与的所有项目列表，支持分页和复合查询
+// @Param       page_serial query integer false "页码，默认值为 1"
+// @Param       page_size query integer false "每页数量，默认值为 10"
+// @Param       status query integer false "项目状态（位掩码），用于复合查询，默认不筛选查询"
+// @Param       workset_id query integer false "项目所属的作品集 ID，默认不筛选作品集"
 // @Param 		id path uint true "用户 ID"
 // @Tags 		user
 // @Produce 	json
-// @Success	 	200 {object} []dtos.MyProjectBasic
+// @Success	 	200 {object} []dtos.ProjectBasic
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
 // @Failure     500 {object} ErrorResponse "服务器内部错误"
 // @Router 		/users/{id}/projects [get]
@@ -136,11 +148,19 @@ func (h *UserHandler) ProjectListPage(ctx iris.Context) {
 	}
 
 	// 获取分页参数
-	pageSerial := ctx.URLParamIntDefault("page_serial", 1)
-	pageSize := ctx.URLParamIntDefault("page_size", 10)
+	pageSerial := ctx.URLParamInt32Default("page_serial", 1)
+	pageSize := ctx.URLParamInt32Default("page_size", 10)
+
+	// 注意默认为 PROJECT_STATUS_ALL，表示不筛选状态
+	status := ctx.URLParamInt32Default("status", dtos.PROJECT_STATUS_ALL)
+
+	// 注意默认为 0，代表不筛选 workset
+	worksetId := ctx.URLParamIntDefault("workset_id", 0)
 
 	// 调用服务层获取数据
-	projects, err := h.ProjectService.GetBasicPageByUserId(userId, pageSerial, pageSize)
+	projects, err := h.ProjectService.GetBasicPageWithParams(
+		uint(worksetId), int(pageSerial), int(pageSize),
+		dtos.SORT_ID_DESC, userId, dtos.ProjectOverallStatus(status))
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ErrorResponse{

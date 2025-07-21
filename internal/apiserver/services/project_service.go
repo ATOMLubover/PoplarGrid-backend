@@ -10,7 +10,6 @@ import (
 	"poplargrid/internal/apiserver/repos"
 	"poplargrid/internal/shared/dbmodels"
 	"poplargrid/internal/shared/txutils"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -19,8 +18,8 @@ import (
 type ProjectService interface {
 	// GetBasicPageWithParams 获取项目列表，支持分页和排序以及复合条件查询
 	GetBasicPageWithParams(worksetId uint, pageSerial, pageSize int, sort int, userId uint, status dtos.ProjectOverallStatus) ([]*dtos.ProjectBasic, error)
-	// GetBasicPageByUserId 获取指定用户参与的项目列表，支持分页
-	GetBasicPageByUserId(userId uint, pageSerial, pageSize int) ([]*dtos.MyProjectBasic, error)
+	// // GetBasicPageByUserId 获取指定用户参与的项目列表，支持分页
+	// GetBasicPageByUserId(userId uint, pageSerial, pageSize int) ([]*dtos.ProjectBasic, error)
 
 	// GetDetail 获取指定 ID 的项目详情
 	GetDetail(projectId uint) (*dtos.ProjectDetail, error)
@@ -72,8 +71,9 @@ func (s *projectServiceImpl) GetBasicPageWithParams(
 	queryParams := s.buildQueryParams(worksetId, userId, sort, status)
 
 	var (
-		page []*dbmodels.Project
-		err  error
+		page       []*dbmodels.Project
+		projLabors map[dbmodels.PrimaryKey]*dbmodels.ProjectLaborDivision
+		err        error
 	)
 
 	switch sort {
@@ -84,6 +84,32 @@ func (s *projectServiceImpl) GetBasicPageWithParams(
 		if err != nil {
 			s.logger.Error("GetBasicPageWithParams 调用 SelectBasicPageWithParam 中出现错误", slog.Any("error", err))
 			return nil, fmt.Errorf("获取项目列表失败")
+		}
+
+		// 如果 userId 不为 0，则需要填充用户参与的角色信息
+		if userId != 0 {
+			// 收集所有项目 ID
+			var projectIds []dbmodels.PrimaryKey
+			for _, project := range page {
+				projectIds = append(projectIds, dbmodels.PrimaryKey(project.Id))
+			}
+
+			// 先查找所有对应的项目 labor
+			labors, err := s.laborRepo.SelectByUserId(
+				dbmodels.PrimaryKey(userId), projectIds)
+			if err != nil {
+				s.logger.Error("GetBasicPageWithParams 调用 SelectByUserId 中出现错误",
+					slog.Uint64("user_id", uint64(userId)),
+					slog.Any("error", err))
+				return nil, errors.New("获取用户参与的项目分工失败")
+			}
+
+			// 根据其 project_id 构建为 projLabors 映射
+			projLabors = make(map[dbmodels.PrimaryKey]*dbmodels.ProjectLaborDivision)
+
+			for _, labor := range labors {
+				projLabors[labor.ProjectId] = labor
+			}
 		}
 
 	default:
@@ -112,50 +138,79 @@ func (s *projectServiceImpl) GetBasicPageWithParams(
 			IsPublished:   project.IsPublished,
 			AllowAutoJoin: project.AllowAutoJoin,
 		})
+
+		// 为每个项目添加指定用户参与的分工信息
+		if userId != 0 {
+			labor, ok := projLabors[dbmodels.PrimaryKey(project.Id)]
+			if !ok {
+				s.logger.Error("GetBasicPageWithParams 未找到用户参与的项目分工",
+					slog.Uint64("user_id", uint64(userId)))
+				return nil, fmt.Errorf("未找到用户参与的项目分工")
+			}
+
+			// 将分工信息添加到项目中
+			if projectBasics[len(projectBasics)-1].Labors == nil {
+				projectBasics[len(projectBasics)-1].Labors = &[]dtos.MemberLabor{}
+			}
+
+			*projectBasics[len(projectBasics)-1].Labors = append(
+				*projectBasics[len(projectBasics)-1].Labors,
+				dtos.MemberLabor{
+					UserId:     uint(labor.UserId),
+					Nickname:   labor.FkUser.Nickname,
+					LaborRole:  uint(labor.LaborRole),
+					JoinedTime: labor.CreatedAt.Format(dtos.DTO_TIME_FORMAT),
+				})
+		}
 	}
 
 	return projectBasics, nil
 }
 
-// GetBasicPageByUserId 实现 ProjectService 接口的 GetBasicPageByUserId 方法
-func (s *projectServiceImpl) GetBasicPageByUserId(userId uint, pageSerial, pageSize int) ([]*dtos.MyProjectBasic, error) {
-	// 获取用户参与的项目列表
-	labors, err := s.laborRepo.SelectProjectPageByUserId(dbmodels.PrimaryKey(userId), (pageSerial-1)*pageSize, pageSize)
-	if err != nil {
-		s.logger.Error("GetBasicPageByUserId 调用 SelectBasicPageIdDescByUserId 中出现错误", slog.Any("error", err))
-		return nil, fmt.Errorf("获取用户参与的项目列表失败")
-	}
+// // GetBasicPageByUserId 实现 ProjectService 接口的 GetBasicPageByUserId 方法
+// func (s *projectServiceImpl) GetBasicPageByUserId(userId uint, pageSerial, pageSize int) ([]*dtos.ProjectBasic, error) {
+// 	// 获取用户参与的项目列表
+// 	labors, err := s.laborRepo.SelectProjectPageByUserId(dbmodels.PrimaryKey(userId), (pageSerial-1)*pageSize, pageSize)
+// 	if err != nil {
+// 		s.logger.Error("GetBasicPageByUserId 调用 SelectBasicPageIdDescByUserId 中出现错误", slog.Any("error", err))
+// 		return nil, fmt.Errorf("获取用户参与的项目列表失败")
+// 	}
 
-	// 将 dbmodels.ProjectLaborDivision 转换为 dtos.MyProjectBasic
-	var myProjects []*dtos.MyProjectBasic
+// 	// 将 dbmodels.ProjectLaborDivision 转换为 dtos.MyProjectBasic
+// 	var myProjects []*dtos.ProjectBasic
 
-	for _, labor := range labors {
-		var status dtos.ProjectOverallStatus
-		status.SetTranslatingStatus(uint(labor.FkProject.TranslateStatus))
-		status.SetProofreadingStatus(uint(labor.FkProject.ProofStatus))
-		status.SetLetteringStatus(uint(labor.FkProject.LetterStatus))
-		status.SetReviewingStatus(uint(labor.FkProject.ReviewStatus))
+// 	for _, labor := range labors {
+// 		var status dtos.ProjectOverallStatus
+// 		status.SetTranslatingStatus(uint(labor.FkProject.TranslateStatus))
+// 		status.SetProofreadingStatus(uint(labor.FkProject.ProofStatus))
+// 		status.SetLetteringStatus(uint(labor.FkProject.LetterStatus))
+// 		status.SetReviewingStatus(uint(labor.FkProject.ReviewStatus))
 
-		myProjects = append(myProjects, &dtos.MyProjectBasic{
-			ProjectBasic: dtos.ProjectBasic{
-				Id:            uint(labor.FkProject.Id),
-				Title:         labor.FkProject.Title,
-				WorksetId:     uint(labor.FkProject.WorksetId),
-				WorksetIndex:  labor.FkProject.WorksetIndex,
-				LegacyId:      uint(labor.FkProject.LegacyId),
-				MoetranId:     labor.FkProject.MoetranId,
-				Status:        status,
-				IsPublished:   labor.FkProject.IsPublished,
-				AllowAutoJoin: labor.FkProject.AllowAutoJoin,
-			},
-			PrincipalId: uint(labor.PrincipalId),
-			Role:        uint(labor.LaborRole),
-			JoinedTime:  labor.CreatedAt.Format(time.DateTime),
-		})
-	}
+// 		type laborComplementary struct {
+// 			Role       uint   `json:"role"`        // 成员在项目中的角色
+// 			JoinedTime string `json:"joined_time"` // 加入的时间
+// 		}
 
-	return myProjects, nil
-}
+// 		myProjects = append(myProjects, &dtos.ProjectBasic{
+// 			Id:            uint(labor.FkProject.Id),
+// 			Title:         labor.FkProject.Title,
+// 			WorksetId:     uint(labor.FkProject.WorksetId),
+// 			WorksetIndex:  labor.FkProject.WorksetIndex,
+// 			LegacyId:      uint(labor.FkProject.LegacyId),
+// 			MoetranId:     labor.FkProject.MoetranId,
+// 			Status:        status,
+// 			IsPublished:   labor.FkProject.IsPublished,
+// 			AllowAutoJoin: labor.FkProject.AllowAutoJoin,
+
+// 			Complementary: laborComplementary{
+// 				Role:       uint(labor.LaborRole),
+// 				JoinedTime: labor.CreatedAt.Format(dtos.DTO_TIME_FORMAT),
+// 			},
+// 		})
+// 	}
+
+// 	return myProjects, nil
+// }
 
 // GetDetail 实现 ProjectService 接口的 GetDetail 方法
 func (s *projectServiceImpl) GetDetail(projectId uint) (*dtos.ProjectDetail, error) {
@@ -164,6 +219,13 @@ func (s *projectServiceImpl) GetDetail(projectId uint) (*dtos.ProjectDetail, err
 	if err != nil {
 		s.logger.Error("GetDetail 调用 SelectById 中出现错误", slog.Any("error", err))
 		return nil, fmt.Errorf("获取项目详情失败")
+	}
+
+	// 收集所有项目 ID，以便后续获取成员分工
+	labors, err := s.laborRepo.SelectByProjectId(dbmodels.PrimaryKey(projectId))
+	if err != nil {
+		s.logger.Error("GetDetail 调用 SelectByProjectId 中出现错误", slog.Any("error", err))
+		return nil, fmt.Errorf("获取项目成员分工失败")
 	}
 
 	// 将 dbmodels.Project 转换为 dtos.ProjectDetail
@@ -187,6 +249,18 @@ func (s *projectServiceImpl) GetDetail(projectId uint) (*dtos.ProjectDetail, err
 		Description: project.Description,
 		CreatedAt:   project.CreatedAt.Format(dtos.DTO_TIME_FORMAT),
 		UpdatedAt:   project.UpdatedAt.Format(dtos.DTO_TIME_FORMAT),
+	}
+
+	// 加入成员分工信息
+	detail.Labors = &[]dtos.MemberLabor{}
+
+	for _, labor := range labors {
+		*detail.Labors = append(*detail.Labors, dtos.MemberLabor{
+			UserId:     uint(labor.UserId),
+			Nickname:   labor.FkUser.Nickname,
+			LaborRole:  uint(labor.LaborRole),
+			JoinedTime: labor.CreatedAt.Format(dtos.DTO_TIME_FORMAT),
+		})
 	}
 
 	return detail, nil

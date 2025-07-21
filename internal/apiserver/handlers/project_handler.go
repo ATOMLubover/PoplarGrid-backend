@@ -13,14 +13,12 @@ func RouteProjectHandler(root *mvc.Application) {
 	// 创建 handler 实例
 	projectHandler := &ProjectHandler{}
 	projectProcHandler := &ProjectProcHandler{}
-	projectLaborHandler := &ProjectLaborHandler{}
 
 	// 注册路由组和 handler
 	projectParty := root.
 		Party("/projects").
 		Handle(projectHandler).
-		Handle(projectProcHandler).
-		Handle(projectLaborHandler)
+		Handle(projectProcHandler)
 
 	// 注册路由与方法间的映射（静态安全）
 	projectParty.Router.Get("", projectHandler.ProjectListPage)
@@ -31,8 +29,6 @@ func RouteProjectHandler(root *mvc.Application) {
 	projectParty.Router.Delete("/{id:uint}", projectProcHandler.Delete)
 
 	projectParty.Router.Patch("/{id:uint}", projectProcHandler.UpdateInfo)
-
-	projectParty.Router.Get("/{id:uint}/labors", projectLaborHandler.LaborDivision)
 }
 
 // ProjectHandler 处理项目相关的请求
@@ -258,41 +254,41 @@ func (h *ProjectProcHandler) UpdateInfo(ctx iris.Context) {
 	})
 }
 
-// ProjectLaborHandler 处理项目角色相关的请求
-type ProjectLaborHandler struct {
-	ProjectService services.ProjectService
-}
+// // ProjectLaborHandler 处理项目角色相关的请求
+// type ProjectLaborHandler struct {
+// 	ProjectService services.ProjectService
+// }
 
-// LaborDivision godoc
-// @Summary 	获取指定项目的分工信息
-// @Description 获取指定项目的分工信息，包括成员的角色和状态
-// @Param 		id path uint true "项目 ID"
-// @Tags 		project_labor
-// @Produce 	json
-// @Success	 	200 {object} []dtos.LaborDivision
-// @Failure     400 {object} ErrorResponse "无效的请求参数"
-// @Failure     500 {object} ErrorResponse "服务器内部错误"
-// @Router 		/projects/{id}/labors [get]
-func (h *ProjectLaborHandler) LaborDivision(ctx iris.Context) {
-	projectId, err := ctx.URLParamInt("id")
-	if err != nil || projectId <= 0 {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "无法获得有效的 project_id",
-		})
-		return
-	}
+// // LaborDivision godoc
+// // @Summary 	获取指定项目的分工信息
+// // @Description 获取指定项目的分工信息，包括成员的角色和状态
+// // @Param 		id path uint true "项目 ID"
+// // @Tags 		project_labor
+// // @Produce 	json
+// // @Success	 	200 {object} []dtos.LaborDivision
+// // @Failure     400 {object} ErrorResponse "无效的请求参数"
+// // @Failure     500 {object} ErrorResponse "服务器内部错误"
+// // @Router 		/projects/{id}/labors [get]
+// func (h *ProjectLaborHandler) LaborDivision(ctx iris.Context) {
+// 	projectId, err := ctx.URLParamInt("id")
+// 	if err != nil || projectId <= 0 {
+// 		ctx.StatusCode(iris.StatusBadRequest)
+// 		ctx.JSON(ErrorResponse{
+// 			Error: "无法获得有效的 project_id",
+// 		})
+// 		return
+// 	}
 
-	// 调用服务层获取分工信息
-	laborDivisions, err := h.ProjectService.GetLaborDivision(uint(projectId))
-	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(ErrorResponse{
-			Error:  "获取项目分工信息失败",
-			Detail: err.Error(),
-		})
-		return
-	}
+// 	// 调用服务层获取分工信息
+// 	laborDivisions, err := h.ProjectService.GetLaborDivision(uint(projectId))
+// 	if err != nil {
+// 		ctx.StatusCode(iris.StatusInternalServerError)
+// 		ctx.JSON(ErrorResponse{
+// 			Error:  "获取项目分工信息失败",
+// 			Detail: err.Error(),
+// 		})
+// 		return
+// 	}
 
-	ctx.JSON(laborDivisions)
-}
+// 	ctx.JSON(laborDivisions)
+// }

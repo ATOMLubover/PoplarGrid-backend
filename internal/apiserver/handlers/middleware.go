@@ -22,8 +22,11 @@ func NewCorsMiddleware(
 	maxAge time.Duration,
 ) IrisMiddleware {
 	if len(allowOrigins) == 0 {
-		// 如果没有设置允许的源，直接返回
-		return nil
+		// 如果没有设置允许的源，直接返回执行函数
+		return func(ctx iris.Context) {
+			// 直接继续处理请求，不设置 CORS 相关头部
+			ctx.Next()
+		}
 	}
 
 	// 将 origin 组成一个 set

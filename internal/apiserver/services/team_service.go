@@ -28,9 +28,11 @@ type teamServiceImpl struct {
 // NewTeamService 创建一个新的 TeamService 实例
 func NewTeamService(
 	teamMemberRepo repos.TeamMemberRepo,
+	logger *slog.Logger,
 ) TeamService {
 	return &teamServiceImpl{
 		teamMemberRepo: teamMemberRepo,
+		logger:         logger,
 	}
 }
 
