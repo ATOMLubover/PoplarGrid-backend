@@ -10,7 +10,7 @@ import (
 // WorksetService 接口定义了作品集服务的基本操作
 type WorksetService interface {
 	// GetBasicPageIdDesc 获取作品集列表，按 ID 倒序
-	GetBasicPage(pageSerial, pageSize int) ([]*dtos.WorksetBasic, error)
+	GetBasicPage(teamId uint, pageSerial, pageSize int) ([]*dtos.WorksetBasic, error)
 
 	// GetProjectStatsByWorksetId 获取特定作品集的项目统计信息
 	GetProjectStatsByWorksetId(worksetId uint) (*dtos.ProjectStats, error)
@@ -37,11 +37,13 @@ func NewWorksetService(
 }
 
 // GetBasicPage 实现 WorksetService 接口的 GetBasicPage 方法
-func (s *worksetServiceImpl) GetBasicPage(pageSerial, pageSize int) ([]*dtos.WorksetBasic, error) {
+func (s *worksetServiceImpl) GetBasicPage(teamId uint, pageSerial, pageSize int) ([]*dtos.WorksetBasic, error) {
 	// 调用仓库方法获取作品集列表
-	worksets, err := s.worksetRepo.SelectBasicPageIdDesc((pageSerial-1)*pageSize, pageSize)
+	worksets, err := s.worksetRepo.SelectBasicPageIdDesc(dbmodels.PrimaryKey(teamId), (pageSerial-1)*pageSize, pageSize)
 	if err != nil {
-		s.logger.Error("GetBasicPage 调用 SelectBasicPageIdDesc 中出现错误", slog.Any("error", err))
+		s.logger.Error("GetBasicPage 调用 SelectBasicPageIdDesc 中出现错误",
+			slog.Uint64("team_id", uint64(teamId)),
+			slog.Any("error", err))
 		return nil, err
 	}
 

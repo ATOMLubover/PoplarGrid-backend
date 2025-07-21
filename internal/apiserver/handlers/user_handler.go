@@ -13,23 +13,17 @@ func RouteUserHandler(root *mvc.Application) {
 	// 创建 UserHandler 和 UserMyHandler 实例
 	userHandler := &UserHandler{}
 
-	// 注册鉴权路由组和 handler
-	userAuthParty := root.
-		Party("/users").
-		Handle(userHandler)
-
-	// 注册中间件，检查用户 ID 是否匹配当前登录用户
-	userAuthParty.Router.Use(NewCheckUserIdMiddleware())
-
-	// 注册路由与方法的映射（类型安全）
-	userAuthParty.Router.Get("/{id:uint}/teams", userHandler.TeamListPage)
-	userAuthParty.Router.Get("/{id:uint}/invitations", userHandler.InvitationListPage)
-
-	// 注册非鉴权路由组和 handler
+	// 注册路由组和 handler
 	userParty := root.
 		Party("/users").
 		Handle(userHandler)
 
+	// 注册中间件，检查用户 ID 是否匹配当前登录用户
+	userParty.Router.Use(NewCheckUserIdMiddleware())
+
+	// 注册路由与方法的映射（类型安全）
+	userParty.Router.Get("/{id:uint}/teams", userHandler.TeamListPage)
+	userParty.Router.Get("/{id:uint}/invitations", userHandler.InvitationListPage)
 	userParty.Router.Get("/{id:uint}/detail", userHandler.UserDetail)
 	userParty.Router.Get("/{id:uint}/projects", userHandler.ProjectListPage)
 }
@@ -58,7 +52,7 @@ func (h *UserHandler) UserDetail(ctx iris.Context) {
 	if err != nil || userId <= 0 {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
-			Error: "无效的 user_id，必须与当前登录用户 ID 匹配",
+			Error: "无法获取有效的 user_id",
 		})
 		return
 	}
@@ -161,7 +155,7 @@ func (h *UserHandler) ProjectListPage(ctx iris.Context) {
 
 // InvitationListPage godoc
 // @Summary 获取当前用户的邀请（发出或者收到）列表，支持分页
-// @Description 根据分页参数获取用户发送的邀请列表，支持分页和排序\n当列表为空时，会返回 null 而不是空数组\n如果 id 不是当前登录的用户 ID，则返回 400 错误
+// @Description 根据分页参数获取用户的邀请列表，支持分页和排序\n当列表为空时，会返回 null 而不是空数组\n如果 id 不是当前登录的用户 ID，则返回 400 错误
 // @Param page_serial query int false "页码，默认值为 1"
 // @Param page_size query int false "每页数量，默认值为 10"
 // @Param id path uint true "用户 ID，必填"
@@ -193,8 +187,26 @@ func (h *UserHandler) InvitationListPage(ctx iris.Context) {
 	switch ctx.URLParam("kind") {
 	case "0": // 发送的邀请
 		invitations, err = h.InvAppService.GetInvitationSentByUserId(userId, pageSerial, pageSize)
+		if err != nil {
+			ctx.StatusCode(iris.StatusInternalServerError)
+			ctx.JSON(ErrorResponse{
+				Error:  "获取用户发送的邀请列表失败",
+				Detail: err.Error(),
+			})
+			return
+		}
+
 	case "1": // 收到的邀请
 		invitations, err = h.InvAppService.GetInvitationRecievedByUserId(userId, pageSerial, pageSize)
+		if err != nil {
+			ctx.StatusCode(iris.StatusInternalServerError)
+			ctx.JSON(ErrorResponse{
+				Error:  "获取用户收到的邀请列表失败",
+				Detail: err.Error(),
+			})
+			return
+		}
+
 	default:
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
@@ -207,17 +219,18 @@ func (h *UserHandler) InvitationListPage(ctx iris.Context) {
 }
 
 // ApplicationSentListPage godoc
-// @Summary 获取当前用户的申请列表，支持分页
-// @Description 根据分页参数获取用户发送的申请列表，支持分页和排序\n当列表为空时，会返回 null 而不是空数组\n如果 id 不是当前登录的用户 ID，则返回 400 错误
+// @Summary 获取当前用户的申请（发出或收到）列表，支持分页
+// @Description 根据分页参数获取用户的申请列表，支持分页和排序\n当列表为空时，会返回 null 而不是空数组\n如果 id 不是当前登录的用户 ID，则返回 400 错误
 // @Param page_serial query int false "页码，默认值为 1"
 // @Param page_size query int false "每页数量，默认值为 10"
 // @Param id path uint true "用户 ID，必填"
+// @Param kind query string true "申请类型，0：发送的申请，1：收到的申请"
 // @Tags application
 // @Produce json
 // @Success 200 {object} []dtos.ApplicationBasic
 // @Failure 400 {object} ErrorResponse "无效的请求参数"
 // @Failure 500 {object} ErrorResponse "服务器内部错误"
-// @Router /users/{id}/applications_sent [get]
+// @Router /users/{id}/applications [get]
 func (h *UserHandler) ApplicationSentListPage(ctx iris.Context) {
 	// 从上下文中获取当前用户 ID
 	userId, err := ctx.Values().GetUint("user_id")
@@ -234,12 +247,37 @@ func (h *UserHandler) ApplicationSentListPage(ctx iris.Context) {
 	pageSize := ctx.URLParamIntDefault("page_size", 10)
 
 	// 调用服务层获取数据
-	applications, err := h.InvAppService.GetApplisSentByUserId(userId, pageSerial, pageSize)
-	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+	var applications []*dtos.ApplicationBasic
+
+	switch ctx.URLParam("kind") {
+	case "0":
+		// 获取发送的申请
+		applications, err = h.InvAppService.GetApplisSentByUserId(userId, pageSerial, pageSize)
+		if err != nil {
+			ctx.StatusCode(iris.StatusInternalServerError)
+			ctx.JSON(ErrorResponse{
+				Error:  "获取用户发送的申请列表失败",
+				Detail: err.Error(),
+			})
+			return
+		}
+
+	case "1":
+		// 获取收到的申请
+		applications, err = h.InvAppService.GetApplisRecievedByUserId(userId, pageSerial, pageSize)
+		if err != nil {
+			ctx.StatusCode(iris.StatusInternalServerError)
+			ctx.JSON(ErrorResponse{
+				Error:  "获取用户收到的申请列表失败",
+				Detail: err.Error(),
+			})
+			return
+		}
+
+	default:
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
-			Error:  "获取用户发送的申请列表失败",
-			Detail: err.Error(),
+			Error: "无效的 kind 参数",
 		})
 		return
 	}

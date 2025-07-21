@@ -9,7 +9,7 @@ import (
 // WorksetRepo 接口定义了工作集仓库的基本操作
 type WorksetRepo interface {
 	// SelectBasicPageIdDesc 按 ID 倒序获取工作集列表，支持分页
-	SelectBasicPageIdDesc(offset, limit int) ([]*dbmodels.Workset, error)
+	SelectBasicPageIdDesc(teamId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.Workset, error)
 }
 
 // worksetRepo 是 WorksetRepo 的实现
@@ -30,11 +30,12 @@ func (r *worksetRepo) Table() *gorm.DB {
 }
 
 // SelectBasicPageIdDesc 实现 WorksetRepo 接口的 SelectBasicPageIdDesc 方法
-func (r *worksetRepo) SelectBasicPageIdDesc(offset, limit int) ([]*dbmodels.Workset, error) {
+func (r *worksetRepo) SelectBasicPageIdDesc(teamId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.Workset, error) {
 	var worksets []*dbmodels.Workset
 
 	if err := r.Table().
 		Select("id, name, team_id"). // 只选择需要的字段以提高性能
+		Where("team_id = ?", teamId).
 		Order("id DESC").
 		Offset(offset).
 		Limit(limit).

@@ -13,7 +13,7 @@ func RouteWorksetHandler(root *mvc.Application) {
 	handler := &WorksetHandler{}
 
 	// 注册路由组
-	party := root.Party("/workset")
+	party := root.Party("/worksets")
 
 	// 注册 handler
 	party.Handle(handler)
@@ -33,7 +33,7 @@ type WorksetHandler struct {
 // @Description 注意当列表为空，会返回 null 而不是空数组
 // @Param 		page_serial query int false "页码，默认值为 1"
 // @Param 		page_size query int false "每页数量，默认值为 10"
-// @Param 		team_id query int true "所属汉化组 ID"
+// @Param 		team_id query uint true "所属汉化组 ID"
 // @Tags 		workset
 // @Produce 	json
 // @Success	 	200 {object} []dtos.WorksetBasic
@@ -55,7 +55,7 @@ func (h *WorksetHandler) WorksetListPage(ctx iris.Context) {
 	}
 
 	// 调用服务层获取数据
-	worksets, err := h.WorksetService.GetBasicPage(pageSerial, pageSize)
+	worksets, err := h.WorksetService.GetBasicPage(uint(teamId), pageSerial, pageSize)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ErrorResponse{

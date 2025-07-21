@@ -317,7 +317,7 @@ type ProjectLaborHandler struct {
 // @Failure     500 {object} ErrorResponse "服务器内部错误"
 // @Router 		/projects/{id}/labors [get]
 func (h *ProjectLaborHandler) LaborDivision(ctx iris.Context) {
-	projectId, err := ctx.URLParamInt("project_id")
+	projectId, err := ctx.URLParamInt("id")
 	if err != nil || projectId <= 0 {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{

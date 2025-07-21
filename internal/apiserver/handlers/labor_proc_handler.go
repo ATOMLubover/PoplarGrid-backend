@@ -42,7 +42,7 @@ type InvitationHandler struct {
 
 // InvitationListPage godoc
 // @Summary 获取当前用户的邀请（发出或者收到）列表，支持分页
-// @Description 根据分页参数获取用户发送的邀请列表，支持分页和排序。当列表为空时，会返回 null 而不是空数组。
+// @Description 根据分页参数获取用户的邀请列表，支持分页和排序。当列表为空时，会返回 null 而不是空数组。
 // @Param page_serial query int false "页码，默认值为 1"
 // @Param page_size query int false "每页数量，默认值为 10"
 // @Param kind query string true "邀请类型，0：发送的邀请，1：收到的邀请"
@@ -141,7 +141,7 @@ type ApplicationHandler struct {
 }
 
 // ApplicationListPage godoc
-// @Summary 获取当前用户发出的申请列表，支持分页
+// @Summary 获取当前用户的申请（发出或收到）列表，支持分页
 // @Description 根据分页参数获取用户的申请列表，支持分页和排序。当列表为空
 // @Param page_serial query int false "页码，默认值为 1"
 // @Param page_size query int false "每页数量，默认值为 10"
