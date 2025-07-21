@@ -27,7 +27,7 @@ type User struct {
 	// 补充备注
 	Remark string `gorm:"type:text"`
 	// QQ 号
-	QqNumber string `gorm:"size:64"`
+	QqNumber int
 
 	// 上一次活跃时间（可能是通过 ping 来确定）
 	LastActive time.Time

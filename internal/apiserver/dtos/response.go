@@ -28,7 +28,9 @@ type ProjectDetail struct {
 // MyProjectBasic 定义了获取用户参与的项目的基本信息
 type MyProjectBasic struct {
 	ProjectBasic `json:",inline"` // 嵌入 ProjectBasic 的字段
-	Role         uint             `json:"role"` // 成员在项目中的角色，使用掩码计算多重身份
+	PrincipalId  uint             `json:"principal_id"` // 项目的负责人 ID
+	Role         uint             `json:"role"`         // 成员在项目中的角色，使用掩码计算多重身份
+	JoinedTime   string           `json:"joined_time"`  // 加入的时间
 }
 
 // ProjectStats 定义了项目整体的一些统计情况
@@ -76,7 +78,7 @@ type UserBasic struct {
 
 // UserDetail 定义了用户的详细信息
 type UserDetail struct {
-	UserBasic
+	UserBasic     `json:",inline"`
 	Email         string `json:"email"`           // 邮箱
 	PoplarIsAdmin bool   `json:"poplar_is_admin"` // 是否是 panel 管理员
 	Remark        string `json:"remark"`          // 备注

@@ -158,7 +158,7 @@ func (h *UserHandler) ProjectListPage(ctx iris.Context) {
 // @Description 根据分页参数获取用户的邀请列表，支持分页和排序\n当列表为空时，会返回 null 而不是空数组\n如果 id 不是当前登录的用户 ID，则返回 400 错误
 // @Param page_serial query int false "页码，默认值为 1"
 // @Param page_size query int false "每页数量，默认值为 10"
-// @Param id path uint true "用户 ID，必填"
+// @Param id path uint true "用户 ID"
 // @Param kind query string true "邀请类型，0：发送的邀请，1：收到的邀请"
 // @Tags invitation
 // @Produce json
@@ -223,7 +223,7 @@ func (h *UserHandler) InvitationListPage(ctx iris.Context) {
 // @Description 根据分页参数获取用户的申请列表，支持分页和排序\n当列表为空时，会返回 null 而不是空数组\n如果 id 不是当前登录的用户 ID，则返回 400 错误
 // @Param page_serial query int false "页码，默认值为 1"
 // @Param page_size query int false "每页数量，默认值为 10"
-// @Param id path uint true "用户 ID，必填"
+// @Param id path uint true "用户 ID"
 // @Param kind query string true "申请类型，0：发送的申请，1：收到的申请"
 // @Tags application
 // @Produce json

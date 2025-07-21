@@ -72,7 +72,9 @@ func (h *TeamHandler) TeamListPage(ctx iris.Context) {
 // @Description 注意当列表为空，会返回 null 而不是空数组
 // @Param 		page_serial query int false "页码，默认值为 1"
 // @Param 		page_size query int false "每页数量，默认值为 10"
-// @Param 		id path int true "所属汉化组 ID，必填"
+// @Param		member_nickname query string false "要模糊搜索的成员（部分）昵称"
+// @Param  		member_qq query int false "要搜索的成员的 QQ 号，使用 interger 加速查找"
+// @Param 		id path int true "所属汉化组 ID"
 // @Tags 		team
 // @Produce 	json
 // @Success	 	200 {object} []dtos.MemberBasic
@@ -93,8 +95,15 @@ func (h *TeamHandler) MemberListPage(ctx iris.Context) {
 		return
 	}
 
+	// 获取昵称残片条件，默认为空代表不查找
+	nickname := ctx.URLParam("member_nickname")
+
+	// 获取 QQ 号条件，默认为 -1 代表不查找
+	qqNumber := ctx.URLParamInt32Default("member_qq", -1)
+
 	// 调用服务层获取数据
-	members, err := h.TeamService.GetMemberBasicPage(teamId, pageSerial, pageSize)
+	members, err := h.TeamService.GetMemberBasicPageWithParams(
+		teamId, pageSerial, pageSize, nickname, int(qqNumber))
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ErrorResponse{

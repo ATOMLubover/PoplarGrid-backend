@@ -17,3 +17,10 @@ type ProjectSearchParams struct {
 	Sort      int                       // 排序方式，0：按 ID 倒序，1：按 updated_at 倒序
 	Status    *ProjectStatusQueryParams // 项目状态查询参数
 }
+
+// MemberSearchParams 定义了成员搜索的参数
+type MemberSearchParams struct {
+	TeamId   uint    // 汉化组 ID
+	Nickname *string // 模糊查找的昵称
+	QqNumber *int    // 查找的 QQ 号
+}

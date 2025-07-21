@@ -3,14 +3,17 @@ module poplargrid
 go 1.24.3
 
 require (
+	github.com/fsnotify/fsnotify v1.8.0
 	github.com/iris-contrib/swagger v0.0.0-20230820002204-56b041d3471a
 	github.com/iris-contrib/swagger/v12 v12.0.1
+	github.com/redis/go-redis/v9 v9.5.1
 	gorm.io/gorm v1.30.0
 )
 
 require (
 	github.com/blang/semver/v4 v4.0.0 // indirect
-	github.com/fsnotify/fsnotify v1.8.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect

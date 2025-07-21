@@ -1,6 +1,8 @@
 package repos
 
 import (
+	"fmt"
+	"poplargrid/internal/apiserver/dtos"
 	"poplargrid/internal/shared/dbmodels"
 
 	"github.com/kataras/iris/v12/x/errors"
@@ -129,8 +131,8 @@ func (r *laborRepoImpl) CreateLaborDivision(labor *dbmodels.ProjectLaborDivision
 
 // TeamMemberRepo 接口定义了成员仓库的基本操作
 type TeamMemberRepo interface {
-	// SelectUserBasicPage 获取指定团队 ID 的成员列表，支持分页（ID 顺序）
-	SelectUserBasicPage(teamId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.TeamMember, error)
+	// SelectUserBasicPageWithParams 根据参数获取指定的成员，支持分页（ID 顺序）
+	SelectUserBasicPageWithParams(offset, limit int, queryParams *dtos.MemberSearchParams) ([]*dbmodels.TeamMember, error)
 
 	// SelectTeamBasicByUserId 获取指定成员 ID 下加入的所有汉化组信息
 	SelectTeamBasicByUserId(userId dbmodels.PrimaryKey) ([]*dbmodels.Team, error)
@@ -155,16 +157,20 @@ func NewTeamMemberRepo(db *gorm.DB) TeamMemberRepo {
 	}
 }
 
-// SelectUserBasicPage 实现 MemberRepo 接口的 SelectUserBasicPage 方法
-func (r *teamMemberRepoImpl) SelectUserBasicPage(teamId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.TeamMember, error) {
+// SelectUserBasicPageWithParams 实现 MemberRepo 接口的 SelectUserBasicPageWithParams 方法
+func (r *teamMemberRepoImpl) SelectUserBasicPageWithParams(
+	offset, limit int,
+	queryParams *dtos.MemberSearchParams,
+) ([]*dbmodels.TeamMember, error) {
 	var members []*dbmodels.TeamMember
 
-	if err := r.handle.Model(&dbmodels.TeamMember{}).
+	query := r.buildQueryWithParams(r.handle.Model(&dbmodels.TeamMember{}), queryParams)
+
+	if err := query.
 		Preload("FkUser", func(db *gorm.DB) *gorm.DB {
 			return db.Select(kUserBasicFields) // 只选择需要的字段
 		}).
 		Select("id, team_id, user_id, role, created_at, updated_at"). // 只选择需要的字段以提高性能
-		Where("team_id = ?", teamId).
 		Offset(offset).
 		Limit(limit).
 		Find(&members).
@@ -173,6 +179,31 @@ func (r *teamMemberRepoImpl) SelectUserBasicPage(teamId dbmodels.PrimaryKey, off
 	}
 
 	return members, nil
+}
+
+// buildQueryWithParams 根据参数构建 WHERE 子句
+func (r *teamMemberRepoImpl) buildQueryWithParams(base *gorm.DB, queryParams *dtos.MemberSearchParams) *gorm.DB {
+	if queryParams == nil {
+		return base
+	}
+
+	if queryParams.Nickname != nil {
+		base = base.Where("nickname LIKE ?", fmt.Sprintf("%%%s%%", *queryParams.Nickname))
+	}
+
+	// 对于 QQ 号的 or 条件处理会复杂一些
+	if queryParams.QqNumber != nil {
+		switch queryParams.Nickname {
+		case nil:
+			// 如果之前没有添加 nickname 的 WHERE，则直接添加 WHERE
+			base = base.Where("qq_number = ?", *queryParams.QqNumber)
+		default:
+			// 否则，使用 OR 连接
+			base = base.Or("qq_number = ?", *queryParams.QqNumber)
+		}
+	}
+
+	return base
 }
 
 // SelectTeamBasicByUserId 实现 MemberRepo 接口的 SelectTeamBasicByUserId 方法
@@ -191,42 +222,42 @@ func (r *teamMemberRepoImpl) SelectTeamBasicByUserId(userId dbmodels.PrimaryKey)
 	return teams, nil
 }
 
-// SelectById 实现 MemberRepo 接口的 SelectById 方法
-func (r *teamMemberRepoImpl) SelectById(memberId dbmodels.PrimaryKey) (*dbmodels.TeamMember, error) {
-	var member dbmodels.TeamMember
+// // SelectById 实现 MemberRepo 接口的 SelectById 方法
+// func (r *teamMemberRepoImpl) SelectById(memberId dbmodels.PrimaryKey) (*dbmodels.TeamMember, error) {
+// 	var member dbmodels.TeamMember
 
-	if err := r.handle.Model(&dbmodels.TeamMember{}).
-		Preload("FkUser", func(db *gorm.DB) *gorm.DB {
-			return db.Select(kUserBasicFields) // 只选择需要的字段
-		}). // 全部预加载 FkUser 关联
-		Where("id = ?", memberId).
-		First(&member).
-		Error; err != nil {
-		return nil, err
-	}
+// 	if err := r.handle.Model(&dbmodels.TeamMember{}).
+// 		Preload("FkUser", func(db *gorm.DB) *gorm.DB {
+// 			return db.Select(kUserBasicFields) // 只选择需要的字段
+// 		}). // 全部预加载 FkUser 关联
+// 		Where("id = ?", memberId).
+// 		First(&member).
+// 		Error; err != nil {
+// 		return nil, err
+// 	}
 
-	return &member, nil
-}
+// 	return &member, nil
+// }
 
-// SelectByIdBatch 实现 MemberRepo 接口的 SelectByIdBatch 方法
-// 接收一个 PrimaryKey 类型的 ID 切片
-func (r *teamMemberRepoImpl) SelectByIdBatch(ids []dbmodels.PrimaryKey) ([]dbmodels.TeamMember, error) {
-	var members []dbmodels.TeamMember
+// // SelectByIdBatch 实现 MemberRepo 接口的 SelectByIdBatch 方法
+// // 接收一个 PrimaryKey 类型的 ID 切片
+// func (r *teamMemberRepoImpl) SelectByIdBatch(ids []dbmodels.PrimaryKey) ([]dbmodels.TeamMember, error) {
+// 	var members []dbmodels.TeamMember
 
-	if len(ids) == 0 {
-		// 如果 ID 列表为空，直接返回空切片
-		return []dbmodels.TeamMember{}, nil
-	}
+// 	if len(ids) == 0 {
+// 		// 如果 ID 列表为空，直接返回空切片
+// 		return []dbmodels.TeamMember{}, nil
+// 	}
 
-	if err := r.handle.Model(&dbmodels.TeamMember{}).
-		Preload("FkUser", func(db *gorm.DB) *gorm.DB {
-			return db.Select(kUserBasicFields) // 只选择需要的字段
-		}).                      // 全部预加载 FkUser 关联
-		Where("id IN (?)", ids). // 使用 IN 查询来批量查询
-		Find(&members).
-		Error; err != nil {
-		return nil, err
-	}
+// 	if err := r.handle.Model(&dbmodels.TeamMember{}).
+// 		Preload("FkUser", func(db *gorm.DB) *gorm.DB {
+// 			return db.Select(kUserBasicFields) // 只选择需要的字段
+// 		}).                      // 全部预加载 FkUser 关联
+// 		Where("id IN (?)", ids). // 使用 IN 查询来批量查询
+// 		Find(&members).
+// 		Error; err != nil {
+// 		return nil, err
+// 	}
 
-	return members, nil
-}
+// 	return members, nil
+// }

@@ -12,8 +12,11 @@ import (
 type TeamService interface {
 	// GetBasicPageByUserId 获取指定用户 ID 的团队列表
 	GetBasicPageByUserId(userId uint, pageSerial, pageSize int) ([]*dtos.TeamBasic, error)
-	// GetMemberBasicPage 获取指定团队 ID 的成员列表，支持分页
-	GetMemberBasicPage(teamId uint, pageSerial, pageSize int) ([]*dtos.MemberBasic, error)
+	// GetMemberBasicPageWithParams 获取指定团队 ID 的成员列表，支持分页
+	GetMemberBasicPageWithParams(
+		teamId uint, pageSerial, pageSize int,
+		nickname string, qqNumber int,
+	) ([]*dtos.MemberBasic, error)
 }
 
 // teamServiceImpl 是 TeamService 的实现
@@ -52,10 +55,16 @@ func (s *teamServiceImpl) GetBasicPageByUserId(userId uint, pageSerial, pageSize
 	return teamBasics, nil
 }
 
-// GetMemberBasicPage 实现 TeamService 接口的 GetMemberBasicPage 方法
-func (s *teamServiceImpl) GetMemberBasicPage(teamId uint, pageSerial, pageSize int) ([]*dtos.MemberBasic, error) {
+// GetMemberBasicPageWithParams 实现 TeamService 接口的 GetMemberBasicPageWithParams 方法
+func (s *teamServiceImpl) GetMemberBasicPageWithParams(
+	teamId uint, pageSerial, pageSize int,
+	nickname string, qqNumber int,
+) ([]*dtos.MemberBasic, error) {
+	// 构造搜索参数
+	queryParams := s.buildQueryParams(teamId, nickname, qqNumber)
+
 	// 调用仓库方法获取成员列表
-	members, err := s.teamMemberRepo.SelectUserBasicPage(dbmodels.PrimaryKey(teamId), (pageSerial-1)*pageSize, pageSize)
+	members, err := s.teamMemberRepo.SelectUserBasicPageWithParams((pageSerial-1)*pageSize, pageSize, queryParams)
 	if err != nil {
 		s.logger.Error("GetMemberListPage 调用 SelectMemberBasicPage 中出现错误", slog.Any("error", err))
 		return nil, err
@@ -74,4 +83,26 @@ func (s *teamServiceImpl) GetMemberBasicPage(teamId uint, pageSerial, pageSize i
 	}
 
 	return memberBasics, nil
+}
+
+// ======= 辅助函数 =======
+
+// buildQueryParams 构造用于搜索 member 的参数
+func (s *teamServiceImpl) buildQueryParams(teamId uint, nickname string, qqNumber int) *dtos.MemberSearchParams {
+	queryParams := &dtos.MemberSearchParams{}
+
+	// teamId 是必填的，否则无法加入特定项目
+	queryParams.TeamId = teamId
+
+	// 昵称不为空，则视为有效
+	if nickname != "" {
+		queryParams.Nickname = &nickname
+	}
+
+	// QQ 号不为 -1，则视为有效
+	if qqNumber != -1 {
+		queryParams.QqNumber = &qqNumber
+	}
+
+	return queryParams
 }

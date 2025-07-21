@@ -10,6 +10,7 @@ import (
 	"poplargrid/internal/apiserver/repos"
 	"poplargrid/internal/shared/dbmodels"
 	"poplargrid/internal/shared/txutils"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -147,7 +148,9 @@ func (s *projectServiceImpl) GetBasicPageByUserId(userId uint, pageSerial, pageS
 				IsPublished:   labor.FkProject.IsPublished,
 				AllowAutoJoin: labor.FkProject.AllowAutoJoin,
 			},
-			Role: uint(labor.LaborRole),
+			PrincipalId: uint(labor.PrincipalId),
+			Role:        uint(labor.LaborRole),
+			JoinedTime:  labor.CreatedAt.Format(time.DateTime),
 		})
 	}
 
@@ -244,9 +247,9 @@ func (s *projectServiceImpl) CreateProject(createInfo *dtos.CreateProjectInfo) (
 		creatorLabor.AddRole(dbmodels.LABOR_CREATOR_MASK)
 
 		laborDivision := &dbmodels.ProjectLaborDivision{
-			ProjectId: dbmodels.PrimaryKey(project.Id),
-			UserId:    dbmodels.PrimaryKey(createInfo.CreatorUserId),
-			LaborRole: creatorLabor,
+			ProjectId:   dbmodels.PrimaryKey(project.Id),
+			UserId:      dbmodels.PrimaryKey(createInfo.CreatorUserId),
+			LaborRole:   creatorLabor,
 			PrincipalId: dbmodels.PrimaryKey(createInfo.CreatorUserId), // 负责人为创建者
 		}
 

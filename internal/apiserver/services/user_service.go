@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"poplargrid/internal/apiserver/dtos"
 	"poplargrid/internal/apiserver/repos"
@@ -46,7 +47,7 @@ func (s *userServiceImpl) GetUserDetail(userId uint) (*dtos.UserDetail, error) {
 		Email:         user.Email,
 		PoplarIsAdmin: user.PoplarIsAdmin,
 		Remark:        user.Remark,
-		QqNumber:      user.QqNumber,
+		QqNumber:      fmt.Sprintf("%d", user.QqNumber),
 		LastActive:    user.LastActive.Format(dtos.DTO_TIME_FORMAT),
 	}
 
