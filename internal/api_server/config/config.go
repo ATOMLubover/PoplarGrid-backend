@@ -27,6 +27,14 @@ type ServerConfig struct {
 
 	// 控制服务器的地址和端口
 	Port int `mapstructure:"port"`
+
+	// 跨域设置
+	CorsOrigins         []string `mapstructure:"cors_origins"`
+	CorsMethods         []string `mapstructure:"cors_methods"`
+	CorsHeaders         []string `mapstructure:"cors_headers"`
+	CorsWithCredentials bool     `mapstructure:"cors_with_credentials"`
+	// 跨域预检请求的最大缓存时间（单位：秒）
+	CorsMaxAge int `mapstructure:"cors_max_age"`
 }
 
 // 数据库配置结构体
@@ -63,7 +71,7 @@ type ApiConfig struct {
 
 var (
 	// 全局配置变量
-	config *Config = nil
+	config *Config = &Config{}
 	// 保护 config 的互斥锁
 	mtx sync.RWMutex
 

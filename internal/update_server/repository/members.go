@@ -4,7 +4,6 @@ import (
 	"poplargrid/internal/shared/dbmodels"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // 成员 repo
@@ -22,11 +21,11 @@ func NewMembersRepo(db *gorm.DB) *MembersRepo {
 
 // GetTable 获取 members 表的上下文引用
 func (r *MembersRepo) GetTable() *gorm.DB {
-	return r.DbCtx.Model(&dbmodels.User{})
+	return r.DbCtx.Model(&dbmodels.TeamMember{})
 }
 
 // BulkUpsert 批量更新或者插入成员
-func (r *MembersRepo) BulkUpsert(inputMembers []*dbmodels.User) error {
+func (r *MembersRepo) BulkUpsert(inputMembers []*dbmodels.TeamMember) error {
 	if len(inputMembers) == 0 {
 		return nil
 	}
@@ -34,12 +33,10 @@ func (r *MembersRepo) BulkUpsert(inputMembers []*dbmodels.User) error {
 	// 为了实现高效的批量插入或更新，我们使用 GORM 的 Clauses(clause.OnConflict{})
 	// 其基于 PostgreSQL 的 UPSERT 功能 UPSERT 支持，大幅减少了数据库的交互次数
 	if err := r.GetTable().
-		Clauses(clause.OnConflict{
-			Columns: []clause.Column{{Name: "moetran_id"}}, // 指定冲突字段为 moetran_id
-			DoUpdates: clause.Assignments(map[string]any{
-				"nickname": gorm.Expr("EXCLUDED.nickname"),
-			}),
-		}).
+		// Clauses(clause.OnConflict{
+		// 	Columns:   []clause.Column{{Name: "moetran_id"}}, // 指定冲突字段为 moetran_id
+		// 	DoNothing: true,
+		// }).
 		Create(&inputMembers).
 		Error; err != nil {
 		return err

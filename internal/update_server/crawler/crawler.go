@@ -18,6 +18,8 @@ type Crawler struct {
 	teamsRepo *repository.TeamsRepo
 	// 成员 repo
 	membersRepo *repository.MembersRepo
+	// 用户 repo
+	usersRepo *repository.UsersRepo
 
 	// 用于与尨译 API 交互的 HTTP 客户端
 	apiClient *ApiClient
@@ -32,6 +34,7 @@ func NewCrawler(
 	worksetsRepo *repository.WorksetsRepo,
 	teamsRepo *repository.TeamsRepo,
 	membersRepo *repository.MembersRepo,
+	usersRepo *repository.UsersRepo,
 	apiClient *ApiClient,
 ) *Crawler {
 	return &Crawler{
@@ -39,6 +42,7 @@ func NewCrawler(
 		worksetsRepo: worksetsRepo,
 		teamsRepo:    teamsRepo,
 		membersRepo:  membersRepo,
+		usersRepo:    usersRepo,
 
 		apiClient: apiClient,
 
@@ -138,7 +142,7 @@ func (c *Crawler) SyncUsersOfTeam(team *dbmodels.Team) error {
 		slog.Info("从尨译获取成员信息成功", "length", len(partUsers), "page", page)
 
 		// 将获取到的成员信息转换成数据库模型
-		users, err := transformer.UsersToMembers(team, partUsers)
+		users, err := transformer.UsersToLocalUsers(team, partUsers)
 		if err != nil {
 			slog.Error("转换成员信息失败", "error", err, "page", page)
 			return err
@@ -146,8 +150,23 @@ func (c *Crawler) SyncUsersOfTeam(team *dbmodels.Team) error {
 
 		slog.Info("转换成员信息成功", "length", len(users), "page", page)
 
+		// 将转换完的用户信息存入数据库
+		if err := c.usersRepo.BulkUpsert(users); err != nil {
+			slog.Error("批量插入用户信息到数据库失败", "error", err, "page", page)
+			return err
+		}
+
+		slog.Info("批量插入用户信息到数据库成功", "length", len(users), "page", page)
+
+		// 将转换后的成员信息转换成 TeamMember 模型
+		members, err := transformer.LocalUsersToTeamMembers(team, users)
+		if err != nil {
+			slog.Error("转换成员信息为 TeamMember 模型失败", "error", err, "page", page)
+			return err
+		}
+
 		// 将转换后的成员信息存入数据库
-		if err := c.membersRepo.BulkUpsert(users); err != nil {
+		if err := c.membersRepo.BulkUpsert(members); err != nil {
 			slog.Error("批量插入成员信息到数据库失败", "error", err, "page", page)
 			return err
 		}

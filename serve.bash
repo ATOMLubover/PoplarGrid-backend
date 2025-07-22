@@ -20,7 +20,7 @@ SERVER_NAME="$1" # 服务器的文件夹名和最终可执行文件的名字
 
 # 变量宏定义
 BIN_DIR="$ROOT_DIR/bin"                             # 二进制文件输出目录
-GO_MAIN_DIR="$ROOT_DIR/cmd/${SERVER_NAME}server"    # main.go 所在目录
+GO_MAIN_DIR="$ROOT_DIR/cmd/${SERVER_NAME}_server"   # main.go 所在目录
 GO_OUT="$BIN_DIR/$SERVER_NAME"                      # 编译输出的二进制文件路径
 SWAG_OUTPUT_DIR="$ROOT_DIR/docs/$SERVER_NAME"       # 定义 Swagger 文档的输出目录
 CONFIG_FILE_NAME="${SERVER_NAME}_config.yaml"       # 配置文件名
@@ -63,8 +63,17 @@ run_swag_init() {
     mkdir -p "$SWAG_OUTPUT_DIR" || exit 1
     
     if [[ ! -d "$GO_MAIN_DIR" ]]; then
-        echo "[ 错误：Go 源码目录 '$GO_MAIN_DIR' 不存在。请检查 server_name 是否正确。 ]"
+        echo "[ 错误：Go 源码目录 '$GO_MAIN_DIR' 不存在。请检查 server_name 是否正确 ]"
         exit 1
+    fi
+
+        # 定义 handlers 目录的完整路径
+    local HANDLERS_DIR="$ROOT_DIR/internal/${SERVER_NAME}_server/handlers"
+
+    # 新增检查：如果 handlers 目录不存在，则提前返回
+    if [[ ! -d "$HANDLERS_DIR" ]]; then
+        echo "[ 注意：handlers 目录 '$HANDLERS_DIR' 不存在，跳过 Swagger 文档生成 ]"
+        return 0
     fi
     
     # 确保返回到脚本根目录，以扫描到所有包
@@ -73,8 +82,8 @@ run_swag_init() {
     echo "[ 开始生成 Swagger API 文档... ]"
     
     if ! swag init \
-    -o "$SWAG_OUTPUT_DIR" \
-    --dir "$GO_MAIN_DIR","$ROOT_DIR/internal/${SERVER_NAME}server/handlers","$ROOT_DIR/internal/${SERVER_NAME}server/dtos"; then
+        -o "$SWAG_OUTPUT_DIR" \
+        --dir "$GO_MAIN_DIR","$ROOT_DIR/internal/${SERVER_NAME}_server/handlers","$ROOT_DIR/internal/${SERVER_NAME}_server/dtos"; then
         echo "[ Swagger API 文档生成失败 ]"
         exit 1
     fi
@@ -86,7 +95,7 @@ run_swag_init() {
 compile_server() {
     # 确保在 Go 源码目录执行编译
     if [[ ! -d "$GO_MAIN_DIR" ]]; then
-        echo "[ 错误：Go 源码目录 '$GO_MAIN_DIR' 不存在。请检查 server_name 是否正确。 ]"
+        echo "[ 错误：Go 源码目录 '$GO_MAIN_DIR' 不存在。请检查 server_name 是否正确 ]"
         exit 1
     fi
     cd "$GO_MAIN_DIR" || exit 1
@@ -102,20 +111,20 @@ compile_server() {
     echo "[ 编译成功，二进制文件输出路径：$GO_OUT ]"
 
     if [[ ! -f "$CONFIG_SOURCE_PATH" ]]; then
-        echo "[ 警告：未找到配置文件 '$CONFIG_SOURCE_PATH'，跳过创建软链接。 ]"
+        echo "[ 警告：未找到配置文件 '$CONFIG_SOURCE_PATH'，跳过创建软链接 ]"
     else
         echo "[ 准备将配置文件 '$CONFIG_FILE_NAME' 以软链接形式复制到 '$BIN_DIR' ]"
         # 移除旧的软链接或文件（如果存在）
         if [[ -L "$CONFIG_DEST_PATH" ]]; then
             rm "$CONFIG_DEST_PATH"
         elif [[ -f "$CONFIG_DEST_PATH" ]]; then
-            echo "[ 警告：目标目录 '$BIN_DIR' 中存在同名文件 '$CONFIG_FILE_NAME'，将被覆盖。 ]"
+            echo "[ 警告：目标目录 '$BIN_DIR' 中存在同名文件 '$CONFIG_FILE_NAME'，将被覆盖 ]"
             rm "$CONFIG_DEST_PATH"
         fi
 
         # 创建新的软链接
         if ! ln -s "$CONFIG_SOURCE_PATH" "$CONFIG_DEST_PATH"; then
-            echo "[ 错误：创建配置文件软链接失败。 ]"
+            echo "[ 错误：创建配置文件软链接失败 ]"
             exit 1
         fi
         echo "[ 配置文件软链接创建成功：$CONFIG_DEST_PATH -> $CONFIG_SOURCE_PATH ]"

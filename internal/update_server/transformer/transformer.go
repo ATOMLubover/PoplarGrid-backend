@@ -7,17 +7,30 @@ import (
 	"strconv"
 )
 
-// UsersToMembers 将尨译的用户信息转化为本地 Member 模型
-func UsersToMembers(team *dbmodels.Team, users []apidto.MoetranUser) ([]*dbmodels.User, error) {
-	var members []*dbmodels.User
+// UsersToLocalUsers 将尨译的用户信息转化为本地 Member 模型
+func UsersToLocalUsers(team *dbmodels.Team, users []apidto.MoetranUser) ([]*dbmodels.User, error) {
+	var localusers []*dbmodels.User
 
 	for _, user := range users {
-		members = append(members, &dbmodels.User{
-			TeamId:    team.Id, // 使用传入的 team 的 IDS
+		localusers = append(localusers, &dbmodels.User{
 			Nickname:  user.Name,
 			MoetranId: user.Id,
 
 			Email: user.Id, // 这里使用 user.Id 作为 Email 占位，防止新创建时违反 unique
+		})
+	}
+
+	return localusers, nil
+}
+
+// LocalUsersToTeamMembers 将尨译的用户信息转化为本地 TeamMember 模型
+func LocalUsersToTeamMembers(team *dbmodels.Team, users []*dbmodels.User) ([]*dbmodels.TeamMember, error) {
+	var members []*dbmodels.TeamMember
+
+	for _, user := range users {
+		members = append(members, &dbmodels.TeamMember{
+			UserId: user.Id, // 使用转换后的用户 ID
+			TeamId: team.Id, // 使用传入的 team 的 ID
 		})
 	}
 
@@ -66,6 +79,8 @@ func ProjsToProjects(projs []apidto.MoetranProj, workset *dbmodels.Workset) (
 			MoetranId: proj.Id,
 			LegacyId:  sExtractLegacyId(proj.Name),
 			WorksetId: workset.Id, // 使用传入的 workset 的 ID
+
+			PrincipalId: 1, // 默认负责人 ID 为 1
 		})
 	}
 

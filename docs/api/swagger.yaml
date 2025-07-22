@@ -147,6 +147,30 @@ definitions:
         description: 用户 ID
         type: integer
     type: object
+  dtos.ProcessApplicationRequest:
+    properties:
+      accept:
+        description: 是否接受申请
+        type: boolean
+      application_id:
+        description: 申请的 ID
+        type: integer
+    required:
+    - accept
+    - application_id
+    type: object
+  dtos.ProcessInvitationRequest:
+    properties:
+      accept:
+        description: 是否接受邀请
+        type: boolean
+      invitation_id:
+        description: 邀请的 ID
+        type: integer
+    required:
+    - accept
+    - invitation_id
+    type: object
   dtos.ProjectBasic:
     properties:
       allow_auto_join:
@@ -463,6 +487,39 @@ paths:
       summary: 创建一个新的申请
       tags:
       - application
+  /applications/{id}:
+    post:
+      description: 处理申请，接受或拒绝申请
+      parameters:
+      - description: 处理申请参数
+        in: body
+        name: body_params
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.ProcessApplicationRequest'
+      - description: 申请 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 申请处理成功
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: 处理申请
+      tags:
+      - application
   /invitations:
     get:
       description: 根据分页参数获取用户的邀请列表，支持分页和排序。当列表为空时，会返回 null 而不是空数组。
@@ -525,6 +582,39 @@ paths:
           schema:
             $ref: '#/definitions/handlers.ErrorResponse'
       summary: 创建一个新的邀请
+      tags:
+      - invitation
+  /invitations/{id}:
+    post:
+      description: 处理邀请，接受或拒绝邀请
+      parameters:
+      - description: 处理邀请参数
+        in: body
+        name: body_params
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.ProcessInvitationRequest'
+      - description: 邀请 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 邀请处理成功
+          schema:
+            $ref: '#/definitions/handlers.SuccessResponse'
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: 处理邀请
       tags:
       - invitation
   /projects:

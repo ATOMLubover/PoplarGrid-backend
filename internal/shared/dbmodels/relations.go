@@ -14,9 +14,6 @@ type ProjectLaborDivision struct {
 
 	// 分工，使用掩码计算多重身份
 	LaborRole LaborMask `gorm:"not null"`
-	// 负责人/审核人
-	PrincipalId PrimaryKey `gorm:"index;not null"`
-	FkPrincipal User       `gorm:"foreignKey:PrincipalId"`
 }
 
 func (ProjectLaborDivision) TableName() string {
@@ -30,7 +27,7 @@ type TeamMember struct {
 	Id PrimaryKey `gorm:"primaryKey;autoIncrement;not null"`
 
 	UserId PrimaryKey `gorm:"index"`
-	FkUser User       `gorm:"foreignKey:UerId"`
+	FkUser User       `gorm:"foreignKey:UserId"`
 
 	TeamId PrimaryKey `gorm:"index"`
 	FkTeam Team       `gorm:"foreignKey:TeamId"`
@@ -43,9 +40,19 @@ func (TeamMember) TableName() string {
 	return "team_members"
 }
 
+// Status 定义了申请状态的类型
+type Status int
+
+// 定义了申请状态的常量
+const (
+	STATUS_PENDING  Status = 0 // 申请待处理
+	STATUS_ACCEPTED Status = 1 // 申请已接受
+	STATUS_REJECTED Status = 2 // 申请已拒绝
+)
+
 // 项目邀请表
 type ProjectInvitation struct {
-	Id PrimaryKey `gorm:"primaryKey;autoIncrement;not null"`
+	BaseModel
 
 	InviterId PrimaryKey `gorm:"index"`
 	FkInvitor User       `gorm:"foreignKey:InviterId"`
@@ -57,7 +64,7 @@ type ProjectInvitation struct {
 
 	TargetRole LaborMask `gorm:"not null;default:0"` // 邀请的角色，使用位掩码表示
 
-	Status int `gorm:"not null;default:0"` // 邀请状态，0 pending, 1 accepted, 2 rejected
+	Status Status `gorm:"not null;default:0"` // 邀请状态，0 pending, 1 accepted, 2 rejected
 }
 
 func (ProjectInvitation) TableName() string {
@@ -66,16 +73,20 @@ func (ProjectInvitation) TableName() string {
 
 // ProjectApplication 项目申请表
 type ProjectApplication struct {
-	Id PrimaryKey `gorm:"primaryKey;autoIncrement;not null"`
+	BaseModel
 
 	ApplicantId PrimaryKey `gorm:"index"`
 	FkApplicant User       `gorm:"foreignKey:ApplicantId"`
 	ProjectId   PrimaryKey `gorm:"index"`
 	FkProject   Project    `gorm:"foreignKey:ProjectId"`
 
+	// 负责人/审核人
+	PrincipalId PrimaryKey `gorm:"index;not null"`
+	FkPrincipal User       `gorm:"foreignKey:PrincipalId"`
+
 	TargetRole LaborMask `gorm:"not null;default:0"` // 申请的角色，使用位掩码表示
 
-	Status int `gorm:"not null;default:0"` // 申请状态，0 pending, 1 accepted, 2 rejected
+	Status Status `gorm:"not null;default:0"` // 申请状态，0 pending, 1 accepted, 2 rejected
 }
 
 func (ProjectApplication) TableName() string {

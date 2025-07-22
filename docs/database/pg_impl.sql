@@ -1,255 +1,684 @@
--- PostgreSQL Version for the Localization Team Project Database
--- Corrected version to match the Go models design (v3).
--- Key changes: 'works' table removed, 'projects' restored, and 'project_tags' created.
+/*
+ Navicat Premium Data Transfer
 
-BEGIN;
+ Topic: poplar         : 白杨表格数据库设计 PostgreSQL 实现版
 
+ Source Server         : local_postgres_root
+ Source Server Type    : PostgreSQL
+ Source Server Version : 170005 (170005)
+ Source Host           : localhost:5432
+ Source Catalog        : poplar
+ Source Schema         : public
 
--- Table: members
--- Stores user information. Matches the Member struct.
-CREATE TABLE members (
-    id SERIAL PRIMARY KEY,
-    created_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
-    deleted_at TIMESTAMPTZ(3) NULL,
-    
-    team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
-    nickname VARCHAR(128) NOT NULL,
-    email VARCHAR(128) NOT NULL,
-    password_hash VARCHAR(256) NOT NULL,
-    moetran_id TEXT NOT NULL,
-    poplar_is_admin BOOLEAN NOT NULL DEFAULT FALSE,
-    labors INTEGER NOT NULL DEFAULT 0,
-    remark TEXT NULL,
-    qq_number VARCHAR(64) NULL,
-    last_active TIMESTAMPTZ(3) NULL,
+ Target Server Type    : PostgreSQL
+ Target Server Version : 170005 (170005)
+ File Encoding         : 65001
 
-    CONSTRAINT unique_members_nickname UNIQUE (nickname),
-    CONSTRAINT unique_members_email UNIQUE (email),
-    CONSTRAINT unique_members_moetran_id UNIQUE (moetran_id)
-);
--- Indexes from original schema, which are good practice.
-CREATE INDEX idx_members_deleted_at ON members(deleted_at);
+ Date: 22/07/2025 23:14:47
+*/
 
 
--- Table: teams
--- Stores translation team info. Matches the Team struct.
-CREATE TABLE teams (
-    id SERIAL PRIMARY KEY,
-    created_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
-    deleted_at TIMESTAMPTZ(3) NULL,
+-- ----------------------------
+-- Sequence structure for project_applications_id_seq
+-- ----------------------------
+DROP SEQUENCE IF EXISTS "public"."project_applications_id_seq";
+CREATE SEQUENCE "public"."project_applications_id_seq" 
+INCREMENT 1
+MINVALUE  1
+MAXVALUE 9223372036854775807
+START 1
+CACHE 1;
 
-    name VARCHAR(256) NOT NULL,
-    moetran_id TEXT NOT NULL,
+-- ----------------------------
+-- Sequence structure for project_invitations_id_seq
+-- ----------------------------
+DROP SEQUENCE IF EXISTS "public"."project_invitations_id_seq";
+CREATE SEQUENCE "public"."project_invitations_id_seq" 
+INCREMENT 1
+MINVALUE  1
+MAXVALUE 9223372036854775807
+START 1
+CACHE 1;
 
-    CONSTRAINT unique_teams_name UNIQUE (name),
-    CONSTRAINT unique_teams_moetran_id UNIQUE (moetran_id)
-);
-CREATE INDEX idx_teams_deleted_at ON teams(deleted_at);
+-- ----------------------------
+-- Sequence structure for project_labor_divisions_id_seq
+-- ----------------------------
+DROP SEQUENCE IF EXISTS "public"."project_labor_divisions_id_seq";
+CREATE SEQUENCE "public"."project_labor_divisions_id_seq" 
+INCREMENT 1
+MINVALUE  1
+MAXVALUE 9223372036854775807
+START 1
+CACHE 1;
 
+-- ----------------------------
+-- Sequence structure for projects_id_seq
+-- ----------------------------
+DROP SEQUENCE IF EXISTS "public"."projects_id_seq";
+CREATE SEQUENCE "public"."projects_id_seq" 
+INCREMENT 1
+MINVALUE  1
+MAXVALUE 9223372036854775807
+START 1
+CACHE 1;
 
--- Table: worksets
--- Stores workset (series/collection) info. Matches the Workset struct.
-CREATE TABLE worksets (
-    id SERIAL PRIMARY KEY,
-    created_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
-    updated_at TIMESTamptz(3) NOT NULL DEFAULT now(),
-    deleted_at TIMESTAMPTZ(3) NULL,
-    
-    team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
-    name TEXT NOT NULL,
-    moetran_id TEXT NOT NULL,
+-- ----------------------------
+-- Sequence structure for team_members_id_seq
+-- ----------------------------
+DROP SEQUENCE IF EXISTS "public"."team_members_id_seq";
+CREATE SEQUENCE "public"."team_members_id_seq" 
+INCREMENT 1
+MINVALUE  1
+MAXVALUE 9223372036854775807
+START 1
+CACHE 1;
 
-    CONSTRAINT unique_worksets_moetran_id UNIQUE (moetran_id),
-    CONSTRAINT unique_worksets_name UNIQUE (name)
-);
-CREATE INDEX idx_worksets_deleted_at ON worksets(deleted_at);
+-- ----------------------------
+-- Sequence structure for teams_id_seq
+-- ----------------------------
+DROP SEQUENCE IF EXISTS "public"."teams_id_seq";
+CREATE SEQUENCE "public"."teams_id_seq" 
+INCREMENT 1
+MINVALUE  1
+MAXVALUE 9223372036854775807
+START 1
+CACHE 1;
 
+-- ----------------------------
+-- Sequence structure for users_id_seq
+-- ----------------------------
+DROP SEQUENCE IF EXISTS "public"."users_id_seq";
+CREATE SEQUENCE "public"."users_id_seq" 
+INCREMENT 1
+MINVALUE  1
+MAXVALUE 9223372036854775807
+START 1
+CACHE 1;
 
--- Table: tags
--- Stores system-wide tags for categorization. Matches the Tag struct.
-CREATE TABLE tags (
-    id SERIAL PRIMARY KEY,
-    created_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
-    deleted_at TIMESTAMPTZ(3) NULL,
-    
-    name VARCHAR(128) NOT NULL,
-    description VARCHAR(256) NULL,
+-- ----------------------------
+-- Sequence structure for worksets_id_seq
+-- ----------------------------
+DROP SEQUENCE IF EXISTS "public"."worksets_id_seq";
+CREATE SEQUENCE "public"."worksets_id_seq" 
+INCREMENT 1
+MINVALUE  1
+MAXVALUE 9223372036854775807
+START 1
+CACHE 1;
 
-    CONSTRAINT unique_tags_name UNIQUE (name)
-);
-CREATE INDEX idx_tags_deleted_at ON tags(deleted_at);
+-- ----------------------------
+-- Table structure for project_applications
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."project_applications";
+CREATE TABLE "public"."project_applications" (
+  "id" int8 NOT NULL DEFAULT nextval('project_applications_id_seq'::regclass),
+  "created_at" timestamptz(6) NOT NULL DEFAULT now(),
+  "updated_at" timestamptz(6) NOT NULL DEFAULT now(),
+  "deleted_at" timestamptz(6),
+  "applicant_id" int8 NOT NULL,
+  "project_id" int8 NOT NULL,
+  "principal_id" int8 NOT NULL,
+  "target_role" int8 NOT NULL DEFAULT 0,
+  "status" int2 NOT NULL DEFAULT 0
+)
+;
 
+-- ----------------------------
+-- Table structure for project_invitations
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."project_invitations";
+CREATE TABLE "public"."project_invitations" (
+  "id" int8 NOT NULL DEFAULT nextval('project_invitations_id_seq'::regclass),
+  "created_at" timestamptz(6) NOT NULL DEFAULT now(),
+  "updated_at" timestamptz(6) NOT NULL DEFAULT now(),
+  "deleted_at" timestamptz(6),
+  "inviter_id" int8 NOT NULL,
+  "invitee_id" int8 NOT NULL,
+  "project_id" int8 NOT NULL,
+  "target_role" int8 NOT NULL DEFAULT 0,
+  "status" int2 NOT NULL DEFAULT 0
+)
+;
 
--- Table: projects (CORRECTED)
--- Core table tracking the progress of a localization project. Now matches the Project struct.
-CREATE TABLE projects (
-    id SERIAL PRIMARY KEY,
-    created_at TIMESTAMPTZ(3) NOT NULL DEFAULT now(),
-    updated_at TIMESTANDZ(3) NOT NULL DEFAULT now(),
-    deleted_at TIMESTAMPTZ(3) NULL,
-    
-    -- Restored fields from the Go model
-    title TEXT NOT NULL,
-    moetran_id TEXT NOT NULL,
+-- ----------------------------
+-- Table structure for project_labor_divisions
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."project_labor_divisions";
+CREATE TABLE "public"."project_labor_divisions" (
+  "id" int8 NOT NULL DEFAULT nextval('project_labor_divisions_id_seq'::regclass),
+  "created_at" timestamptz(6) NOT NULL DEFAULT now(),
+  "updated_at" timestamptz(6) NOT NULL DEFAULT now(),
+  "deleted_at" timestamptz(6),
+  "project_id" int8 NOT NULL,
+  "user_id" int8 NOT NULL,
+  "labor_role" int8 NOT NULL
+)
+;
 
-    -- Fields that were already correct
-    legacy_id INTEGER NULL,
-    workset_id INTEGER NOT NULL REFERENCES worksets(id) ON DELETE CASCADE,
-    status INTEGER NOT NULL,
-    urgency SMALLINT NOT NULL
-);
+-- ----------------------------
+-- Table structure for projects
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."projects";
+CREATE TABLE "public"."projects" (
+  "id" int8 NOT NULL DEFAULT nextval('projects_id_seq'::regclass),
+  "created_at" timestamptz(6) NOT NULL DEFAULT now(),
+  "updated_at" timestamptz(6) NOT NULL DEFAULT now(),
+  "deleted_at" timestamptz(6),
+  "title" text COLLATE "pg_catalog"."default" NOT NULL,
+  "description" text COLLATE "pg_catalog"."default",
+  "moetran_id" text COLLATE "pg_catalog"."default",
+  "legacy_id" int8,
+  "workset_id" int8 NOT NULL,
+  "principal_id" int8 NOT NULL,
+  "workset_index" int8 NOT NULL,
+  "translate_status" int2 NOT NULL DEFAULT 0,
+  "proof_status" int2 NOT NULL DEFAULT 0,
+  "letter_status" int2 NOT NULL DEFAULT 0,
+  "review_status" int2 NOT NULL DEFAULT 0,
+  "is_published" bool NOT NULL DEFAULT false,
+  "allow_auto_join" bool NOT NULL DEFAULT false,
+  "is_hidden" bool NOT NULL DEFAULT false
+)
+;
 
--- 现有索引保持不变
-CREATE INDEX idx_projects_deleted_at ON projects(deleted_at);
-CREATE INDEX idx_projects_legacy_id ON projects(legacy_id);
-CREATE INDEX idx_projects_title ON projects(title); -- This is a non-unique index and can be kept
+-- ----------------------------
+-- Table structure for team_members
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."team_members";
+CREATE TABLE "public"."team_members" (
+  "id" int8 NOT NULL DEFAULT nextval('team_members_id_seq'::regclass),
+  "created_at" timestamptz(6) NOT NULL DEFAULT now(),
+  "updated_at" timestamptz(6) NOT NULL DEFAULT now(),
+  "deleted_at" timestamptz(6),
+  "user_id" int8 NOT NULL,
+  "team_id" int8 NOT NULL,
+  "role" int8 NOT NULL DEFAULT 0
+)
+;
 
--- New: Create a unique index for the 'title' field of active (non-deleted) projects.
--- This ensures that the 'title' is unique only for projects that have not been soft-deleted.
--- Note: Partial unique indexes with a WHERE clause cannot be defined directly as an inline CONSTRAINT
--- within the CREATE TABLE statement in PostgreSQL.
-CREATE UNIQUE INDEX unique_active_projects_title ON projects (title) WHERE deleted_at IS NULL;
+-- ----------------------------
+-- Table structure for teams
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."teams";
+CREATE TABLE "public"."teams" (
+  "id" int8 NOT NULL DEFAULT nextval('teams_id_seq'::regclass),
+  "created_at" timestamptz(6) NOT NULL DEFAULT now(),
+  "updated_at" timestamptz(6) NOT NULL DEFAULT now(),
+  "deleted_at" timestamptz(6),
+  "name" varchar(256) COLLATE "pg_catalog"."default" NOT NULL,
+  "moetran_id" text COLLATE "pg_catalog"."default"
+)
+;
 
--- New: Create a unique index for the 'moetran_id' field of active (non-deleted) projects.
--- This ensures that the 'moetran_id' is unique only for projects that have not been soft-deleted.
--- Note: Partial unique indexes with a WHERE clause cannot be defined directly as an inline CONSTRAINT
--- within the CREATE TABLE statement in PostgreSQL.
-CREATE UNIQUE INDEX unique_active_projects_moetran_id ON projects (moetran_id) WHERE deleted_at IS NULL;
+-- ----------------------------
+-- Table structure for users
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."users";
+CREATE TABLE "public"."users" (
+  "id" int8 NOT NULL DEFAULT nextval('users_id_seq'::regclass),
+  "created_at" timestamptz(6) NOT NULL DEFAULT now(),
+  "updated_at" timestamptz(6) NOT NULL DEFAULT now(),
+  "deleted_at" timestamptz(6),
+  "nickname" varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
+  "email" varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
+  "password_hash" varchar(256) COLLATE "pg_catalog"."default" NOT NULL,
+  "moetran_id" text COLLATE "pg_catalog"."default",
+  "moetran_auth" text COLLATE "pg_catalog"."default",
+  "poplar_is_admin" bool NOT NULL DEFAULT false,
+  "remark" text COLLATE "pg_catalog"."default",
+  "qq_number" int8,
+  "last_active" timestamptz(6)
+)
+;
 
+-- ----------------------------
+-- Table structure for worksets
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."worksets";
+CREATE TABLE "public"."worksets" (
+  "id" int8 NOT NULL DEFAULT nextval('worksets_id_seq'::regclass),
+  "created_at" timestamptz(6) NOT NULL DEFAULT now(),
+  "updated_at" timestamptz(6) NOT NULL DEFAULT now(),
+  "deleted_at" timestamptz(6),
+  "team_id" int8 NOT NULL,
+  "name" text COLLATE "pg_catalog"."default" NOT NULL,
+  "moetran_id" text COLLATE "pg_catalog"."default",
+  "project_sequence_name" text COLLATE "pg_catalog"."default" NOT NULL
+)
+;
 
--- Table: member_preferences
--- Stores member's tag preferences. Matches the MemberPreference struct.
-CREATE TABLE member_preferences (
-    member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
-    tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-    is_resisted BOOLEAN NOT NULL DEFAULT FALSE,
-    
-    -- A member can only have one preference entry per tag.
-    PRIMARY KEY (member_id, tag_id)
-);
-
-
--- Table: project_tags (CORRECTED)
--- Join table between projects and tags. Replaces 'work_tags'. Matches the ProjectTag struct.
-CREATE TABLE project_tags (
-    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-    tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-    
-    -- A tag can only be applied to a project once.
-    PRIMARY KEY (project_id, tag_id)
-);
-
-
--- Table: project_labor_divisions
--- Join table for project assignments. Matches the ProjectLaborDivision struct.
-CREATE TABLE project_labor_divisions (
-    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-    member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
-    labor_role INTEGER NOT NULL,
-
-    -- A member should only have one labor entry per project
-    -- Using PRIMARY KEY is also an option here, but UNIQUE works perfectly.
-    CONSTRAINT unique_pld_project_member UNIQUE (project_id, member_id)
-);
--- Indexes are helpful for querying assignments by project or by member.
-CREATE INDEX idx_pld_project_id ON project_labor_divisions(project_id);
-CREATE INDEX idx_pld_member_id ON project_labor_divisions(member_id);
-
-
-COMMIT;
-
---------------
--- 针对实现 workset 内递增 index 的实现
---------------
-
--- 假设你已经创建了一个新的 workset，它的 ID 是 123
-CREATE SEQUENCE projects_seq_workset_123 START 1;
-
--- 用于动态获取并设置项目的 workset_project_index 的触发器函数
-CREATE OR REPLACE FUNCTION set_project_workset_index()
-RETURNS TRIGGER AS $$
+-- ----------------------------
+-- Function structure for create_workset_project_sequence
+-- ----------------------------
+DROP FUNCTION IF EXISTS "public"."create_workset_project_sequence"();
+CREATE OR REPLACE FUNCTION "public"."create_workset_project_sequence"()
+  RETURNS "pg_catalog"."trigger" AS $BODY$
 DECLARE
-    -- 声明一个变量来存储从 worksets 表查到的序列名称
-    v_seq_name TEXT;
-    -- 声明一个变量来存储从序列中获取的下一个值
-    v_next_val BIGINT;
+    -- 声明一个变量来存储生成的序列名称
+    v_sequence_name TEXT;
 BEGIN
-    -- 1. 根据当前新插入项目（NEW）的 workset_id，去 worksets 表查找到对应的序列名称
-    SELECT project_sequence_name INTO v_seq_name
-    FROM worksets
-    WHERE id = NEW.workset_id;
-
-    -- 如果没有找到序列名称，说明 workset 数据有问题，抛出异常阻止插入
-    IF v_seq_name IS NULL THEN
-        RAISE EXCEPTION 'Sequence name not found for workset_id %', NEW.workset_id;
+    -- 检查 NEW.id 是否已存在。对于 BIGSERIAL，ID 在 BEFORE INSERT 触发器执行时就已经生成了。
+    IF NEW.id IS NULL THEN
+        RAISE EXCEPTION 'Workset ID (NEW.id) cannot be NULL for sequence creation.';
     END IF;
 
-    -- 2. 动态执行 SQL：从找到的序列中获取下一个值
-    -- 注意：这里必须使用 EXECUTE，因为序列名称是变量，不能直接写在 nextval() 里
-    -- nextval('sequence_name') 是获取下一个值的函数
-    EXECUTE 'SELECT nextval(''' || v_seq_name || ''')' INTO v_next_val;
+    -- 根据 workset 的 ID 生成唯一的序列名称
+    -- 格式与 Go 代码中的 PROJ_IDX_SEQ_PREFIX_FMT 保持一致
+    v_sequence_name := format('workset_project_index_seq_%s', NEW.id);
 
-    -- 3. 将获取到的下一个序列值，赋值给新插入项目记录的 workset_project_number 字段
-    NEW.workset_index := v_next_val;
+    -- 将生成的序列名称赋值给新行的 project_sequence_name 字段
+    -- 这一步必须在创建序列之前，因为 CREATE SEQUENCE 语句中会用到这个名称
+    NEW.project_sequence_name := v_sequence_name;
 
-    -- 4. 返回 NEW，表示允许插入操作继续，并使用 NEW 中修改后的值
+    -- 动态执行 SQL 创建新的 PostgreSQL 序列
+    -- START 1 表示序列从 1 开始
+    EXECUTE format('CREATE SEQUENCE %I START 1', v_sequence_name);
+
+    -- 返回 NEW，表示允许插入操作继续，并使用修改后的 NEW 记录
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;
 
-CREATE TRIGGER before_insert_projects_set_workset_number
-BEFORE INSERT ON projects          -- 在向 projects 表插入数据之前
-FOR EACH ROW                       -- 对每一行数据都执行
-EXECUTE FUNCTION set_project_workset_index(); -- 调用我们的函数
+-- ----------------------------
+-- Function structure for set_project_workset_index
+-- ----------------------------
+DROP FUNCTION IF EXISTS "public"."set_project_workset_index"();
+CREATE OR REPLACE FUNCTION "public"."set_project_workset_index"()
+  RETURNS "pg_catalog"."trigger" AS $BODY$
+DECLARE
+    v_sequence_name TEXT;
+    v_next_val BIGINT;
+BEGIN
+    RAISE NOTICE '--- 触发器 trg_set_project_workset_index 已激活 ---';
+    RAISE NOTICE '即将插入的 project.workset_id: %', NEW.workset_id;
+    RAISE NOTICE '即将插入的 project.workset_index (初始值): %', NEW.workset_index; -- 观察GORM传入的初始值
 
-------------
--- 针对 projects 进行统计的物化视图的实现
-------------
+    -- 1. 根据 NEW.workset_id 查询 worksets 表获取 project_sequence_name
+    BEGIN
+        SELECT project_sequence_name INTO v_sequence_name
+        FROM worksets
+        WHERE id = NEW.workset_id
+        FOR UPDATE; -- 锁定 workset 行，确保序列名称的原子性
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE EXCEPTION '未找到 workset_id % 对应的 workset 记录。', NEW.workset_id;
+        WHEN OTHERS THEN
+            RAISE EXCEPTION '查询 workset_id % 对应的序列名时发生未知错误: %', NEW.workset_id, SQLERRM;
+    END;
 
--- 假设你的 projects 表和 WorksetId 字段都已存在并包含数据。
+    RAISE NOTICE '从 worksets 表中找到的序列名称: %', v_sequence_name;
 
--- 如果你已经创建了 project_stats_mv，需要先删除它才能重新创建，
--- 特别是如果字段名发生了变化。
--- DROP MATERIALIZED VIEW IF EXISTS project_stats_mv;
+    IF v_sequence_name IS NULL OR v_sequence_name = '' THEN
+        RAISE EXCEPTION 'workset_id % 对应的 project_sequence_name 为空或无效。', NEW.workset_id;
+    END IF;
 
-CREATE MATERIALIZED VIEW project_stats_mv AS
-SELECT
-    p.workset_id, -- WorksetId 作为分组和查询的维度
-    COUNT(*) AS total,
+    -- 2. 动态执行 SQL，从获取到的序列中获取下一个值
+    -- 使用 $1::regclass 明确将传入的字符串视为关系（如序列）的名称
+    BEGIN
+        EXECUTE 'SELECT nextval($1::regclass)' INTO v_next_val USING v_sequence_name;
+    EXCEPTION
+        WHEN OTHERS THEN
+            -- 捕获更具体的错误信息，并重新抛出
+            RAISE EXCEPTION '从序列 % 获取 nextval 失败: % (SQLSTATE %)', v_sequence_name, SQLERRM, SQLSTATE;
+    END;
 
-    -- 翻译相关统计
-    COUNT(CASE WHEN p.translate_status = 0 THEN 1 END) AS not_translating,
-    COUNT(CASE WHEN p.translate_status = 1 THEN 1 END) AS translating, -- 对应 TranslateInProgress
-    COUNT(CASE WHEN p.translate_status = 2 THEN 1 END) AS translated,  -- 对应 TranslateCompleted
+    RAISE NOTICE '从序列 % 获取到的下一个值: %', v_sequence_name, v_next_val;
 
-    -- 校对相关统计
-    COUNT(CASE WHEN p.proof_status = 0 THEN 1 END) AS not_prooving,
-    COUNT(CASE WHEN p.proof_status = 1 THEN 1 END) AS prooving,    -- 对应 ProofInProgress
-    COUNT(CASE WHEN p.proof_status = 2 THEN 1 END) AS prooved,     -- 对应 ProofCompleted
+    -- 3. 将获取到的下一个序列值赋值给新插入项目记录的 workset_index 字段
+    NEW.workset_index := v_next_val;
+    RAISE NOTICE '已将 NEW.workset_index 设置为: %', NEW.workset_index;
 
-    -- 排版相关统计 (原嵌字)
-    COUNT(CASE WHEN p.letter_status = 0 THEN 1 END) AS not_lettering,
-    COUNT(CASE WHEN p.letter_status = 1 THEN 1 END) AS lettering,   -- 对应 LetterInProgress
-    COUNT(CASE WHEN p.letter_status = 2 THEN 1 END) AS letterred,   -- 对应 LetterCompleted
+    RAISE NOTICE '--- 触发器 trg_set_project_workset_index 执行完毕 ---';
+    RETURN NEW;
+END;
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;
 
-    -- 审核相关统计
-    COUNT(CASE WHEN p.review_status = 0 THEN 1 END) AS not_reviewing,
-    COUNT(CASE WHEN p.review_status = 1 THEN 1 END) AS reviewing,   -- 对应 ReviewInProgress
-    COUNT(CASE WHEN p.review_status = 2 THEN 1 END) AS reviewed,    -- 对应 ReviewCompleted
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+ALTER SEQUENCE "public"."project_applications_id_seq"
+OWNED BY "public"."project_applications"."id";
+SELECT setval('"public"."project_applications_id_seq"', 1, false);
 
-    -- 发布相关统计
-    COUNT(CASE WHEN p.is_published = FALSE THEN 1 END) AS not_published,
-    COUNT(CASE WHEN p.is_published = TRUE THEN 1 END) AS published
-FROM
-    projects AS p
-WHERE
-    p.deleted_at IS NULL -- 只统计未被软删除的项目
-GROUP BY
-    p.workset_id; -- 按 WorksetId 分组
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+ALTER SEQUENCE "public"."project_invitations_id_seq"
+OWNED BY "public"."project_invitations"."id";
+SELECT setval('"public"."project_invitations_id_seq"', 1, false);
 
--- 推荐：为物化视图创建唯一索引，以支持 CONCURRENTLY 刷新和加速查询
--- WorksetId 是每行唯一的标识
-CREATE UNIQUE INDEX IF NOT EXISTS idx_project_stats_mv_workset_id ON project_stats_mv (workset_id);
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+ALTER SEQUENCE "public"."project_labor_divisions_id_seq"
+OWNED BY "public"."project_labor_divisions"."id";
+SELECT setval('"public"."project_labor_divisions_id_seq"', 1, false);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+ALTER SEQUENCE "public"."projects_id_seq"
+OWNED BY "public"."projects"."id";
+SELECT setval('"public"."projects_id_seq"', 1358, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+ALTER SEQUENCE "public"."team_members_id_seq"
+OWNED BY "public"."team_members"."id";
+SELECT setval('"public"."team_members_id_seq"', 297, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+ALTER SEQUENCE "public"."teams_id_seq"
+OWNED BY "public"."teams"."id";
+SELECT setval('"public"."teams_id_seq"', 1, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+ALTER SEQUENCE "public"."users_id_seq"
+OWNED BY "public"."users"."id";
+SELECT setval('"public"."users_id_seq"', 297, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+SELECT setval('"public"."workset_project_index_seq_1"', 6, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+SELECT setval('"public"."workset_project_index_seq_10"', 113, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+SELECT setval('"public"."workset_project_index_seq_11"', 1, false);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+SELECT setval('"public"."workset_project_index_seq_12"', 115, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+SELECT setval('"public"."workset_project_index_seq_13"', 6, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+SELECT setval('"public"."workset_project_index_seq_14"', 2, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+SELECT setval('"public"."workset_project_index_seq_2"', 780, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+SELECT setval('"public"."workset_project_index_seq_3"', 176, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+SELECT setval('"public"."workset_project_index_seq_4"', 102, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+SELECT setval('"public"."workset_project_index_seq_5"', 3, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+SELECT setval('"public"."workset_project_index_seq_6"', 3, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+SELECT setval('"public"."workset_project_index_seq_7"', 5, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+SELECT setval('"public"."workset_project_index_seq_8"', 10, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+SELECT setval('"public"."workset_project_index_seq_9"', 37, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+ALTER SEQUENCE "public"."worksets_id_seq"
+OWNED BY "public"."worksets"."id";
+SELECT setval('"public"."worksets_id_seq"', 14, true);
+
+-- ----------------------------
+-- Indexes structure for table project_applications
+-- ----------------------------
+CREATE INDEX "idx_project_applications_applicant_id" ON "public"."project_applications" USING btree (
+  "applicant_id" "pg_catalog"."int8_ops" ASC NULLS LAST
+);
+CREATE INDEX "idx_project_applications_deleted_at" ON "public"."project_applications" USING btree (
+  "deleted_at" "pg_catalog"."timestamptz_ops" ASC NULLS LAST
+);
+CREATE INDEX "idx_project_applications_principal_id" ON "public"."project_applications" USING btree (
+  "principal_id" "pg_catalog"."int8_ops" ASC NULLS LAST
+);
+CREATE INDEX "idx_project_applications_project_id" ON "public"."project_applications" USING btree (
+  "project_id" "pg_catalog"."int8_ops" ASC NULLS LAST
+);
+
+-- ----------------------------
+-- Primary Key structure for table project_applications
+-- ----------------------------
+ALTER TABLE "public"."project_applications" ADD CONSTRAINT "project_applications_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Indexes structure for table project_invitations
+-- ----------------------------
+CREATE INDEX "idx_project_invitations_deleted_at" ON "public"."project_invitations" USING btree (
+  "deleted_at" "pg_catalog"."timestamptz_ops" ASC NULLS LAST
+);
+CREATE INDEX "idx_project_invitations_invitee_id" ON "public"."project_invitations" USING btree (
+  "invitee_id" "pg_catalog"."int8_ops" ASC NULLS LAST
+);
+CREATE INDEX "idx_project_invitations_inviter_id" ON "public"."project_invitations" USING btree (
+  "inviter_id" "pg_catalog"."int8_ops" ASC NULLS LAST
+);
+CREATE INDEX "idx_project_invitations_project_id" ON "public"."project_invitations" USING btree (
+  "project_id" "pg_catalog"."int8_ops" ASC NULLS LAST
+);
+
+-- ----------------------------
+-- Primary Key structure for table project_invitations
+-- ----------------------------
+ALTER TABLE "public"."project_invitations" ADD CONSTRAINT "project_invitations_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Indexes structure for table project_labor_divisions
+-- ----------------------------
+CREATE INDEX "idx_project_labor_divisions_deleted_at" ON "public"."project_labor_divisions" USING btree (
+  "deleted_at" "pg_catalog"."timestamptz_ops" ASC NULLS LAST
+);
+
+-- ----------------------------
+-- Uniques structure for table project_labor_divisions
+-- ----------------------------
+ALTER TABLE "public"."project_labor_divisions" ADD CONSTRAINT "unique_user_in_project" UNIQUE ("project_id", "user_id");
+
+-- ----------------------------
+-- Primary Key structure for table project_labor_divisions
+-- ----------------------------
+ALTER TABLE "public"."project_labor_divisions" ADD CONSTRAINT "project_labor_divisions_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Indexes structure for table projects
+-- ----------------------------
+CREATE INDEX "idx_projects_deleted_at" ON "public"."projects" USING btree (
+  "deleted_at" "pg_catalog"."timestamptz_ops" ASC NULLS LAST
+);
+CREATE INDEX "idx_projects_legacy_id" ON "public"."projects" USING btree (
+  "legacy_id" "pg_catalog"."int8_ops" ASC NULLS LAST
+);
+CREATE INDEX "idx_projects_principal_id" ON "public"."projects" USING btree (
+  "principal_id" "pg_catalog"."int8_ops" ASC NULLS LAST
+);
+CREATE INDEX "idx_projects_title" ON "public"."projects" USING btree (
+  "title" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+);
+CREATE UNIQUE INDEX "idx_projects_workset_id_workset_index" ON "public"."projects" USING btree (
+  "workset_id" "pg_catalog"."int8_ops" ASC NULLS LAST,
+  "workset_index" "pg_catalog"."int8_ops" ASC NULLS LAST
+) WHERE deleted_at IS NULL;
+
+-- ----------------------------
+-- Triggers structure for table projects
+-- ----------------------------
+CREATE TRIGGER "trg_set_project_workset_index" BEFORE INSERT ON "public"."projects"
+FOR EACH ROW
+EXECUTE PROCEDURE "public"."set_project_workset_index"();
+
+-- ----------------------------
+-- Uniques structure for table projects
+-- ----------------------------
+ALTER TABLE "public"."projects" ADD CONSTRAINT "projects_moetran_id_key" UNIQUE ("moetran_id");
+ALTER TABLE "public"."projects" ADD CONSTRAINT "unique_project_in_workset" UNIQUE ("workset_id", "workset_index");
+
+-- ----------------------------
+-- Primary Key structure for table projects
+-- ----------------------------
+ALTER TABLE "public"."projects" ADD CONSTRAINT "projects_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Indexes structure for table team_members
+-- ----------------------------
+CREATE INDEX "idx_team_members_deleted_at" ON "public"."team_members" USING btree (
+  "deleted_at" "pg_catalog"."timestamptz_ops" ASC NULLS LAST
+);
+CREATE INDEX "idx_team_members_team_id" ON "public"."team_members" USING btree (
+  "team_id" "pg_catalog"."int8_ops" ASC NULLS LAST
+);
+CREATE INDEX "idx_team_members_user_id" ON "public"."team_members" USING btree (
+  "user_id" "pg_catalog"."int8_ops" ASC NULLS LAST
+);
+
+-- ----------------------------
+-- Uniques structure for table team_members
+-- ----------------------------
+ALTER TABLE "public"."team_members" ADD CONSTRAINT "unique_member_in_team" UNIQUE ("user_id", "team_id");
+
+-- ----------------------------
+-- Primary Key structure for table team_members
+-- ----------------------------
+ALTER TABLE "public"."team_members" ADD CONSTRAINT "team_members_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Indexes structure for table teams
+-- ----------------------------
+CREATE INDEX "idx_teams_deleted_at" ON "public"."teams" USING btree (
+  "deleted_at" "pg_catalog"."timestamptz_ops" ASC NULLS LAST
+);
+
+-- ----------------------------
+-- Uniques structure for table teams
+-- ----------------------------
+ALTER TABLE "public"."teams" ADD CONSTRAINT "teams_name_key" UNIQUE ("name");
+ALTER TABLE "public"."teams" ADD CONSTRAINT "teams_moetran_id_key" UNIQUE ("moetran_id");
+
+-- ----------------------------
+-- Primary Key structure for table teams
+-- ----------------------------
+ALTER TABLE "public"."teams" ADD CONSTRAINT "teams_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Indexes structure for table users
+-- ----------------------------
+CREATE INDEX "idx_users_deleted_at" ON "public"."users" USING btree (
+  "deleted_at" "pg_catalog"."timestamptz_ops" ASC NULLS LAST
+);
+
+-- ----------------------------
+-- Uniques structure for table users
+-- ----------------------------
+ALTER TABLE "public"."users" ADD CONSTRAINT "users_nickname_key" UNIQUE ("nickname");
+ALTER TABLE "public"."users" ADD CONSTRAINT "users_email_key" UNIQUE ("email");
+ALTER TABLE "public"."users" ADD CONSTRAINT "users_moetran_id_key" UNIQUE ("moetran_id");
+
+-- ----------------------------
+-- Primary Key structure for table users
+-- ----------------------------
+ALTER TABLE "public"."users" ADD CONSTRAINT "users_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Indexes structure for table worksets
+-- ----------------------------
+CREATE INDEX "idx_worksets_deleted_at" ON "public"."worksets" USING btree (
+  "deleted_at" "pg_catalog"."timestamptz_ops" ASC NULLS LAST
+);
+
+-- ----------------------------
+-- Triggers structure for table worksets
+-- ----------------------------
+CREATE TRIGGER "trg_create_workset_project_sequence" BEFORE INSERT ON "public"."worksets"
+FOR EACH ROW
+EXECUTE PROCEDURE "public"."create_workset_project_sequence"();
+
+-- ----------------------------
+-- Uniques structure for table worksets
+-- ----------------------------
+ALTER TABLE "public"."worksets" ADD CONSTRAINT "worksets_name_key" UNIQUE ("name");
+ALTER TABLE "public"."worksets" ADD CONSTRAINT "worksets_moetran_id_key" UNIQUE ("moetran_id");
+ALTER TABLE "public"."worksets" ADD CONSTRAINT "worksets_project_sequence_name_key" UNIQUE ("project_sequence_name");
+
+-- ----------------------------
+-- Primary Key structure for table worksets
+-- ----------------------------
+ALTER TABLE "public"."worksets" ADD CONSTRAINT "worksets_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Foreign Keys structure for table project_applications
+-- ----------------------------
+ALTER TABLE "public"."project_applications" ADD CONSTRAINT "project_applications_applicant_id_fkey" FOREIGN KEY ("applicant_id") REFERENCES "public"."users" ("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE "public"."project_applications" ADD CONSTRAINT "project_applications_principal_id_fkey" FOREIGN KEY ("principal_id") REFERENCES "public"."users" ("id") ON DELETE RESTRICT ON UPDATE NO ACTION;
+ALTER TABLE "public"."project_applications" ADD CONSTRAINT "project_applications_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects" ("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- ----------------------------
+-- Foreign Keys structure for table project_invitations
+-- ----------------------------
+ALTER TABLE "public"."project_invitations" ADD CONSTRAINT "project_invitations_invitee_id_fkey" FOREIGN KEY ("invitee_id") REFERENCES "public"."users" ("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE "public"."project_invitations" ADD CONSTRAINT "project_invitations_inviter_id_fkey" FOREIGN KEY ("inviter_id") REFERENCES "public"."users" ("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE "public"."project_invitations" ADD CONSTRAINT "project_invitations_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects" ("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- ----------------------------
+-- Foreign Keys structure for table project_labor_divisions
+-- ----------------------------
+ALTER TABLE "public"."project_labor_divisions" ADD CONSTRAINT "project_labor_divisions_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects" ("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE "public"."project_labor_divisions" ADD CONSTRAINT "project_labor_divisions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users" ("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- ----------------------------
+-- Foreign Keys structure for table projects
+-- ----------------------------
+ALTER TABLE "public"."projects" ADD CONSTRAINT "projects_principal_id_fkey" FOREIGN KEY ("principal_id") REFERENCES "public"."users" ("id") ON DELETE RESTRICT ON UPDATE NO ACTION;
+ALTER TABLE "public"."projects" ADD CONSTRAINT "projects_workset_id_fkey" FOREIGN KEY ("workset_id") REFERENCES "public"."worksets" ("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- ----------------------------
+-- Foreign Keys structure for table team_members
+-- ----------------------------
+ALTER TABLE "public"."team_members" ADD CONSTRAINT "team_members_team_id_fkey" FOREIGN KEY ("team_id") REFERENCES "public"."teams" ("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE "public"."team_members" ADD CONSTRAINT "team_members_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users" ("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- ----------------------------
+-- Foreign Keys structure for table worksets
+-- ----------------------------
+ALTER TABLE "public"."worksets" ADD CONSTRAINT "worksets_team_id_fkey" FOREIGN KEY ("team_id") REFERENCES "public"."teams" ("id") ON DELETE CASCADE ON UPDATE NO ACTION;

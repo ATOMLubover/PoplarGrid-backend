@@ -6,7 +6,6 @@ import (
 	"poplargrid/internal/shared/dbmodels"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // 作品集 repo
@@ -38,16 +37,16 @@ func (r *WorksetsRepo) BulkUpsert(inputWorksets []*dbmodels.Workset) error {
 	// 使用 Clauses(clause.OnConflict{}) 实现批量 UPSERT
 	// 冲突目标为 MoetranId，使冲突发生时，更新指定字段 Name 和 UpdatedAt
 	if err := r.GetTable().
-		Clauses(clause.OnConflict{
-			Columns: []clause.Column{{
-				Name: "moetran_id", // 指定冲突字段为 moetran_id
-			}},
-			DoUpdates: clause.Assignments(map[string]any{ // 冲突时要更新的字段
-				// EXCLUDED 表示冲突行的新值
-				"name":       gorm.Expr("EXCLUDED.name"),
-				"updated_at": gorm.Expr("EXCLUDED.updated_at"),
-			}),
-		}).
+		// Clauses(clause.OnConflict{
+		// 	Columns: []clause.Column{{
+		// 		Name: "moetran_id", // 指定冲突字段为 moetran_id
+		// 	}},
+		// 	DoUpdates: clause.Assignments(map[string]any{ // 冲突时要更新的字段
+		// 		// EXCLUDED 表示冲突行的新值
+		// 		"name":       gorm.Expr("EXCLUDED.name"),
+		// 		"updated_at": gorm.Expr("EXCLUDED.updated_at"),
+		// 	}),
+		// }).
 		Create(&inputWorksets).
 		Error; err != nil {
 		return fmt.Errorf("批量 Upsert Worksets 失败: %w", err)

@@ -105,6 +105,56 @@
                 }
             }
         },
+        "/applications/{id}": {
+            "post": {
+                "description": "处理申请，接受或拒绝申请",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "application"
+                ],
+                "summary": "处理申请",
+                "parameters": [
+                    {
+                        "description": "处理申请参数",
+                        "name": "body_params",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ProcessApplicationRequest"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "申请 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "申请处理成功",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/invitations": {
             "get": {
                 "description": "根据分页参数获取用户的邀请列表，支持分页和排序。当列表为空时，会返回 null 而不是空数组。",
@@ -183,6 +233,56 @@
                 "responses": {
                     "200": {
                         "description": "邀请创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/invitations/{id}": {
+            "post": {
+                "description": "处理邀请，接受或拒绝邀请",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invitation"
+                ],
+                "summary": "处理邀请",
+                "parameters": [
+                    {
+                        "description": "处理邀请参数",
+                        "name": "body_params",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ProcessInvitationRequest"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "邀请 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "邀请处理成功",
                         "schema": {
                             "$ref": "#/definitions/handlers.SuccessResponse"
                         }
@@ -1166,6 +1266,40 @@
                 },
                 "user_id": {
                     "description": "用户 ID",
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.ProcessApplicationRequest": {
+            "type": "object",
+            "required": [
+                "accept",
+                "application_id"
+            ],
+            "properties": {
+                "accept": {
+                    "description": "是否接受申请",
+                    "type": "boolean"
+                },
+                "application_id": {
+                    "description": "申请的 ID",
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.ProcessInvitationRequest": {
+            "type": "object",
+            "required": [
+                "accept",
+                "invitation_id"
+            ],
+            "properties": {
+                "accept": {
+                    "description": "是否接受邀请",
+                    "type": "boolean"
+                },
+                "invitation_id": {
+                    "description": "邀请的 ID",
                     "type": "integer"
                 }
             }
