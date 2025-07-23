@@ -363,14 +363,14 @@ SELECT setval('"public"."project_labor_divisions_id_seq"', 1, false);
 -- ----------------------------
 ALTER SEQUENCE "public"."projects_id_seq"
 OWNED BY "public"."projects"."id";
-SELECT setval('"public"."projects_id_seq"', 1358, true);
+SELECT setval('"public"."projects_id_seq"', 1, true);
 
 -- ----------------------------
 -- Alter sequences owned by
 -- ----------------------------
 ALTER SEQUENCE "public"."team_members_id_seq"
 OWNED BY "public"."team_members"."id";
-SELECT setval('"public"."team_members_id_seq"', 297, true);
+SELECT setval('"public"."team_members_id_seq"', 1, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -384,84 +384,14 @@ SELECT setval('"public"."teams_id_seq"', 1, true);
 -- ----------------------------
 ALTER SEQUENCE "public"."users_id_seq"
 OWNED BY "public"."users"."id";
-SELECT setval('"public"."users_id_seq"', 297, true);
-
--- ----------------------------
--- Alter sequences owned by
--- ----------------------------
-SELECT setval('"public"."workset_project_index_seq_1"', 6, true);
-
--- ----------------------------
--- Alter sequences owned by
--- ----------------------------
-SELECT setval('"public"."workset_project_index_seq_10"', 113, true);
-
--- ----------------------------
--- Alter sequences owned by
--- ----------------------------
-SELECT setval('"public"."workset_project_index_seq_11"', 1, false);
-
--- ----------------------------
--- Alter sequences owned by
--- ----------------------------
-SELECT setval('"public"."workset_project_index_seq_12"', 115, true);
-
--- ----------------------------
--- Alter sequences owned by
--- ----------------------------
-SELECT setval('"public"."workset_project_index_seq_13"', 6, true);
-
--- ----------------------------
--- Alter sequences owned by
--- ----------------------------
-SELECT setval('"public"."workset_project_index_seq_14"', 2, true);
-
--- ----------------------------
--- Alter sequences owned by
--- ----------------------------
-SELECT setval('"public"."workset_project_index_seq_2"', 780, true);
-
--- ----------------------------
--- Alter sequences owned by
--- ----------------------------
-SELECT setval('"public"."workset_project_index_seq_3"', 176, true);
-
--- ----------------------------
--- Alter sequences owned by
--- ----------------------------
-SELECT setval('"public"."workset_project_index_seq_4"', 102, true);
-
--- ----------------------------
--- Alter sequences owned by
--- ----------------------------
-SELECT setval('"public"."workset_project_index_seq_5"', 3, true);
-
--- ----------------------------
--- Alter sequences owned by
--- ----------------------------
-SELECT setval('"public"."workset_project_index_seq_6"', 3, true);
-
--- ----------------------------
--- Alter sequences owned by
--- ----------------------------
-SELECT setval('"public"."workset_project_index_seq_7"', 5, true);
-
--- ----------------------------
--- Alter sequences owned by
--- ----------------------------
-SELECT setval('"public"."workset_project_index_seq_8"', 10, true);
-
--- ----------------------------
--- Alter sequences owned by
--- ----------------------------
-SELECT setval('"public"."workset_project_index_seq_9"', 37, true);
+SELECT setval('"public"."users_id_seq"', 1, true);
 
 -- ----------------------------
 -- Alter sequences owned by
 -- ----------------------------
 ALTER SEQUENCE "public"."worksets_id_seq"
 OWNED BY "public"."worksets"."id";
-SELECT setval('"public"."worksets_id_seq"', 14, true);
+SELECT setval('"public"."worksets_id_seq"', 1, true);
 
 -- ----------------------------
 -- Indexes structure for table project_applications
