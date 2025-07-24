@@ -14,25 +14,15 @@ func RouteLaborProcHandler(root *mvc.Application) {
 	invHandler := &InvitationHandler{}
 
 	// 注册路由组
-	invParty := root.
-		Party("/invitations").
+	root.Party("/invitations").
 		Handle(invHandler)
-
-	// 注册路由与方法的映射（类型安全）
-	invParty.Router.Get("", invHandler.InvitationListPage)
-	invParty.Router.Post("", invHandler.CreateInvitation)
 
 	// 创建 ApplicationHandler 实例
 	appHandler := &ApplicationHandler{}
 
 	// 注册路由组
-	appParty := root.
-		Party("/applications").
+	root.Party("/applications").
 		Handle(appHandler)
-
-	// 注册路由与方法的映射（类型安全）
-	appParty.Router.Get("", appHandler.ApplicationListPage)
-	appParty.Router.Post("", appHandler.CreateApplication)
 }
 
 // InvitationHandler 处理邀请相关的请求
@@ -40,50 +30,12 @@ type InvitationHandler struct {
 	LaborService services.LaborService
 }
 
-// InvitationListPage godoc
-// @Summary 获取当前用户的邀请（发出或者收到）列表，支持分页
-// @Description 根据分页参数获取用户的邀请列表，支持分页和排序。当列表为空时，会返回 null 而不是空数组。
-// @Param page_serial query int false "页码，默认值为 1"
-// @Param page_size query int false "每页数量，默认值为 10"
-// @Param kind query string true "邀请类型，0：发送的邀请，1：收到的邀请"
-// @Tags invitation
-// @Produce json
-// @Success 200 {object} []dtos.InvitationBasic
-// @Failure 400 {object} ErrorResponse "无效的请求参数"
-// @Failure 500 {object} ErrorResponse "服务器内部错误"
-// @Router /invitations [get]
-func (h *InvitationHandler) InvitationListPage(ctx iris.Context) {
-	// 从上下文中获取当前用户 ID
-	userId, err := ctx.Values().GetUint("user_id")
-	if err != nil || userId <= 0 {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "无法获取有效的 user_id",
-		})
-		return
-	}
-
-	// 获取分页参数
-	pageSerial := ctx.URLParamIntDefault("page_serial", 1)
-	pageSize := ctx.URLParamIntDefault("page_size", 10)
-
-	// 调用服务层获取数据
-	var invitations []*dtos.InvitationBasic
-
-	switch ctx.URLParam("kind") {
-	case "0": // 发送的邀请
-		invitations, err = h.LaborService.GetInvitationSentByUserId(userId, pageSerial, pageSize)
-	case "1": // 收到的邀请
-		invitations, err = h.LaborService.GetInvitationRecievedByUserId(userId, pageSerial, pageSize)
-	default:
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "无效的 kind 参数",
-		})
-		return
-	}
-
-	ctx.JSON(invitations)
+// BeforeActivation 在控制器激活前注册路由
+func (h *InvitationHandler) BeforeActivation(b mvc.BeforeActivation) {
+	// 注册 POST /invitations
+	b.Handle("POST", "/", "CreateInvitation")
+	// 注册 POST /invitations/{id}
+	b.Handle("PUT", "/{id:uint}", "ProcessInvitation")
 }
 
 // CreateInvitation godoc
@@ -145,7 +97,7 @@ func (h *InvitationHandler) CreateInvitation(ctx iris.Context) {
 // @Success 200 {object} SuccessResponse "邀请处理成功"
 // @Failure 400 {object} ErrorResponse "无效的请求参数"
 // @Failure 500 {object} ErrorResponse "服务器内部错误"
-// @Router /invitations/{id} [post]
+// @Router /invitations/{id} [put]
 func (h *InvitationHandler) ProcessInvitation(ctx iris.Context) {
 	// 从上下文中获取当前用户 ID
 	inviteeId, err := ctx.Values().GetUint("user_id")
@@ -213,69 +165,12 @@ type ApplicationHandler struct {
 	LaborService services.LaborService
 }
 
-// ApplicationListPage godoc
-// @Summary 获取当前用户的申请（发出或收到）列表，支持分页
-// @Description 根据分页参数获取用户的申请列表，支持分页和排序。当列表为空
-// @Param page_serial query int false "页码，默认值为 1"
-// @Param page_size query int false "每页数量，默认值为 10"
-// @Param kind query string true "申请类型，0：发出的申请，1：收到的申请"
-// @Tags application
-// @Produce json
-// @Success 200 {object} []dtos.ApplicationBasic
-// @Failure 400 {object} ErrorResponse "无效的请求参数"
-// @Failure 500 {object} ErrorResponse "服务器内部错误"
-// @Router /applications [get]
-func (h *ApplicationHandler) ApplicationListPage(ctx iris.Context) {
-	// 从上下文中获取当前用户 ID
-	userId, err := ctx.Values().GetUint("user_id")
-	if err != nil || userId <= 0 {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "无法获取有效的 user_id",
-		})
-		return
-	}
-
-	// 获取分页参数
-	pageSerial := ctx.URLParamIntDefault("page_serial", 1)
-	pageSize := ctx.URLParamIntDefault("page_size", 10)
-
-	// 调用服务层获取数据
-	var applications []*dtos.ApplicationBasic
-
-	switch ctx.URLParam("kind") {
-	case "0":
-		// 获取发出的申请
-		applications, err = h.LaborService.GetApplisSentByUserId(userId, pageSerial, pageSize)
-		if err != nil {
-			ctx.StatusCode(iris.StatusInternalServerError)
-			ctx.JSON(ErrorResponse{
-				Error:  "获取发出的申请列表失败",
-				Detail: err.Error(),
-			})
-			return
-		}
-	case "1":
-		// 获取收到的申请
-		applications, err = h.LaborService.GetApplisRecievedByUserId(userId, pageSerial, pageSize)
-		if err != nil {
-			ctx.StatusCode(iris.StatusInternalServerError)
-			ctx.JSON(ErrorResponse{
-				Error:  "获取收到的申请列表失败",
-				Detail: err.Error(),
-			})
-			return
-		}
-
-	default:
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "无效的 kind 参数",
-		})
-		return
-	}
-
-	ctx.JSON(applications)
+// BeforeActivation 在控制器激活前注册路由
+func (a *ApplicationHandler) BeforeActivation(b mvc.BeforeActivation) {
+	// 注册 POST /applications
+	b.Handle("POST", "/", "CreateApplication")
+	// 注册 POST /applications/{id}
+	b.Handle("PUT", "/{id:uint}", "ProcessApplication")
 }
 
 // CreateApplication godoc
@@ -335,7 +230,7 @@ func (h *ApplicationHandler) CreateApplication(ctx iris.Context) {
 // @Success 200 {object} SuccessResponse "申请处理成功"
 // @Failure 400 {object} ErrorResponse "无效的请求参数"
 // @Failure 500 {object} ErrorResponse "服务器内部错误"
-// @Router /applications/{id} [post]
+// @Router /applications/{id} [put]
 func (h *ApplicationHandler) ProcessApplication(ctx iris.Context) {
 	// 从上下文中获取当前用户 ID
 	userId, err := ctx.Values().GetUint("user_id")

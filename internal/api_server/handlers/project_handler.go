@@ -15,25 +15,23 @@ func RouteProjectHandler(root *mvc.Application) {
 	projectProcHandler := &ProjectProcHandler{}
 
 	// 注册路由组和 handler
-	projectParty := root.
-		Party("/projects").
-		Handle(projectHandler).
+	root.Party("/projects").
+		Handle(projectHandler)
+	root.Party("/projects").
 		Handle(projectProcHandler)
-
-	// 注册路由与方法间的映射（静态安全）
-	projectParty.Router.Get("", projectHandler.ProjectListPage)
-	projectParty.Router.Get("/{id:uint}", projectHandler.ProjectDetail)
-
-	projectParty.Router.Post("", projectProcHandler.Create)
-
-	projectParty.Router.Delete("/{id:uint}", projectProcHandler.Delete)
-
-	projectParty.Router.Patch("/{id:uint}", projectProcHandler.UpdateInfo)
 }
 
 // ProjectHandler 处理项目相关的请求
 type ProjectHandler struct {
 	ProjectService services.ProjectService
+}
+
+// BeforeActivation 在控制器激活前注册路由
+func (p *ProjectHandler) BeforeActivation(b mvc.BeforeActivation) {
+	// 注册 GET /projects
+	b.Handle("GET", "/", "ProjectListPage")
+	// 注册 GET /projects/{id:uint}
+	b.Handle("GET", "/{id:uint}", "ProjectDetail")
 }
 
 // ProjectListPage godoc
@@ -45,6 +43,7 @@ type ProjectHandler struct {
 // @Param       status query integer false "项目状态（位掩码），用于复合查询，默认不筛选查询"
 // @Param       user_id query integer false "用户 ID，默认不筛选用户"
 // @Param       workset_id query integer false "项目所属的作品集 ID，默认不筛选作品集"
+// @Param       index query integer false "项目的索引或 legacy ID，默认不筛选"
 // @Tags        project
 // @Produce     json
 // @Success     200 {object} []dtos.ProjectBasic
@@ -55,6 +54,7 @@ func (h *ProjectHandler) ProjectListPage(ctx iris.Context) {
 	pageSerial := ctx.URLParamInt32Default("page_serial", 1)
 	pageSize := ctx.URLParamInt32Default("page_size", 10)
 
+	// 注意默认为 0，代表按 ID 倒序
 	sort := ctx.URLParamInt32Default("sort", 0)
 
 	// 注意默认为 PROJECT_STATUS_ALL，表示不筛选状态
@@ -66,10 +66,14 @@ func (h *ProjectHandler) ProjectListPage(ctx iris.Context) {
 	// 注意默认为 0，代表不筛选 user
 	userId := ctx.URLParamIntDefault("user_id", 0)
 
+	// 注意默认为 0，代表不筛选 index / legacy id
+	index := ctx.URLParamIntDefault("index", 0)
+
 	// 根据参数调用服务层获取数据
 	projects, err := h.ProjectService.GetBasicPageWithParams(
-		uint(worksetId), int(pageSerial), int(pageSize), int(sort),
-		uint(userId), dtos.ProjectOverallStatus(status))
+		uint(worksetId), uint(index), uint(userId),
+		int(pageSerial), int(pageSize),
+		int(sort), dtos.ProjectOverallStatus(status))
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ErrorResponse{
@@ -121,12 +125,22 @@ type ProjectProcHandler struct {
 	ProjectService services.ProjectService
 }
 
+// BeforeActivation 在控制器激活前注册路由
+func (p *ProjectProcHandler) BeforeActivation(b mvc.BeforeActivation) {
+	// 注册 POST /projects
+	b.Handle("POST", "/", "Create")
+	// 注册 DELETE /projects/{id:uint}
+	b.Handle("DELETE", "/{id:uint}", "Delete")
+	// 注册 PATCH /projects/{id:uint}
+	b.Handle("PATCH", "/{id:uint}", "UpdateInfo")
+}
+
 // Create godoc
 // @Summary 	创建项目
 // @Description 创建一个新的项目
 // @Accept      application/json
 // @Param       body_params body dtos.CreateProjectRequest true "创建项目的请求体"
-// @Tags 		project_proc
+// @Tags 		project
 // @Produce 	json
 // @Success	 	200 {object} dtos.ProjectCreatedInfo
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
@@ -177,7 +191,7 @@ func (h *ProjectProcHandler) Create(ctx iris.Context) {
 // @Summary 	删除项目
 // @Description 删除指定的项目，需提供项目 ID
 // @Param       id path integer true "项目 ID"
-// @Tags 		project_proc
+// @Tags 		project
 // @Produce 	json
 // @Success	 	200 {object} SuccessResponse "删除成功"
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
@@ -214,7 +228,7 @@ func (h *ProjectProcHandler) Delete(ctx iris.Context) {
 // @Accept      application/json
 // @Param       id path integer true "项目 ID"
 // @Param       body_params body dtos.UpdateProjectRequest true "更新的项目信息"
-// @Tags 		project_proc
+// @Tags 		project
 // @Produce 	json
 // @Success	 	200 {object} SuccessResponse "更新成功"
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
@@ -253,42 +267,3 @@ func (h *ProjectProcHandler) UpdateInfo(ctx iris.Context) {
 		Message: "项目更新成功",
 	})
 }
-
-// // ProjectLaborHandler 处理项目角色相关的请求
-// type ProjectLaborHandler struct {
-// 	ProjectService services.ProjectService
-// }
-
-// // LaborDivision godoc
-// // @Summary 	获取指定项目的分工信息
-// // @Description 获取指定项目的分工信息，包括成员的角色和状态
-// // @Param 		id path uint true "项目 ID"
-// // @Tags 		project_labor
-// // @Produce 	json
-// // @Success	 	200 {object} []dtos.LaborDivision
-// // @Failure     400 {object} ErrorResponse "无效的请求参数"
-// // @Failure     500 {object} ErrorResponse "服务器内部错误"
-// // @Router 		/projects/{id}/labors [get]
-// func (h *ProjectLaborHandler) LaborDivision(ctx iris.Context) {
-// 	projectId, err := ctx.URLParamInt("id")
-// 	if err != nil || projectId <= 0 {
-// 		ctx.StatusCode(iris.StatusBadRequest)
-// 		ctx.JSON(ErrorResponse{
-// 			Error: "无法获得有效的 project_id",
-// 		})
-// 		return
-// 	}
-
-// 	// 调用服务层获取分工信息
-// 	laborDivisions, err := h.ProjectService.GetLaborDivision(uint(projectId))
-// 	if err != nil {
-// 		ctx.StatusCode(iris.StatusInternalServerError)
-// 		ctx.JSON(ErrorResponse{
-// 			Error:  "获取项目分工信息失败",
-// 			Detail: err.Error(),
-// 		})
-// 		return
-// 	}
-
-// 	ctx.JSON(laborDivisions)
-// }

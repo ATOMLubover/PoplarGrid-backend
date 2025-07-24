@@ -43,10 +43,8 @@ type apiClientImpl struct {
 
 // CreateProject 实现 ApiClient 接口的 CreateProject 方法
 func (c *apiClientImpl) CreateProject(info *CreateProjectInfo) (*MoetranCreateProjectResponse, error) {
-	// 先组装在龙译存储的项目 title
-	title := fmt.Sprintf("【%d】%s", info.WorksetIndex, info.Title)
 	// 截断标题到 40 bytes，以满足龙译的限制
-	title = truncateStringByRune(title, 40)
+	title := truncateStringByRune(info.Title, 40)
 
 	// 组装 POST 请求体
 	body := MoetranCreateProjectRequest{
@@ -70,7 +68,7 @@ func (c *apiClientImpl) CreateProject(info *CreateProjectInfo) (*MoetranCreatePr
 	}
 
 	// 组装请求 URL
-	url := fmt.Sprintf("%s/projects/teams/%s/projects",
+	url := fmt.Sprintf("%s/teams/%s/projects",
 		c.baseUrl, info.MoetranTeamId)
 
 	// 创建 HTTP POST 请求

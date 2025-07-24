@@ -126,12 +126,12 @@ func (r *projectRepoImpl) CreateProject(project *dbmodels.Project) error {
 	// 随后尝试获取对应的 workset_index
 	// 递归加载 workset 信息和 team 信息
 	if err := r.Table().
-		Preload("FkWorkset", func(db *gorm.DB) {
-			db.
-				Preload("FkTeam", func(db *gorm.DB) {
-					db.Select("id", "moetran_id")
+		Preload("FkWorkset", func(db *gorm.DB) *gorm.DB {
+			return db.
+				Preload("FkTeam", func(db *gorm.DB) *gorm.DB {
+					return db.Select("id", "moetran_id")
 				}).
-				Select("id", "moetran_id")
+				Select("id", "moetran_id", "team_id")
 		}).
 		Where("id = ?", project.Id).
 		Find(project).
@@ -164,8 +164,8 @@ func (r *projectRepoImpl) SaveInfo(project *dbmodels.Project) error {
 
 	// 执行更新操作
 	if err := r.Table().
-		// 这里使用 Save 方法会自动处理主键和更新字段，利用零值保护简化
-		Save(project).
+		// 这里使用 Updates 方法会自动处理主键和更新字段，利用零值保护简化
+		Updates(project).
 		Error; err != nil {
 		return err
 	}
@@ -203,10 +203,16 @@ func (r *projectRepoImpl) buildQueryWithParams(base *gorm.DB, queryParams *dtos.
 			Where("project_labor_divisions.user_id = ?", queryParams.UserId)
 	}
 
-	// 如果不需要根据 user 查询，则进行普通查询
-	// 先添加工作集 ID 的查询条件
+	// 添加工作集 ID 的查询条件
 	if queryParams.WorksetId != nil {
 		base = base.Where("workset_id = ?", *queryParams.WorksetId)
+	}
+
+	// 添加 index 的查询条件
+	if queryParams.Index != nil {
+		base = base.Where(
+			base.Where("legacy_id = ?", *queryParams.Index).
+				Or("workset_index = ?", *queryParams.Index))
 	}
 
 	// 添加 sort 条件

@@ -14,18 +14,10 @@ func RouteUserHandler(root *mvc.Application) {
 	userHandler := &UserHandler{}
 
 	// 注册路由组和 handler
-	userParty := root.
-		Party("/users").
-		Handle(userHandler)
-
-	// 注册中间件，检查用户 ID 是否匹配当前登录用户
-	userParty.Router.Use(NewCheckUserIdMiddleware())
-
-	// 注册路由与方法的映射（类型安全）
-	userParty.Router.Get("/{id:uint}/teams", userHandler.TeamListPage)
-	userParty.Router.Get("/{id:uint}/invitations", userHandler.InvitationListPage)
-	userParty.Router.Get("/{id:uint}/detail", userHandler.UserDetail)
-	userParty.Router.Get("/{id:uint}/projects", userHandler.ProjectListPage)
+	root.Party("/users").
+		Handle(userHandler).
+		// 注册中间件，检查用户 ID 是否匹配当前登录用户
+		Router.Use(NewCheckUserIdMiddleware())
 }
 
 // UserHandler 处理用户相关的请求
@@ -36,15 +28,16 @@ type UserHandler struct {
 	InvAppService  services.LaborService
 }
 
-// func (h *UserHandler) BeforeActivation(b mvc.BeforeActivation) {
-// 	b.Handle("GET", "/{id:uint}/teams", "TeamListPage")
-// 	b.Handle("GET", "/{id:uint}/invitations", "InvitationListPage")
-// 	b.Handle("GET", "/{id:uint}/detail", "UserDetail")
-// 	b.Handle("GET", "/{id:uint}/projects", "ProjectListPage")
+// BeforeActivation 在控制器激活前注册路由
+func (h *UserHandler) BeforeActivation(b mvc.BeforeActivation) {
+	b.Handle("GET", "/{id:uint}/teams", "TeamListPage")
+	b.Handle("GET", "/{id:uint}/invitations", "InvitationListPage")
+	b.Handle("GET", "/{id:uint}/detail", "UserDetail")
+	b.Handle("GET", "/{id:uint}/projects", "ProjectListPage")
 
-// 	// 注册控制器特定的中间件
-// 	b.Router().Use(NewCheckUserIdMiddleware())
-// }
+	// 注册控制器特定的中间件
+	b.Router().Use(NewCheckUserIdMiddleware())
+}
 
 // UserDetail godoc
 // @Summary 	获取用户详情
@@ -129,6 +122,7 @@ func (h *UserHandler) TeamListPage(ctx iris.Context) {
 // @Param       page_size query integer false "每页数量，默认值为 10"
 // @Param       status query integer false "项目状态（位掩码），用于复合查询，默认不筛选查询"
 // @Param       workset_id query integer false "项目所属的作品集 ID，默认不筛选作品集"
+// @Param       index query integer false "项目的索引或 legacy ID，默认不筛选"
 // @Param 		id path uint true "用户 ID"
 // @Tags 		user
 // @Produce 	json
@@ -151,6 +145,9 @@ func (h *UserHandler) ProjectListPage(ctx iris.Context) {
 	pageSerial := ctx.URLParamInt32Default("page_serial", 1)
 	pageSize := ctx.URLParamInt32Default("page_size", 10)
 
+	// 注意默认为 0，代表不筛选 index / legacy id
+	index := ctx.URLParamIntDefault("index", 0)
+
 	// 注意默认为 PROJECT_STATUS_ALL，表示不筛选状态
 	status := ctx.URLParamInt32Default("status", dtos.PROJECT_STATUS_ALL)
 
@@ -159,8 +156,9 @@ func (h *UserHandler) ProjectListPage(ctx iris.Context) {
 
 	// 调用服务层获取数据
 	projects, err := h.ProjectService.GetBasicPageWithParams(
-		uint(worksetId), int(pageSerial), int(pageSize),
-		dtos.SORT_ID_DESC, userId, dtos.ProjectOverallStatus(status))
+		uint(worksetId), uint(index), userId,
+		int(pageSerial), int(pageSize),
+		dtos.SORT_ID_DESC, dtos.ProjectOverallStatus(status))
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ErrorResponse{
@@ -180,7 +178,7 @@ func (h *UserHandler) ProjectListPage(ctx iris.Context) {
 // @Param page_size query int false "每页数量，默认值为 10"
 // @Param id path uint true "用户 ID"
 // @Param kind query string true "邀请类型，0：发送的邀请，1：收到的邀请"
-// @Tags invitation
+// @Tags user
 // @Produce json
 // @Success 200 {object} []dtos.InvitationBasic
 // @Failure 400 {object} ErrorResponse "无效的请求参数"
@@ -245,7 +243,7 @@ func (h *UserHandler) InvitationListPage(ctx iris.Context) {
 // @Param page_size query int false "每页数量，默认值为 10"
 // @Param id path uint true "用户 ID"
 // @Param kind query string true "申请类型，0：发送的申请，1：收到的申请"
-// @Tags application
+// @Tags user
 // @Produce json
 // @Success 200 {object} []dtos.ApplicationBasic
 // @Failure 400 {object} ErrorResponse "无效的请求参数"

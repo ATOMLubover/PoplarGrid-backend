@@ -13,6 +13,7 @@ type ProjectStatusQueryParams struct {
 // ProjectSearchParams 定义了项目搜索的参数
 type ProjectSearchParams struct {
 	WorksetId *uint                     // 作品集 ID
+	Index     *uint                     // 项目的索引或 legacy ID
 	UserId    *uint                     // 用户 ID
 	Sort      int                       // 排序方式，0：按 ID 倒序，1：按 updated_at 倒序
 	Status    *ProjectStatusQueryParams // 项目状态查询参数

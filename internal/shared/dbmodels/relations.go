@@ -24,8 +24,6 @@ func (ProjectLaborDivision) TableName() string {
 type TeamMember struct {
 	BaseModel
 
-	Id PrimaryKey `gorm:"primaryKey;autoIncrement;not null"`
-
 	UserId PrimaryKey `gorm:"index"`
 	FkUser User       `gorm:"foreignKey:UserId"`
 

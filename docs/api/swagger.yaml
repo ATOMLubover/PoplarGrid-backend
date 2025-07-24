@@ -424,42 +424,6 @@ info:
   version: "1.0"
 paths:
   /applications:
-    get:
-      description: 根据分页参数获取用户的申请列表，支持分页和排序。当列表为空
-      parameters:
-      - description: 页码，默认值为 1
-        in: query
-        name: page_serial
-        type: integer
-      - description: 每页数量，默认值为 10
-        in: query
-        name: page_size
-        type: integer
-      - description: 申请类型，0：发出的申请，1：收到的申请
-        in: query
-        name: kind
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/dtos.ApplicationBasic'
-            type: array
-        "400":
-          description: 无效的请求参数
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      summary: 获取当前用户的申请（发出或收到）列表，支持分页
-      tags:
-      - application
     post:
       description: 创建一个新的申请，申请加入项目
       parameters:
@@ -488,7 +452,7 @@ paths:
       tags:
       - application
   /applications/{id}:
-    post:
+    put:
       description: 处理申请，接受或拒绝申请
       parameters:
       - description: 处理申请参数
@@ -521,42 +485,6 @@ paths:
       tags:
       - application
   /invitations:
-    get:
-      description: 根据分页参数获取用户的邀请列表，支持分页和排序。当列表为空时，会返回 null 而不是空数组。
-      parameters:
-      - description: 页码，默认值为 1
-        in: query
-        name: page_serial
-        type: integer
-      - description: 每页数量，默认值为 10
-        in: query
-        name: page_size
-        type: integer
-      - description: 邀请类型，0：发送的邀请，1：收到的邀请
-        in: query
-        name: kind
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/dtos.InvitationBasic'
-            type: array
-        "400":
-          description: 无效的请求参数
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      summary: 获取当前用户的邀请（发出或者收到）列表，支持分页
-      tags:
-      - invitation
     post:
       description: 创建一个新的邀请，邀请用户加入项目
       parameters:
@@ -585,7 +513,7 @@ paths:
       tags:
       - invitation
   /invitations/{id}:
-    post:
+    put:
       description: 处理邀请，接受或拒绝邀请
       parameters:
       - description: 处理邀请参数
@@ -645,6 +573,10 @@ paths:
         in: query
         name: workset_id
         type: integer
+      - description: 项目的索引或 legacy ID，默认不筛选
+        in: query
+        name: index
+        type: integer
       produces:
       - application/json
       responses:
@@ -693,7 +625,7 @@ paths:
             $ref: '#/definitions/handlers.ErrorResponse'
       summary: 创建项目
       tags:
-      - project_proc
+      - project
   /projects/{id}:
     delete:
       description: 删除指定的项目，需提供项目 ID
@@ -720,7 +652,7 @@ paths:
             $ref: '#/definitions/handlers.ErrorResponse'
       summary: 删除项目
       tags:
-      - project_proc
+      - project
     get:
       description: 获取指定项目的详细信息，包括翻译、校对、嵌字、审核、发布等状态
       parameters:
@@ -780,39 +712,7 @@ paths:
             $ref: '#/definitions/handlers.ErrorResponse'
       summary: 更新项目
       tags:
-      - project_proc
-  /teams:
-    get:
-      description: 根据分页参数获取汉化组列表，支持分页和排序。当列表为空时，会返回 null 而不是空数组。
-      parameters:
-      - description: 页码，默认值为 1
-        in: query
-        name: page_serial
-        type: integer
-      - description: 每页数量，默认值为 10
-        in: query
-        name: page_size
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/dtos.TeamBasic'
-            type: array
-        "400":
-          description: 无效的请求参数
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      summary: 获取当前用户的汉化组列表分页
-      tags:
-      - team
+      - project
   /teams/{id}/members:
     get:
       description: 注意当列表为空，会返回 null 而不是空数组
@@ -858,6 +758,43 @@ paths:
       summary: 获取汉化组成员列表分页
       tags:
       - team
+  /teams/{id}/worksets:
+    get:
+      description: 注意当列表为空，会返回 null 而不是空数组
+      parameters:
+      - description: 页码，默认值为 1
+        in: query
+        name: page_serial
+        type: integer
+      - description: 每页数量，默认值为 10
+        in: query
+        name: page_size
+        type: integer
+      - description: 所属汉化组 ID
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.WorksetBasic'
+            type: array
+        "400":
+          description: 无效的请求参数
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: 获取特定汉化组的工作集列表分页，按 ID 倒序
+      tags:
+      - team
   /users/{id}/applications:
     get:
       description: 根据分页参数获取用户的申请列表，支持分页和排序\n当列表为空时，会返回 null 而不是空数组\n如果 id 不是当前登录的用户
@@ -900,7 +837,7 @@ paths:
             $ref: '#/definitions/handlers.ErrorResponse'
       summary: 获取当前用户的申请（发出或收到）列表，支持分页
       tags:
-      - application
+      - user
   /users/{id}/detail:
     get:
       description: 获取指定用户的详细信息，包括 ID、昵称、QQ 等
@@ -970,7 +907,7 @@ paths:
             $ref: '#/definitions/handlers.ErrorResponse'
       summary: 获取当前用户的邀请（发出或者收到）列表，支持分页
       tags:
-      - invitation
+      - user
   /users/{id}/projects:
     get:
       description: 获取指定用户参与的所有项目列表，支持分页和复合查询
@@ -990,6 +927,10 @@ paths:
       - description: 项目所属的作品集 ID，默认不筛选作品集
         in: query
         name: workset_id
+        type: integer
+      - description: 项目的索引或 legacy ID，默认不筛选
+        in: query
+        name: index
         type: integer
       - description: 用户 ID
         in: path
@@ -1053,43 +994,6 @@ paths:
       summary: 获取当前用户参与的汉化组列表
       tags:
       - user
-  /worksets:
-    get:
-      description: 注意当列表为空，会返回 null 而不是空数组
-      parameters:
-      - description: 页码，默认值为 1
-        in: query
-        name: page_serial
-        type: integer
-      - description: 每页数量，默认值为 10
-        in: query
-        name: page_size
-        type: integer
-      - description: 所属汉化组 ID
-        in: query
-        name: team_id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/dtos.WorksetBasic'
-            type: array
-        "400":
-          description: 无效的请求参数
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      summary: 获取特定汉化组的工作集列表分页，按 ID 倒序
-      tags:
-      - workset
   /worksets/{id}/stats:
     get:
       description: 获取所有项目的统计信息，包括总数、翻译、校对、嵌字，审核、发布对应数量等

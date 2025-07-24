@@ -17,9 +17,11 @@ import (
 // ProjectService 接口定义了项目服务的基本操作
 type ProjectService interface {
 	// GetBasicPageWithParams 获取项目列表，支持分页和排序以及复合条件查询
-	GetBasicPageWithParams(worksetId uint, pageSerial, pageSize int, sort int, userId uint, status dtos.ProjectOverallStatus) ([]*dtos.ProjectBasic, error)
-	// // GetBasicPageByUserId 获取指定用户参与的项目列表，支持分页
-	// GetBasicPageByUserId(userId uint, pageSerial, pageSize int) ([]*dtos.ProjectBasic, error)
+	GetBasicPageWithParams(
+		worksetId, index uint, userId uint,
+		pageSerial, pageSize int, sort int,
+		status dtos.ProjectOverallStatus,
+	) ([]*dtos.ProjectBasic, error)
 
 	// GetDetail 获取指定 ID 的项目详情
 	GetDetail(projectId uint) (*dtos.ProjectDetail, error)
@@ -65,10 +67,12 @@ func NewProjectService(
 
 // GetBasicPageWithParams 实现 ProjectService 接口的 GetBasicPageWithParams 方法
 func (s *projectServiceImpl) GetBasicPageWithParams(
-	worksetId uint, pageSerial, pageSize int, sort int,
-	userId uint, status dtos.ProjectOverallStatus) ([]*dtos.ProjectBasic, error) {
+	worksetId, index uint, userId uint,
+	pageSerial, pageSize int, sort int,
+	status dtos.ProjectOverallStatus,
+) ([]*dtos.ProjectBasic, error) {
 	// 解析构建最终的查询条件
-	queryParams := s.buildQueryParams(worksetId, userId, sort, status)
+	queryParams := s.buildQueryParams(worksetId, index, userId, sort, status)
 
 	var (
 		page       []*dbmodels.Project
@@ -167,56 +171,17 @@ func (s *projectServiceImpl) GetBasicPageWithParams(
 	return projectBasics, nil
 }
 
-// // GetBasicPageByUserId 实现 ProjectService 接口的 GetBasicPageByUserId 方法
-// func (s *projectServiceImpl) GetBasicPageByUserId(userId uint, pageSerial, pageSize int) ([]*dtos.ProjectBasic, error) {
-// 	// 获取用户参与的项目列表
-// 	labors, err := s.laborRepo.SelectProjectPageByUserId(dbmodels.PrimaryKey(userId), (pageSerial-1)*pageSize, pageSize)
-// 	if err != nil {
-// 		s.logger.Error("GetBasicPageByUserId 调用 SelectBasicPageIdDescByUserId 中出现错误", slog.Any("error", err))
-// 		return nil, fmt.Errorf("获取用户参与的项目列表失败")
-// 	}
-
-// 	// 将 dbmodels.ProjectLaborDivision 转换为 dtos.MyProjectBasic
-// 	var myProjects []*dtos.ProjectBasic
-
-// 	for _, labor := range labors {
-// 		var status dtos.ProjectOverallStatus
-// 		status.SetTranslatingStatus(uint(labor.FkProject.TranslateStatus))
-// 		status.SetProofreadingStatus(uint(labor.FkProject.ProofStatus))
-// 		status.SetLetteringStatus(uint(labor.FkProject.LetterStatus))
-// 		status.SetReviewingStatus(uint(labor.FkProject.ReviewStatus))
-
-// 		type laborComplementary struct {
-// 			Role       uint   `json:"role"`        // 成员在项目中的角色
-// 			JoinedTime string `json:"joined_time"` // 加入的时间
-// 		}
-
-// 		myProjects = append(myProjects, &dtos.ProjectBasic{
-// 			Id:            uint(labor.FkProject.Id),
-// 			Title:         labor.FkProject.Title,
-// 			WorksetId:     uint(labor.FkProject.WorksetId),
-// 			WorksetIndex:  labor.FkProject.WorksetIndex,
-// 			LegacyId:      uint(labor.FkProject.LegacyId),
-// 			MoetranId:     labor.FkProject.MoetranId,
-// 			Status:        status,
-// 			IsPublished:   labor.FkProject.IsPublished,
-// 			AllowAutoJoin: labor.FkProject.AllowAutoJoin,
-
-// 			Complementary: laborComplementary{
-// 				Role:       uint(labor.LaborRole),
-// 				JoinedTime: labor.CreatedAt.Format(dtos.DTO_TIME_FORMAT),
-// 			},
-// 		})
-// 	}
-
-// 	return myProjects, nil
-// }
-
 // GetDetail 实现 ProjectService 接口的 GetDetail 方法
 func (s *projectServiceImpl) GetDetail(projectId uint) (*dtos.ProjectDetail, error) {
 	// 调用仓库方法获取项目详情
 	project, err := s.projectRepo.SelectById(dbmodels.PrimaryKey(projectId))
 	if err != nil {
+		// 此处单独拦截 not found 错误
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logger.Error("GetDetail 调用 SelectById 中未找到项目", slog.Uint64("project_id", uint64(projectId)))
+			return nil, fmt.Errorf("未找到指定 ID 的项目")
+		}
+
 		s.logger.Error("GetDetail 调用 SelectById 中出现错误", slog.Any("error", err))
 		return nil, fmt.Errorf("获取项目详情失败")
 	}
@@ -320,6 +285,7 @@ func (s *projectServiceImpl) CreateProject(createInfo *dtos.CreateProjectInfo) (
 		// 创建 creator 的分工记录
 		creatorLabor := dbmodels.LaborMask(0)
 		creatorLabor.AddRole(dbmodels.LABOR_CREATOR_MASK)
+		creatorLabor.AddRole(dbmodels.LABOR_PRINCIPAL_MASK)
 
 		laborDivision := &dbmodels.ProjectLaborDivision{
 			ProjectId: dbmodels.PrimaryKey(project.Id),
@@ -444,12 +410,17 @@ func (s *projectServiceImpl) DeleteProject(projectId uint) error {
 // ================ 辅助函数 ================
 
 // buildQueryParams 通过 service 参数为 queryParams 构建查询条件
-func (s *projectServiceImpl) buildQueryParams(worksetId, userId uint, sort int, status dtos.ProjectOverallStatus) *dtos.ProjectSearchParams {
+func (s *projectServiceImpl) buildQueryParams(worksetId, index, userId uint, sort int, status dtos.ProjectOverallStatus) *dtos.ProjectSearchParams {
 	queryParams := &dtos.ProjectSearchParams{}
 
 	// 解析 workset id，其为 0 时不筛选
 	if worksetId != 0 {
 		queryParams.WorksetId = &worksetId
+	}
+
+	// 解析 index，其为 0 时不筛选
+	if index != 0 {
+		queryParams.Index = &index
 	}
 
 	// 解析 user id，其为 0 时不筛选
@@ -518,7 +489,7 @@ func (s *projectServiceImpl) buildMoetranProjInfo(
 	user *dbmodels.User,
 ) *apiclient.CreateProjectInfo {
 	// 组装尨译的 title
-	title := fmt.Sprintf("[%d-%d] %s",
+	title := fmt.Sprintf("[%d-%d]%s",
 		project.WorksetId, project.WorksetIndex, project.Title)
 
 	// 构造 AllowApplyType 和 ApplicationCheckType

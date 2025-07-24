@@ -197,7 +197,7 @@ func ApplyMvc(irisApp *iris.Application) *iris.Application {
 
 	// 注册各个 service 的依赖
 	mvcApp.Register(
-		services.NewLaborService(invitationRepo, appliRepo, slog.Default()),
+		services.NewLaborService(invitationRepo, appliRepo, laborRepo, projRepo, memberRepo, slog.Default()),
 		services.NewUserService(userRepo),
 		services.NewProjectService(projRepo, laborRepo, userRepo, apiClient, slog.Default()),
 		services.NewTeamService(memberRepo, slog.Default()),
@@ -214,7 +214,7 @@ func ApplyMvc(irisApp *iris.Application) *iris.Application {
 			cfg.Server.CorsWithCredentials,
 			time.Duration(cfg.Server.CorsMaxAge)*time.Second,
 		),
-		// cookie 和请求头预处理
+		// TODO：请求头预处理
 		handlers.NewUserInfoExtractMiddleware(),
 	)
 

@@ -12,9 +12,9 @@ type InvitationRepo interface {
 	Repo
 
 	// GetInvitationSentByUserId 根据用户 ID 获取其发送的邀请信息
-	GetInvitationSentByUserId(userId dbmodels.PrimaryKey) ([]*dbmodels.ProjectInvitation, error)
+	GetInvitationSentByUserId(userId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.ProjectInvitation, error)
 	// GetInvitationRecievedByUserId 根据用户 ID 获取收到的邀请信息
-	GetInvitationRecievedByUserId(userId dbmodels.PrimaryKey) ([]*dbmodels.ProjectInvitation, error)
+	GetInvitationRecievedByUserId(userId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.ProjectInvitation, error)
 
 	// SelectById 获取指定 ID 的邀请信息
 	SelectById(invitationId dbmodels.PrimaryKey) (*dbmodels.ProjectInvitation, error)
@@ -45,19 +45,22 @@ func (r *invitationRepoImpl) GetHandle() *gorm.DB {
 }
 
 // GetInvitationSentByUserId 实现 InvitationRepo 接口的 GetInvitationSentByUserId 方法
-func (r *invitationRepoImpl) GetInvitationSentByUserId(userId dbmodels.PrimaryKey) ([]*dbmodels.ProjectInvitation, error) {
+func (r *invitationRepoImpl) GetInvitationSentByUserId(userId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.ProjectInvitation, error) {
 	var invitations []*dbmodels.ProjectInvitation
 
 	if err := r.handle.Model(&dbmodels.ProjectInvitation{}).
 		Where("inviter_id = ?", userId).
 		// 预加载 FkProject 关联的 Project 信息
 		Preload("FkProject", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id", "title", "workset_id", "workset_index", "status")
+			return db.Select(kProjectBasicFields)
 		}).
 		// 预加载 FkInvitee 关联的 User 信息
 		Preload("FkInvitee", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id", "nickname") // User 只需要 id、nickname
 		}).
+		Offset(offset).
+		Limit(limit).
+		Order("id DESC").
 		Find(&invitations).Error; err != nil {
 		return nil, err
 	}
@@ -66,19 +69,22 @@ func (r *invitationRepoImpl) GetInvitationSentByUserId(userId dbmodels.PrimaryKe
 }
 
 // GetInvitationRecievedByUserId 实现 InvitationRepo 接口的 GetInvitationRecievedByUserId 方法
-func (r *invitationRepoImpl) GetInvitationRecievedByUserId(userId dbmodels.PrimaryKey) ([]*dbmodels.ProjectInvitation, error) {
+func (r *invitationRepoImpl) GetInvitationRecievedByUserId(userId dbmodels.PrimaryKey, offset, limit int) ([]*dbmodels.ProjectInvitation, error) {
 	var invitations []*dbmodels.ProjectInvitation
 
 	if err := r.handle.Model(&dbmodels.ProjectInvitation{}).
-		Where("invitee_id = ? AND status = 0", userId).
+		Where("invitee_id = ?", userId).
 		// 预加载 FkProject 关联的 Project 信息
 		Preload("FkProject", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id", "title", "workset_id", "workset_index", "status")
+			return db.Select(kProjectBasicFields)
 		}).
 		// 预加载 FkInvitee 关联的 User 信息
 		Preload("FkInvitee", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id", "nickname") // User 只需要 id、nickname
 		}).
+		Offset(offset).
+		Limit(limit).
+		Order("id DESC").
 		Find(&invitations).Error; err != nil {
 		return nil, err
 	}

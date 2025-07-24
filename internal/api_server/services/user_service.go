@@ -7,6 +7,8 @@ import (
 	"poplargrid/internal/api_server/dtos"
 	"poplargrid/internal/api_server/repos"
 	"poplargrid/internal/shared/dbmodels"
+
+	"gorm.io/gorm"
 )
 
 // UserService 接口定义了用户服务的基本操作
@@ -32,6 +34,13 @@ func NewUserService(userRepo repos.UserRepo) UserService {
 func (s *userServiceImpl) GetUserDetail(userId uint) (*dtos.UserDetail, error) {
 	user, err := s.userRepo.SelectByUserId(dbmodels.PrimaryKey(userId))
 	if err != nil {
+		// 此处单独拦截 not found 错误
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logger.Error("GetUserDetail 调用 SelectByUserId 中未找到用户",
+				slog.Uint64("user_id", uint64(userId)))
+			return nil, fmt.Errorf("未找到指定 ID 的用户")
+		}
+
 		s.logger.Error("GetUserDetail 调用 SelectByUserId 中出现错误",
 			slog.Uint64("user_id", uint64(userId)),
 			slog.Any("error", err))

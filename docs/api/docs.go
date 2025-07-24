@@ -16,60 +16,6 @@ const docTemplate = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/applications": {
-            "get": {
-                "description": "根据分页参数获取用户的申请列表，支持分页和排序。当列表为空",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "application"
-                ],
-                "summary": "获取当前用户的申请（发出或收到）列表，支持分页",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "页码，默认值为 1",
-                        "name": "page_serial",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量，默认值为 10",
-                        "name": "page_size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "申请类型，0：发出的申请，1：收到的申请",
-                        "name": "kind",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dtos.ApplicationBasic"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "post": {
                 "description": "创建一个新的申请，申请加入项目",
                 "produces": [
@@ -113,7 +59,7 @@ const docTemplate = `{
             }
         },
         "/applications/{id}": {
-            "post": {
+            "put": {
                 "description": "处理申请，接受或拒绝申请",
                 "produces": [
                     "application/json"
@@ -163,60 +109,6 @@ const docTemplate = `{
             }
         },
         "/invitations": {
-            "get": {
-                "description": "根据分页参数获取用户的邀请列表，支持分页和排序。当列表为空时，会返回 null 而不是空数组。",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "invitation"
-                ],
-                "summary": "获取当前用户的邀请（发出或者收到）列表，支持分页",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "页码，默认值为 1",
-                        "name": "page_serial",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量，默认值为 10",
-                        "name": "page_size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "邀请类型，0：发送的邀请，1：收到的邀请",
-                        "name": "kind",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dtos.InvitationBasic"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "post": {
                 "description": "创建一个新的邀请，邀请用户加入项目",
                 "produces": [
@@ -260,7 +152,7 @@ const docTemplate = `{
             }
         },
         "/invitations/{id}": {
-            "post": {
+            "put": {
                 "description": "处理邀请，接受或拒绝邀请",
                 "produces": [
                     "application/json"
@@ -355,6 +247,12 @@ const docTemplate = `{
                         "description": "项目所属的作品集 ID，默认不筛选作品集",
                         "name": "workset_id",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "项目的索引或 legacy ID，默认不筛选",
+                        "name": "index",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -390,7 +288,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "project_proc"
+                    "project"
                 ],
                 "summary": "创建项目",
                 "parameters": [
@@ -472,7 +370,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "project_proc"
+                    "project"
                 ],
                 "summary": "删除项目",
                 "parameters": [
@@ -514,7 +412,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "project_proc"
+                    "project"
                 ],
                 "summary": "更新项目",
                 "parameters": [
@@ -540,55 +438,6 @@ const docTemplate = `{
                         "description": "更新成功",
                         "schema": {
                             "$ref": "#/definitions/handlers.SuccessResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/teams": {
-            "get": {
-                "description": "根据分页参数获取汉化组列表，支持分页和排序。当列表为空时，会返回 null 而不是空数组。",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "team"
-                ],
-                "summary": "获取当前用户的汉化组列表分页",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "页码，默认值为 1",
-                        "name": "page_serial",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量，默认值为 10",
-                        "name": "page_size",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dtos.TeamBasic"
-                            }
                         }
                     },
                     "400": {
@@ -674,6 +523,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/teams/{id}/worksets": {
+            "get": {
+                "description": "注意当列表为空，会返回 null 而不是空数组",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "team"
+                ],
+                "summary": "获取特定汉化组的工作集列表分页，按 ID 倒序",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，默认值为 1",
+                        "name": "page_serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认值为 10",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "所属汉化组 ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.WorksetBasic"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/users/{id}/applications": {
             "get": {
                 "description": "根据分页参数获取用户的申请列表，支持分页和排序\\n当列表为空时，会返回 null 而不是空数组\\n如果 id 不是当前登录的用户 ID，则返回 400 错误",
@@ -681,7 +586,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "application"
+                    "user"
                 ],
                 "summary": "获取当前用户的申请（发出或收到）列表，支持分页",
                 "parameters": [
@@ -785,7 +690,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "invitation"
+                    "user"
                 ],
                 "summary": "获取当前用户的邀请（发出或者收到）列表，支持分页",
                 "parameters": [
@@ -878,6 +783,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
+                        "description": "项目的索引或 legacy ID，默认不筛选",
+                        "name": "index",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
                         "description": "用户 ID",
                         "name": "id",
                         "in": "path",
@@ -947,62 +858,6 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/dtos.TeamBasic"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/worksets": {
-            "get": {
-                "description": "注意当列表为空，会返回 null 而不是空数组",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "workset"
-                ],
-                "summary": "获取特定汉化组的工作集列表分页，按 ID 倒序",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "页码，默认值为 1",
-                        "name": "page_serial",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量，默认值为 10",
-                        "name": "page_size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "所属汉化组 ID",
-                        "name": "team_id",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dtos.WorksetBasic"
                             }
                         }
                     },

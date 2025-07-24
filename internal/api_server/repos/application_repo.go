@@ -48,11 +48,17 @@ func (r *appliRepoImpl) GetApplicationSentByUserId(userId dbmodels.PrimaryKey, o
 	var applications []*dbmodels.ProjectApplication
 
 	if err := r.handle.Model(&dbmodels.ProjectApplication{}).
-		Where("applicant_id = ? AND status = 0", userId).
+		Where("applicant_id = ?", userId).
 		// 预加载 FkProject 关联的 Project 信息
 		Preload("FkProject", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id", "title", "workset_id", "workset_index", "status")
+			return db.Select(kProjectBasicFields)
 		}).
+		Preload("FkApplicant", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "nickname") // 只需要 id 和 nickname
+		}).
+		Offset(offset).
+		Limit(limit).
+		Order("id DESC").
 		Find(&applications).
 		Error; err != nil {
 		return nil, err
@@ -67,13 +73,17 @@ func (r *appliRepoImpl) GetApplicationRecievedByUserId(userId dbmodels.PrimaryKe
 
 	// 查找 userId 作为 creator 的项目对应的申请
 	if err := r.handle.Model(&dbmodels.ProjectApplication{}).
-		Where("project_id IN (SELECT project_id FROM applications WHERE principal_id = ?)", userId).
+		Where("project_id IN (SELECT project_id FROM project_applications WHERE principal_id = ?)", userId).
 		// 预加载 FkProject 关联的 Project 信息
 		Preload("FkProject", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id", "title", "workset_id", "workset_index", "status")
+			return db.Select(kProjectBasicFields)
+		}).
+		Preload("FkApplicant", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "nickname") // 只需要 id 和 nickname
 		}).
 		Offset(offset).
 		Limit(limit).
+		Order("id DESC").
 		Find(&applications).
 		Error; err != nil {
 		return nil, err
@@ -87,6 +97,9 @@ func (r *appliRepoImpl) SelectById(applicationId dbmodels.PrimaryKey) (*dbmodels
 	var application dbmodels.ProjectApplication
 
 	if err := r.handle.Model(&dbmodels.ProjectApplication{}).
+		Preload("FkProject", func(db *gorm.DB) *gorm.DB {
+			return db.Select(kProjectBasicFields)
+		}).
 		Where("id = ?", applicationId).
 		First(&application).
 		Error; err != nil {

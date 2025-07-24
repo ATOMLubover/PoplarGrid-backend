@@ -156,9 +156,9 @@ type TeamMemberRepo interface {
 	// SelectTeamBasicByUserId 获取指定成员 ID 下加入的所有汉化组信息
 	SelectTeamBasicByUserId(userId dbmodels.PrimaryKey) ([]*dbmodels.Team, error)
 
-	// // SelectById 获取指定成员 ID 的成员信息
-	// // 注意：这个函数会预加载 FkUser 的基础字段
-	// SelectById(id dbmodels.PrimaryKey) (*dbmodels.TeamMember, error)
+	// SelectByUserId 获取指定用户 ID 的成员信息
+	// 注意：这个函数会预加载 FkUser 的基础字段
+	SelectByUserId(userId dbmodels.PrimaryKey) (*dbmodels.TeamMember, error)
 	// // SelectByIdBacth 批量获取指定的 ID 的成员信息
 	// // 这个函数同样会预加载 FkUser 的基础字段
 	// SelectByIdBatch(ids []dbmodels.PrimaryKey) ([]dbmodels.TeamMember, error)
@@ -200,6 +200,23 @@ func (r *teamMemberRepoImpl) SelectUserBasicPageWithParams(
 	return members, nil
 }
 
+// SelectByUserId 实现 MemberRepo 接口的 SelectByUserId 方法
+func (r *teamMemberRepoImpl) SelectByUserId(userId dbmodels.PrimaryKey) (*dbmodels.TeamMember, error) {
+	var member dbmodels.TeamMember
+
+	if err := r.handle.Model(&dbmodels.TeamMember{}).
+		Preload("FkUser", func(db *gorm.DB) *gorm.DB {
+			return db.Select(kUserBasicFields) // 只选择需要的字段
+		}).
+		Where("user_id = ?", userId).
+		First(&member).
+		Error; err != nil {
+		return nil, err
+	}
+
+	return &member, nil
+}
+
 // buildQueryWithParams 根据参数构建 WHERE 子句
 func (r *teamMemberRepoImpl) buildQueryWithParams(base *gorm.DB, queryParams *dtos.MemberSearchParams) *gorm.DB {
 	if queryParams == nil {
@@ -229,10 +246,8 @@ func (r *teamMemberRepoImpl) buildQueryWithParams(base *gorm.DB, queryParams *dt
 func (r *teamMemberRepoImpl) SelectTeamBasicByUserId(userId dbmodels.PrimaryKey) ([]*dbmodels.Team, error) {
 	var teams []*dbmodels.Team
 
-	if err := r.handle.Model(&dbmodels.TeamMember{}).
-		Select("Team.*").
-		// 使用 LEFT JOIN 连接 teams 表，保证即使用户没有加入任何团队也能返回 NULL 结果
-		Joins("LEFT JOIN teams ON teams.id = team_members.team_id").
+	if err := r.handle.Model(&dbmodels.Team{}).
+		Joins("RIGHT JOIN team_members ON teams.id = team_members.team_id").
 		Where("team_members.user_id = ?", userId).
 		Find(&teams).Error; err != nil {
 		return nil, err

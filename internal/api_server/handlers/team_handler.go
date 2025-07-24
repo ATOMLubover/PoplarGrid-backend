@@ -13,58 +13,20 @@ func RouteTeamHandler(root *mvc.Application) {
 	handler := &TeamHandler{}
 
 	// 注册路由组
-	teamParty := root.
-		Party("/teams").
+	root.Party("/teams").
 		Handle(handler)
-
-	// 注册路由与方法的映射（类型安全）
-	teamParty.Router.Get("", handler.TeamListPage)
-	teamParty.Router.Get("/{id:uint}/members", handler.MemberListPage)
 }
 
 // TeamHandler 处理汉化组信息相关的请求
 type TeamHandler struct {
-	TeamService services.TeamService
+	TeamService    services.TeamService
+	WorksetService services.WorksetService
 }
 
-// TeamListPage godoc
-// @Summary 	获取当前用户的汉化组列表分页
-// @Description 根据分页参数获取汉化组列表，支持分页和排序。当列表为空时，会返回 null 而不是空数组。
-// @Param 		page_serial query int false "页码，默认值为 1"
-// @Param 		page_size query int false "每页数量，默认值为 10"
-// @Tags 		team
-// @Produce 	json
-// @Success	 	200 {object} []dtos.TeamBasic
-// @Failure     400 {object} ErrorResponse "无效的请求参数"
-// @Failure     500 {object} ErrorResponse "服务器内部错误"
-// @Router 		/teams [get]
-func (h *TeamHandler) TeamListPage(ctx iris.Context) {
-	// 从上下文中获取当前用户 ID
-	userId, err := ctx.Values().GetUint("user_id")
-	if err != nil || userId <= 0 {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "无法获取有效的 user_id",
-		})
-		return
-	}
-
-	// 获取分页参数
-	pageSerial := ctx.URLParamIntDefault("page_serial", 1)
-	pageSize := ctx.URLParamIntDefault("page_size", 10)
-
-	// 调用服务层获取数据
-	teams, err := h.TeamService.GetBasicPageByUserId(userId, pageSerial, pageSize)
-	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(ErrorResponse{
-			Error:  "获取汉化组列表失败",
-			Detail: err.Error(),
-		})
-		return
-	}
-
-	ctx.JSON(teams)
+// BeforeActivation 在控制器激活前注册路由
+func (t *TeamHandler) BeforeActivation(b mvc.BeforeActivation) {
+	// 注册 GET /teams/{id:uint}/members
+	b.Handle("GET", "/{id:uint}/members", "MemberListPage")
 }
 
 // MemberListPage godoc
@@ -114,4 +76,44 @@ func (h *TeamHandler) MemberListPage(ctx iris.Context) {
 	}
 
 	ctx.JSON(members)
+}
+
+// WorksetListPage godoc
+// @Summary 	获取特定汉化组的工作集列表分页，按 ID 倒序
+// @Description 注意当列表为空，会返回 null 而不是空数组
+// @Param 		page_serial query int false "页码，默认值为 1"
+// @Param 		page_size query int false "每页数量，默认值为 10"
+// @Param 		id query uint true "所属汉化组 ID"
+// @Tags 		team
+// @Produce 	json
+// @Success	 	200 {object} []dtos.WorksetBasic
+// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Router 		/teams/{id}/worksets [get]
+func (h *TeamHandler) WorksetListPage(ctx iris.Context) {
+	// 获取分页参数
+	pageSerial := ctx.URLParamIntDefault("page_serial", 1)
+	pageSize := ctx.URLParamIntDefault("page_size", 10)
+
+	teamId, err := ctx.Params().GetUint("id")
+	if err != nil || teamId <= 0 {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(ErrorResponse{
+			Error: "team_id 必须是一个明确给出的正整数",
+		})
+		return
+	}
+
+	// 调用服务层获取数据
+	worksets, err := h.WorksetService.GetBasicPage(teamId, pageSerial, pageSize)
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.JSON(ErrorResponse{
+			Error:  "获取工作集列表失败",
+			Detail: err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(worksets)
 }

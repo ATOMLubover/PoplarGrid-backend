@@ -13,14 +13,8 @@ func RouteWorksetHandler(root *mvc.Application) {
 	handler := &WorksetHandler{}
 
 	// 注册路由组
-	party := root.Party("/worksets")
-
-	// 注册 handler
-	party.Handle(handler)
-
-	// 注册路由与方法的映射（类型安全）
-	party.Router.Get("", handler.WorksetListPage)
-	party.Router.Get("/{id:uint}/stats", handler.ProjectStats)
+	root.Party("/worksets").
+		Handle(handler)
 }
 
 // WorksetHandler 处理工作集相关的请求
@@ -28,44 +22,10 @@ type WorksetHandler struct {
 	WorksetService services.WorksetService
 }
 
-// WorksetListPage godoc
-// @Summary 	获取特定汉化组的工作集列表分页，按 ID 倒序
-// @Description 注意当列表为空，会返回 null 而不是空数组
-// @Param 		page_serial query int false "页码，默认值为 1"
-// @Param 		page_size query int false "每页数量，默认值为 10"
-// @Param 		team_id query uint true "所属汉化组 ID"
-// @Tags 		workset
-// @Produce 	json
-// @Success	 	200 {object} []dtos.WorksetBasic
-// @Failure     400 {object} ErrorResponse "无效的请求参数"
-// @Failure     500 {object} ErrorResponse "服务器内部错误"
-// @Router 		/worksets [get]
-func (h *WorksetHandler) WorksetListPage(ctx iris.Context) {
-	// 获取分页参数
-	pageSerial := ctx.URLParamIntDefault("page_serial", 1)
-	pageSize := ctx.URLParamIntDefault("page_size", 10)
-
-	teamId, err := ctx.URLParamInt("team_id")
-	if err != nil || teamId <= 0 {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "team_id 必须是一个明确给出的正整数",
-		})
-		return
-	}
-
-	// 调用服务层获取数据
-	worksets, err := h.WorksetService.GetBasicPage(uint(teamId), pageSerial, pageSize)
-	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(ErrorResponse{
-			Error:  "获取工作集列表失败",
-			Detail: err.Error(),
-		})
-		return
-	}
-
-	ctx.JSON(worksets)
+// BeforeActivation 在控制器激活前注册路由
+func (w *WorksetHandler) BeforeActivation(b mvc.BeforeActivation) {
+	// 注册 GET /worksets/{id:uint}/stats
+	b.Handle("GET", "/{id:uint}/stats", "ProjectStats")
 }
 
 // ProjectStats godoc

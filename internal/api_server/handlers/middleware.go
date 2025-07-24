@@ -108,17 +108,27 @@ func NewCorsMiddleware(
 func NewUserInfoExtractMiddleware() IrisMiddleware {
 	return func(ctx iris.Context) {
 		// 首先解析 Client-Request-User-Id
-		if userIdStr := ctx.GetHeader("Client-Request-User-Id"); userIdStr != "" {
-			userId, err := strconv.ParseUint(userIdStr, 10, 64)
-			if err != nil {
-				ctx.StopWithJSON(iris.StatusBadRequest, iris.Map{
-					"error": "无法解析的 user_id 头",
-				})
-				return
-			}
-
-			ctx.Values().Set("user_id", userId)
+		userIdStr := ctx.GetHeader("Client-Request-User-Id")
+		if userIdStr == "" {
+			ctx.StopWithJSON(iris.StatusBadRequest, ErrorResponse{
+				Error: "缺少 Client-Request-User-Id 请求头",
+			})
+			return
 		}
+
+		userId, err := strconv.ParseUint(userIdStr, 10, 32)
+		if err != nil || userId == 0 {
+			ctx.StopWithJSON(iris.StatusBadRequest, ErrorResponse{
+				Error: "无效的 Client-Request-User-Id 请求头",
+			})
+			return
+		}
+
+		// 将 userId 存入上下文
+		ctx.Values().Set("user_id", userId)
+
+		// 继续处理请求
+		ctx.Next()
 	}
 }
 
@@ -140,6 +150,7 @@ func NewCheckUserIdMiddleware() IrisMiddleware {
 			ctx.StopWithJSON(iris.StatusBadRequest, ErrorResponse{
 				Error: "无效的 user_id，必须与当前登录用户 ID 匹配",
 			})
+			return
 		}
 
 		// 继续处理请求

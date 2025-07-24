@@ -409,6 +409,10 @@ CREATE INDEX "idx_project_applications_project_id" ON "public"."project_applicat
   "project_id" "pg_catalog"."int8_ops" ASC NULLS LAST
 );
 
+CREATE UNIQUE INDEX "uq_project_applications_pending"
+ON "public"."project_applications" ("project_id", "applicant_id")
+WHERE status = 0;
+
 -- ----------------------------
 -- Primary Key structure for table project_applications
 -- ----------------------------
@@ -429,6 +433,10 @@ CREATE INDEX "idx_project_invitations_inviter_id" ON "public"."project_invitatio
 CREATE INDEX "idx_project_invitations_project_id" ON "public"."project_invitations" USING btree (
   "project_id" "pg_catalog"."int8_ops" ASC NULLS LAST
 );
+
+CREATE UNIQUE INDEX "uq_project_invitations_pending"
+ON "public"."project_invitations" ("project_id", "invitee_id")
+WHERE status = 0;
 
 -- ----------------------------
 -- Primary Key structure for table project_invitations
@@ -482,7 +490,6 @@ EXECUTE PROCEDURE "public"."set_project_workset_index"();
 -- ----------------------------
 -- Uniques structure for table projects
 -- ----------------------------
-ALTER TABLE "public"."projects" ADD CONSTRAINT "projects_moetran_id_key" UNIQUE ("moetran_id");
 ALTER TABLE "public"."projects" ADD CONSTRAINT "unique_project_in_workset" UNIQUE ("workset_id", "workset_index");
 
 -- ----------------------------
@@ -524,7 +531,6 @@ CREATE INDEX "idx_teams_deleted_at" ON "public"."teams" USING btree (
 -- Uniques structure for table teams
 -- ----------------------------
 ALTER TABLE "public"."teams" ADD CONSTRAINT "teams_name_key" UNIQUE ("name");
-ALTER TABLE "public"."teams" ADD CONSTRAINT "teams_moetran_id_key" UNIQUE ("moetran_id");
 
 -- ----------------------------
 -- Primary Key structure for table teams
@@ -543,7 +549,6 @@ CREATE INDEX "idx_users_deleted_at" ON "public"."users" USING btree (
 -- ----------------------------
 ALTER TABLE "public"."users" ADD CONSTRAINT "users_nickname_key" UNIQUE ("nickname");
 ALTER TABLE "public"."users" ADD CONSTRAINT "users_email_key" UNIQUE ("email");
-ALTER TABLE "public"."users" ADD CONSTRAINT "users_moetran_id_key" UNIQUE ("moetran_id");
 
 -- ----------------------------
 -- Primary Key structure for table users
@@ -568,7 +573,6 @@ EXECUTE PROCEDURE "public"."create_workset_project_sequence"();
 -- Uniques structure for table worksets
 -- ----------------------------
 ALTER TABLE "public"."worksets" ADD CONSTRAINT "worksets_name_key" UNIQUE ("name");
-ALTER TABLE "public"."worksets" ADD CONSTRAINT "worksets_moetran_id_key" UNIQUE ("moetran_id");
 ALTER TABLE "public"."worksets" ADD CONSTRAINT "worksets_project_sequence_name_key" UNIQUE ("project_sequence_name");
 
 -- ----------------------------
