@@ -167,7 +167,7 @@ func (h *ProjectProcHandler) Create(ctx iris.Context) {
 	}
 
 	// 调用服务层创建项目
-	info, err := h.ProjectService.CreateProject(&dtos.CreateProjectInfo{
+	info, err := h.ProjectService.CreateProject(&dtos.CreateProjectParams{
 		Title:         request.Title,
 		Description:   request.Description,
 		WorksetId:     request.WorksetId,

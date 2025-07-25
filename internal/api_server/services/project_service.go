@@ -30,7 +30,7 @@ type ProjectService interface {
 	GetLaborDivision(projectId uint) ([]*dtos.LaborDivision, error)
 
 	// CreateProject 创建一个新的项目
-	CreateProject(request *dtos.CreateProjectInfo) (*dtos.ProjectCreatedInfo, error)
+	CreateProject(request *dtos.CreateProjectParams) (*dtos.ProjectCreatedInfo, error)
 
 	// UpdateProject 更新指定 ID 的项目
 	UpdateProject(projectId uint, request *dtos.UpdateProjectRequest) error
@@ -254,7 +254,7 @@ func (s *projectServiceImpl) GetLaborDivision(projectId uint) ([]*dtos.LaborDivi
 }
 
 // CreateProject 实现 ProjectService 接口的 CreateProject 方法
-func (s *projectServiceImpl) CreateProject(createInfo *dtos.CreateProjectInfo) (*dtos.ProjectCreatedInfo, error) {
+func (s *projectServiceImpl) CreateProject(createInfo *dtos.CreateProjectParams) (*dtos.ProjectCreatedInfo, error) {
 	// 构建一个事务协调器
 	coordinater := txutils.NewTransactionCoordinator(s.projectRepo.GetHandle())
 
@@ -484,7 +484,7 @@ func (s *projectServiceImpl) buildQueryParams(worksetId, index, userId uint, sor
 
 // buildMoetranProjInfo 构建 Moetran 项目信息
 func (s *projectServiceImpl) buildMoetranProjInfo(
-	info *dtos.CreateProjectInfo,
+	info *dtos.CreateProjectParams,
 	project *dbmodels.Project,
 	user *dbmodels.User,
 ) *apiclient.CreateProjectInfo {

@@ -2,11 +2,8 @@ package services
 
 import (
 	"errors"
-	"fmt"
 	"log/slog"
-	"poplargrid/internal/api_server/dtos"
-	"poplargrid/internal/api_server/repos"
-	"poplargrid/internal/shared/dbmodels"
+	"poplargrid/internal/shared/models"
 
 	"gorm.io/gorm"
 )
@@ -14,51 +11,69 @@ import (
 // UserService 接口定义了用户服务的基本操作
 type UserService interface {
 	// GetUserDetail 获取指定用户的详细信息
-	GetUserDetail(userId uint) (*dtos.UserDetail, error)
+	GetUserDetail(userId uint) (*UserInfo, error)
+}
+
+// UserInfo 定义了用户的基本信息
+type UserInfo struct {
+	Id       uint   // 用户 ID
+	Nickname string // 昵称
+	Email    string // 邮箱
+	QqNumber int    // QQ 号
+	IsAdmin  bool   // 是否是管理员
+	Remark   string // 补充备注
 }
 
 // userServiceImpl 是 UserService 接口的实现
 type userServiceImpl struct {
-	userRepo repos.UserRepo
-	logger   *slog.Logger
+	handle *gorm.DB
+	logger *slog.Logger
 }
 
 // NewUserService 创建一个新的 UserService 实例
-func NewUserService(userRepo repos.UserRepo) UserService {
+func NewUserService(hdl *gorm.DB, lgr *slog.Logger) UserService {
 	return &userServiceImpl{
-		userRepo: userRepo,
+		handle: hdl,
+		logger: lgr,
 	}
 }
 
 // GetUserDetail 实现 UserService 接口的方法，获取指定用户的详细信息
-func (s *userServiceImpl) GetUserDetail(userId uint) (*dtos.UserDetail, error) {
-	user, err := s.userRepo.SelectByUserId(dbmodels.PrimaryKey(userId))
+func (s *userServiceImpl) GetUserDetail(userId uint) (*UserInfo, error) {
+	// 查询条件为用户 ID
+	userPKey := models.PKey(userId)
+	userSpec := &models.UserSpec{
+		Id: &userPKey,
+	}
+	// 查询的字段
+	userFields := &models.UserFields{
+		Id:       true,
+		Nickname: true,
+		Email:    true,
+		QqNumber: true,
+		IsAdmin:  true,
+		Remark:   true,
+	}
+
+	// 执行查询
+	user, err := models.GetUser().SelectFirst(s.handle, userSpec, userFields)
 	if err != nil {
-		// 此处单独拦截 not found 错误
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			s.logger.Error("GetUserDetail 调用 SelectByUserId 中未找到用户",
-				slog.Uint64("user_id", uint64(userId)))
-			return nil, fmt.Errorf("未找到指定 ID 的用户")
+			return nil, errors.New("用户不存在")
 		}
-
-		s.logger.Error("GetUserDetail 调用 SelectByUserId 中出现错误",
-			slog.Uint64("user_id", uint64(userId)),
-			slog.Any("error", err))
-		return nil, errors.New("无法读取到指定 user 的详细信息")
+		s.logger.Error("failed to get user detail", "error", err)
+		return nil, err // 返回错误
 	}
 
-	// 将 dbmodels.User 转换为 dtos.UserDetail
-	userDetail := &dtos.UserDetail{
-		UserBasic: dtos.UserBasic{
-			Id:       uint(user.Id),
-			Nickname: user.Nickname,
-		},
-		Email:         user.Email,
-		PoplarIsAdmin: user.PoplarIsAdmin,
-		Remark:        user.Remark,
-		QqNumber:      fmt.Sprintf("%d", user.QqNumber),
-		LastActive:    user.LastActive.Format(dtos.DTO_TIME_FORMAT),
+	// 将查询结果转换为 UserInfo
+	userInfo := &UserInfo{
+		Id:       uint(user.Id),
+		Nickname: user.Nickname,
+		Email:    user.Email,
+		QqNumber: user.QqNumber,
+		IsAdmin:  user.IsAdmin,
+		Remark:   user.Remark,
 	}
 
-	return userDetail, nil
+	return userInfo, nil
 }

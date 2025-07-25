@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -103,7 +104,7 @@ func NewCorsMiddleware(
 	}
 }
 
-// NewUserInfoExtractMiddleware 生成一个解析 Gateway Server 解析信息到 ctx 的中间件
+// NewUserInfoExtractMiddleware 生成一个提取用户信息的中间件
 // 其作用于 handler 之前
 func NewUserInfoExtractMiddleware() IrisMiddleware {
 	return func(ctx iris.Context) {
@@ -135,18 +136,32 @@ func NewUserInfoExtractMiddleware() IrisMiddleware {
 // NewCheckUserIdMiddleware 生成一个检查 user_id 的中间件
 func NewCheckUserIdMiddleware() IrisMiddleware {
 	return func(ctx iris.Context) {
+		// 从路径参数获取 user_id 并进行验证
+		pathUserId, err := ctx.Params().GetUint("user_id")
+		if errors.Is(err, iris.ErrNotFound) {
+			// 如果没有提供 user_id，则直接继续处理请求
+			ctx.Next()
+			return
+		}
+		if err != nil {
+			// 否则如果有其他错误，返回 400 Bad Request
+			ctx.StopWithJSON(iris.StatusBadRequest, ErrorResponse{
+				Error: "无效的 user_id，必须与当前登录用户 ID 匹配",
+			})
+			return
+		}
+
 		// 从上下文中获取 user_id
 		userId, err := ctx.Values().GetUint("user_id")
-		if err != nil || userId <= 0 {
+		if err != nil {
 			ctx.StopWithJSON(iris.StatusBadRequest, ErrorResponse{
 				Error: "无法获取有效的 user_id",
 			})
 			return
 		}
 
-		// 从路径参数获取 user_id 并进行验证
-		pathUserId, err := ctx.Params().GetUint("id")
-		if err != nil || pathUserId != userId {
+		// 检查路径参数中的 user_id 是否与上下文中的 user_id 匹配
+		if pathUserId != userId {
 			ctx.StopWithJSON(iris.StatusBadRequest, ErrorResponse{
 				Error: "无效的 user_id，必须与当前登录用户 ID 匹配",
 			})
