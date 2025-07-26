@@ -48,22 +48,21 @@ type WorksetSpec struct {
 
 // Apply 将 WorksetSpec 应用到 WHERE 子句
 func (s *WorksetSpec) Apply(query *gorm.DB) {
-	cnd := make(map[string]any)
-
 	if s.Id != nil {
-		cnd["id"] = *s.Id
-	}
-	if s.Name != nil {
-		cnd["name"] = *s.Name
-	}
-	if s.MoetranId != nil {
-		cnd["moetran_id"] = *s.MoetranId
-	}
-	if s.TeamId != nil {
-		cnd["team_id"] = *s.TeamId
+		query = query.Where("id = ?", *s.Id)
 	}
 
-	query = query.Where(cnd)
+	if s.Name != nil {
+		query = query.Where("name = ?", *s.Name)
+	}
+
+	if s.MoetranId != nil {
+		query = query.Where("moetran_id = ?", *s.MoetranId)
+	}
+
+	if s.TeamId != nil {
+		query = query.Where("team_id = ?", *s.TeamId)
+	}
 }
 
 // Insert 创建一个新的 Workset 实例

@@ -8,12 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// MemberService 接口定义了成员服务的基本操作
-type MemberService interface {
-	// GetMembers 获取指定条件下的成员列表
-	GetMembers(params *MemberListParams) ([]*MemberInfo, error)
-}
-
 // RoleMask 定义了成员角色的掩码
 type RoleMask uint32
 
@@ -56,6 +50,12 @@ type MemberInfo struct {
 	User UserInfo // 对应的用户信息
 	Team TeamInfo // 对应的团队信息
 	Role RoleMask // 在组内的职责（掩码格式）
+}
+
+// MemberService 接口定义了成员服务的基本操作
+type MemberService interface {
+	// GetMembers 获取指定条件下的成员列表
+	GetMembers(params *MemberListParams) ([]*MemberInfo, error)
 }
 
 // memberServiceImpl 是 MemberService 接口的实现
@@ -103,7 +103,7 @@ func (s *memberServiceImpl) GetMembers(params *MemberListParams) ([]*MemberInfo,
 				slog.Any("error", err))
 			return nil, errors.New("没有找到指定用户的成员信息")
 		}
-        
+
 		s.logger.Error("获取指定用户",
 			slog.Any("user_id", params.UserId),
 			slog.Any("error", err))

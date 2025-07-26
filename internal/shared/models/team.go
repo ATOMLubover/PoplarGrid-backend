@@ -36,19 +36,17 @@ type TeamSpec struct {
 
 // Apply 将 TeamSpec 应用到 WHERE 子句上
 func (s *TeamSpec) Apply(query *gorm.DB) {
-	cnd := make(map[string]any)
-
 	if s.Id != nil {
-		cnd["id"] = *s.Id
-	}
-	if s.Name != nil {
-		cnd["name"] = *s.Name
-	}
-	if s.MoetranId != nil {
-		cnd["moetran_id"] = *s.MoetranId
+		query = query.Where("id = ?", *s.Id)
 	}
 
-	query = query.Where(cnd)
+	if s.Name != nil {
+		query = query.Where("name = ?", *s.Name)
+	}
+
+	if s.MoetranId != nil {
+		query = query.Where("moetran_id = ?", *s.MoetranId)
+	}
 }
 
 // Insert 创建一个新的 Team 实例

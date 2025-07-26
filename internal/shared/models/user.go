@@ -47,33 +47,35 @@ type UserSpec struct {
 
 	IsAdmin *bool
 
-	MoetranId *string
+	MoetranId  *string
+	MoetranJwt *string
 }
 
 // Apply 将 UserSpec 应用到 WHERE 子句
 func (s *UserSpec) Apply(query *gorm.DB) {
-	cnd := make(map[string]any)
-
 	if s.Id != nil {
-		cnd["id"] = *s.Id
+		query = query.Where("id = ?", *s.Id)
 	}
+
 	if s.Nickname != nil {
-		cnd["nickname"] = *s.Nickname
+		query = query.Where("nickname = ?", *s.Nickname)
 	}
 	if s.Email != nil {
-		cnd["email"] = *s.Email
+		query = query.Where("email = ?", *s.Email)
 	}
 	if s.QqNumber != nil {
-		cnd["qq_number"] = *s.QqNumber
-	}
-	if s.IsAdmin != nil {
-		cnd["is_admin"] = *s.IsAdmin
-	}
-	if s.MoetranId != nil {
-		cnd["moetran_id"] = *s.MoetranId
+		query = query.Where("qq_number = ?", *s.QqNumber)
 	}
 
-	query = query.Where(cnd)
+	if s.IsAdmin != nil {
+		query = query.Where("is_admin = ?", *s.IsAdmin)
+	}
+	if s.MoetranId != nil {
+		query = query.Where("moetran_id = ?", *s.MoetranId)
+	}
+	if s.MoetranJwt != nil {
+		query = query.Where("moetran_jwt = ?", *s.MoetranJwt)
+	}
 }
 
 // UserFields 定义了用户的字段，用于查询时选择特定字段返回

@@ -26,7 +26,7 @@ type Project struct {
 
 	// 当前项目的状态，全部拥有索引加速
 	TranslateStatus uint8 `gorm:"not null;default:0"`     // 0: 未开始, 1: 翻译中, 2: 已翻译
-	ProofStatus     uint8 `gorm:"not null;default:0"`     // 0: 未开始, 1: 校对中, 2: 已校对
+	ProofreadStatus uint8 `gorm:"not null;default:0"`     // 0: 未开始, 1: 校对中, 2: 已校对
 	LetterStatus    uint8 `gorm:"not null;default:0"`     // 0: 未开始, 1: 字幕制作中, 2: 已完成
 	ReviewStatus    uint8 `gorm:"not null;default:0"`     // 0: 未开始, 1: 审核中, 2: 已审核
 	IsPublished     bool  `gorm:"not null;default:false"` // 是否已发布
@@ -67,67 +67,63 @@ type ProjectSpec struct {
 	ProofreadStatus *[]uint8
 	LetterStatus    *[]uint8
 	ReviewStatus    *[]uint8
-	IsPublished     *[]bool
+	IsPublished     *bool
 
 	AllowAutoJoin *bool
 	IsHidden      *bool
 }
 
 // Apply 将 ProjectSpec 应用到 WHERE 子句
-func (s *ProjectSpec) Apply(query *gorm.DB) error {
-	condition := make(map[string]any)
-
-	if s.Title != nil {
-		// Title 使用 LIKE 模糊查询
-		query = query.Where("title LIKE ?", "%"+*s.Title+"%")
+func (s *ProjectSpec) Apply(query *gorm.DB) {
+	if s.Id != nil {
+		query = query.Where("projects.id = ?", *s.Id)
 	}
 
-	if s.Id != nil {
-		condition["id"] = *s.Id
+	if s.Title != nil {
+		query = query.Where("projects.title LIKE ?", "%"+*s.Title+"%")
 	}
 
 	if s.PrincipalId != nil {
-		condition["principal_id"] = *s.PrincipalId
+		query = query.Where("projects.principal_id = ?", *s.PrincipalId)
 	}
 
-	// 作品集相关条件
 	if s.WorksetId != nil {
-		condition["workset_id"] = *s.WorksetId
+		query = query.Where("projects.workset_id = ?", *s.WorksetId)
 	}
+
 	if s.WorksetIndex != nil {
-		condition["workset_index"] = *s.WorksetIndex
+		// 特别处理：index 指代的是作品集的索引或者是 legacy ID
+		query = query.Where(
+			query.Where("projects.workset_index = ?", *s.WorksetIndex).
+				Or("projects.legacy_id = ?", *s.WorksetIndex))
 	}
 
 	if s.MoetranId != nil {
-		condition["moetran_id"] = *s.MoetranId
+		query = query.Where("projects.moetran_id = ?", *s.MoetranId)
 	}
 
-	// 状态条件
 	if s.TranslateStatus != nil {
-		condition["translate_status"] = *s.TranslateStatus
+		query = query.Where("projects.translate_status IN (?)", *s.TranslateStatus)
 	}
 	if s.ProofreadStatus != nil {
-		condition["proof_status"] = *s.ProofreadStatus
+		query = query.Where("projects.proofread_status IN (?)", *s.ProofreadStatus)
 	}
 	if s.LetterStatus != nil {
-		condition["letter_status"] = *s.LetterStatus
+		query = query.Where("projects.letter_status IN (?)", *s.LetterStatus)
 	}
 	if s.ReviewStatus != nil {
-		condition["review_status"] = *s.ReviewStatus
+		query = query.Where("projects.review_status IN (?)", *s.ReviewStatus)
 	}
 	if s.IsPublished != nil {
-		condition["is_published"] = *s.IsPublished
+		query = query.Where("projects.is_published = ?", *s.IsPublished)
 	}
 
-	// 项目权限条件
 	if s.AllowAutoJoin != nil {
-		condition["allow_auto_join"] = *s.AllowAutoJoin
+		query = query.Where("projects.allow_auto_join = ?", *s.AllowAutoJoin)
 	}
 	if s.IsHidden != nil {
-		condition["is_hidden"] = *s.IsHidden
+		query = query.Where("projects.is_hidden = ?", *s.IsHidden)
 	}
-
-	return nil
 }
 
 // ProjectFields 定义了项目的字段，用于查询时选择特定字段返回
@@ -156,7 +152,7 @@ type ProjectFields struct {
 }
 
 // Apply 将 ProjectFields 转换为字符串切片并应用到 SELECT 子句
-func (p *ProjectFields) Apply(query *gorm.DB) error {
+func (p *ProjectFields) Apply(query *gorm.DB) {
 	fields := []string{}
 
 	if p.Id {
@@ -214,8 +210,6 @@ func (p *ProjectFields) Apply(query *gorm.DB) error {
 	if p.IsHidden {
 		fields = append(fields, "is_hidden")
 	}
-
-	return nil
 }
 
 // Insert 创建一个新的 Project 实例

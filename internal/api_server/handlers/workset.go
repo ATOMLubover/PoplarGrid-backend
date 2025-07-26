@@ -50,7 +50,7 @@ func (h *WorksetHandler) ProjectStats(ctx iris.Context) {
 	}
 
 	// 调用服务层获取统计数据
-	stats, err := h.WorksetService.GetProjectStatsByWorksetId(worksetId)
+	stats, err := h.WorksetService.GetWorksetStats(worksetId)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ctx.JSON(ErrorResponse{

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"poplargrid/internal/api_server/dtos"
 	"poplargrid/internal/api_server/services"
 
@@ -10,15 +11,9 @@ import (
 
 // RouteProjectHandler 注册项目相关的路由
 func RouteProjectHandler(root *mvc.Application) {
-	// 创建 handler 实例
-	projectHandler := &ProjectHandler{}
-	projectProcHandler := &ProjectProcHandler{}
-
 	// 注册路由组和 handler
 	root.Party("/projects").
-		Handle(projectHandler)
-	root.Party("/projects").
-		Handle(projectProcHandler)
+		Handle(new(ProjectHandler))
 }
 
 // ProjectHandler 处理项目相关的请求
@@ -41,7 +36,7 @@ func (p *ProjectHandler) BeforeActivation(b mvc.BeforeActivation) {
 // @Param       page_size query integer false "每页数量，默认值为 10"
 // @Param       sort query integer false "排序方式，0：按 ID 倒序，1：按 updated_at 倒序，默认按 ID 倒序"
 // @Param       status query integer false "项目状态（位掩码），用于复合查询，默认不筛选查询"
-// @Param       user_id query integer false "用户 ID，默认不筛选用户"
+// @Param       member_id query integer false "成员 ID，默认不筛选成员"
 // @Param       workset_id query integer false "项目所属的作品集 ID，默认不筛选作品集"
 // @Param       index query integer false "项目的索引或 legacy ID，默认不筛选"
 // @Tags        project
@@ -51,29 +46,38 @@ func (p *ProjectHandler) BeforeActivation(b mvc.BeforeActivation) {
 // @Failure     500 {object} ErrorResponse "服务器内部错误"
 // @Router      /projects [get]
 func (h *ProjectHandler) ProjectListPage(ctx iris.Context) {
-	pageSerial := ctx.URLParamInt32Default("page_serial", 1)
-	pageSize := ctx.URLParamInt32Default("page_size", 10)
+	pageSerial := ctx.URLParamIntDefault("page_serial", 1)
+	pageSize := ctx.URLParamIntDefault("page_size", 10)
 
-	// 注意默认为 0，代表按 ID 倒序
-	sort := ctx.URLParamInt32Default("sort", 0)
-
-	// 注意默认为 PROJECT_STATUS_ALL，表示不筛选状态
-	status := ctx.URLParamInt32Default("status", dtos.PROJECT_STATUS_ALL)
+	statusesSlice := ctx.URLParamSlice("status")
+	statuses, err := h.sliceStringToStatus(statusesSlice)
+	if err != nil {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(ErrorResponse{
+			Error:  "无法转换状态参数",
+			Detail: err.Error(),
+		})
+		return
+	}
 
 	// 注意默认为 0，代表不筛选 workset
 	worksetId := ctx.URLParamIntDefault("workset_id", 0)
 
 	// 注意默认为 0，代表不筛选 user
-	userId := ctx.URLParamIntDefault("user_id", 0)
+	memberId := ctx.URLParamIntDefault("member_id", 0)
 
 	// 注意默认为 0，代表不筛选 index / legacy id
 	index := ctx.URLParamIntDefault("index", 0)
 
 	// 根据参数调用服务层获取数据
-	projects, err := h.ProjectService.GetBasicPageWithParams(
-		uint(worksetId), uint(index), uint(userId),
-		int(pageSerial), int(pageSize),
-		int(sort), dtos.ProjectOverallStatus(status))
+	projects, err := h.ProjectService.GetProjects(&services.ProjectListParams{
+		Offset:    (pageSerial - 1) * pageSize,
+		Limit:     pageSize,
+		Status:    statuses,
+		MemberId:  uint(memberId),
+		WorksetId: uint(worksetId),
+		Index:     uint(index),
+	})
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ErrorResponse{
@@ -107,7 +111,7 @@ func (h *ProjectHandler) ProjectDetail(ctx iris.Context) {
 	}
 
 	// 调用服务层获取数据
-	project, err := h.ProjectService.GetDetail(projectId)
+	project, err := h.ProjectService.GetProjectDetail(projectId)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ErrorResponse{
@@ -266,4 +270,17 @@ func (h *ProjectProcHandler) UpdateInfo(ctx iris.Context) {
 	ctx.JSON(SuccessResponse{
 		Message: "项目更新成功",
 	})
+}
+
+// sliceStringToStatus 将字符串切片转换为无符号整数切片
+func (*ProjectHandler) sliceStringToStatus(slice []string) ([]services.ProjectStatus, error) {
+	result := make([]services.ProjectStatus, 0, len(slice))
+	for _, str := range slice {
+		var num uint
+		if _, err := fmt.Sscanf(str, "%d", &num); err != nil {
+			return nil, fmt.Errorf("无法转换字符串 '%s' 为无符号整数: %w", str, err)
+		}
+		result = append(result, services.ProjectStatus(num))
+	}
+	return result, nil
 }

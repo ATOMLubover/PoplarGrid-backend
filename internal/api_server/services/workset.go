@@ -8,15 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// WorksetService 接口定义了作品集服务的基本操作
-type WorksetService interface {
-	// GetWorksets 根据参数获取作品集列表
-	GetWorksets(params *WorksetListParams) ([]*WorksetInfo, error)
-
-	// GetWorksetStatsByWorksetId 获取特定作品集的项目统计信息
-	GetWorksetStatsByWorksetId(worksetId uint) (*WorksetStats, error)
-}
-
 // WorksetListParams 定义了获取作品集列表的查询参数
 type WorksetListParams struct {
 	Offset int  // 偏移量
@@ -53,6 +44,14 @@ type WorksetStats struct {
 	NotReviewingCount int // 未审核项目数
 	ReviewingCount    int // 正在审核项目数
 	ReviewedCount     int // 已审核项目数
+}
+
+// WorksetService 接口定义了作品集服务的基本操作
+type WorksetService interface {
+	// GetWorksets 根据参数获取作品集列表
+	GetWorksets(params *WorksetListParams) ([]*WorksetInfo, error)
+	// GetWorksetStats 获取特定作品集的项目统计信息
+	GetWorksetStats(worksetId uint) (*WorksetStats, error)
 }
 
 // worksetServiceImpl 是 WorksetService 的实现
@@ -112,8 +111,8 @@ func (s *worksetServiceImpl) GetWorksets(params *WorksetListParams) ([]*WorksetI
 	return worksetInfos, nil
 }
 
-// GetWorksetStatsByWorksetId 实现 WorksetService 接口的 GetWorksetStatsByWorksetId 方法
-func (s *worksetServiceImpl) GetWorksetStatsByWorksetId(worksetId uint) (*WorksetStats, error) {
+// GetWorksetStats 实现 WorksetService 接口的 GetWorksetStats 方法
+func (s *worksetServiceImpl) GetWorksetStats(worksetId uint) (*WorksetStats, error) {
 	// 查询条件为作品集 ID
 	worksetPKey := models.PKey(worksetId)
 

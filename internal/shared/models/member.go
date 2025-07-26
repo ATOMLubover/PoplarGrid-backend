@@ -52,61 +52,49 @@ type MemberSpec struct {
 	IsReviewer    *bool
 	IsPublisher   *bool
 
-	UserId     *PKey
-	UserFields *UserFields // 需要 Preload 时指定
+	UserId *PKey
 
 	TeamId *PKey
 }
 
 // Apply 将 MemberSpec 应用为 WHERE 子句
 func (s *MemberSpec) Apply(query *gorm.DB) {
-	cnd := make(map[string]any)
-
-	// 主键条件
 	if s.Id != nil {
-		cnd["id"] = *s.Id
+		query = query.Where("id = ?", *s.Id)
 	}
 
-	// 职位条件
 	if s.IsAdmin != nil {
-		cnd["is_admin"] = *s.IsAdmin
+		query = query.Where("is_admin = ?", *s.IsAdmin)
 	}
 	if s.IsSource != nil {
-		cnd["is_source"] = *s.IsSource
+		query = query.Where("is_source_provider = ?", *s.IsSource)
 	}
 	if s.IsPerfector != nil {
-		cnd["is_perfector"] = *s.IsPerfector
+		query = query.Where("is_perfector = ?", *s.IsPerfector)
 	}
 	if s.IsTranslator != nil {
-		cnd["is_translator"] = *s.IsTranslator
+		query = query.Where("is_translator = ?", *s.IsTranslator)
 	}
 	if s.IsProofreader != nil {
-		cnd["is_proofreader"] = *s.IsProofreader
+		query = query.Where("is_proofreader = ?", *s.IsProofreader)
 	}
 	if s.IsLetterer != nil {
-		cnd["is_letterer"] = *s.IsLetterer
+		query = query.Where("is_letterer = ?", *s.IsLetterer)
 	}
 	if s.IsReviewer != nil {
-		cnd["is_reviewer"] = *s.IsReviewer
+		query = query.Where("is_reviewer = ?", *s.IsReviewer)
 	}
 	if s.IsPublisher != nil {
-		cnd["is_publisher"] = *s.IsPublisher
+		query = query.Where("is_publisher = ?", *s.IsPublisher)
 	}
 
-	// 外键条件
 	if s.UserId != nil {
-		if *s.UserId != 0 {
-			cnd["user_id"] = *s.UserId
-		}
-	}
-	if s.TeamId != nil {
-		if *s.TeamId != 0 {
-			cnd["team_id"] = *s.TeamId
-		}
+		query = query.Where("user_id = ?", *s.UserId)
 	}
 
-	// 构建 WHERE 子句
-	query = query.Where(cnd)
+	if s.TeamId != nil {
+		query = query.Where("team_id = ?", *s.TeamId)
+	}
 }
 
 // MemberFields 定义了成员的字段，用于查询时选择特定字段返回

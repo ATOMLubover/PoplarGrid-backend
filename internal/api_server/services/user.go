@@ -8,12 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// UserService 接口定义了用户服务的基本操作
-type UserService interface {
-	// GetUserDetail 获取指定用户的详细信息
-	GetUserDetail(userId uint) (*UserInfo, error)
-}
-
 // UserInfo 定义了用户的基本信息
 type UserInfo struct {
 	Id       uint   // 用户 ID
@@ -22,6 +16,12 @@ type UserInfo struct {
 	QqNumber int    // QQ 号
 	IsAdmin  bool   // 是否是管理员
 	Remark   string // 补充备注
+}
+
+// UserService 接口定义了用户服务的基本操作
+type UserService interface {
+	// GetUserDetail 获取指定用户的详细信息
+	GetUserDetail(userId uint) (*UserInfo, error)
 }
 
 // userServiceImpl 是 UserService 接口的实现
