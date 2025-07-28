@@ -15,30 +15,66 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/applications": {
-            "post": {
-                "description": "创建一个新的申请，申请加入项目",
+        "/api/applications": {
+            "get": {
+                "description": "获取当前用户的申请列表",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "application"
                 ],
-                "summary": "创建一个新的申请",
+                "summary": "获取申请列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.ApplicationInfo"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "创建一个新的申请记录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "application"
+                ],
+                "summary": "创建申请",
                 "parameters": [
                     {
-                        "description": "申请参数",
+                        "description": "申请的基本信息",
                         "name": "body_params",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dtos.ApplyProjectRequest"
+                            "$ref": "#/definitions/handlers.CreateApplicationRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "申请创建成功",
+                        "description": "创建成功",
                         "schema": {
                             "$ref": "#/definitions/handlers.SuccessResponse"
                         }
@@ -58,9 +94,12 @@ const docTemplate = `{
                 }
             }
         },
-        "/applications/{id}": {
+        "/api/applications/{id}": {
             "put": {
-                "description": "处理申请，接受或拒绝申请",
+                "description": "接受或拒绝申请",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -70,25 +109,25 @@ const docTemplate = `{
                 "summary": "处理申请",
                 "parameters": [
                     {
-                        "description": "处理申请参数",
-                        "name": "body_params",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ProcessApplicationRequest"
-                        }
-                    },
-                    {
                         "type": "integer",
                         "description": "申请 ID",
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "处理申请的请求参数",
+                        "name": "body_params",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ProcessApplicationRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "申请处理成功",
+                        "description": "处理成功",
                         "schema": {
                             "$ref": "#/definitions/handlers.SuccessResponse"
                         }
@@ -108,30 +147,66 @@ const docTemplate = `{
                 }
             }
         },
-        "/invitations": {
-            "post": {
-                "description": "创建一个新的邀请，邀请用户加入项目",
+        "/api/invitations": {
+            "get": {
+                "description": "获取当前用户的邀请列表",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "invitation"
                 ],
-                "summary": "创建一个新的邀请",
+                "summary": "获取邀请列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.InvitationInfo"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "创建一个新的邀请记录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invitation"
+                ],
+                "summary": "创建邀请",
                 "parameters": [
                     {
-                        "description": "邀请参数",
+                        "description": "邀请的基本信息",
                         "name": "body_params",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dtos.InviteMemberRequest"
+                            "$ref": "#/definitions/handlers.CreateInvitationRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "邀请创建成功",
+                        "description": "创建成功",
                         "schema": {
                             "$ref": "#/definitions/handlers.SuccessResponse"
                         }
@@ -151,9 +226,12 @@ const docTemplate = `{
                 }
             }
         },
-        "/invitations/{id}": {
+        "/api/invitations/{id}": {
             "put": {
-                "description": "处理邀请，接受或拒绝邀请",
+                "description": "接受或拒绝邀请",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -163,25 +241,25 @@ const docTemplate = `{
                 "summary": "处理邀请",
                 "parameters": [
                     {
-                        "description": "处理邀请参数",
-                        "name": "body_params",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ProcessInvitationRequest"
-                        }
-                    },
-                    {
                         "type": "integer",
                         "description": "邀请 ID",
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "处理邀请的请求参数",
+                        "name": "body_params",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ProcessInvitationRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "邀请处理成功",
+                        "description": "处理成功",
                         "schema": {
                             "$ref": "#/definitions/handlers.SuccessResponse"
                         }
@@ -201,7 +279,63 @@ const docTemplate = `{
                 }
             }
         },
-        "/projects": {
+        "/api/members": {
+            "get": {
+                "description": "获取指定汉化组的成员列表，注意当列表为空，会返回 null 而不是空数组",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "member"
+                ],
+                "summary": "获取指定汉化组的成员列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，默认值为 1",
+                        "name": "page_serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认值为 10",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "汉化组 ID",
+                        "name": "team_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.MemberInfo"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/projects": {
             "get": {
                 "description": "根据作品集 ID 获取项目列表，支持分页、排序和状态筛选。当列表为空时，会返回 null 而不是空数组。",
                 "produces": [
@@ -226,31 +360,25 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "排序方式，0：按 ID 倒序，1：按 updated_at 倒序，默认按 ID 倒序",
-                        "name": "sort",
+                        "description": "项目状态（位掩码），用于复合查询，可以有多个 status，默认不筛选",
+                        "name": "status_mask",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "项目状态（位掩码），用于复合查询，默认不筛选查询",
-                        "name": "status",
+                        "description": "成员 ID，默认不筛选成员",
+                        "name": "member_id",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "用户 ID，默认不筛选用户",
-                        "name": "user_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "项目所属的作品集 ID，默认不筛选作品集",
+                        "description": "项目所属的作品集 ID，默认不筛选",
                         "name": "workset_id",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "项目的索引或 legacy ID，默认不筛选",
+                        "description": "项目的 workset index 或 legacy ID，默认不筛选",
                         "name": "index",
                         "in": "query"
                     }
@@ -261,7 +389,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dtos.ProjectBasic"
+                                "$ref": "#/definitions/handlers.ProjectInfo"
                             }
                         }
                     },
@@ -298,15 +426,15 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dtos.CreateProjectRequest"
+                            "$ref": "#/definitions/handlers.CreateProjectRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "创建成功",
                         "schema": {
-                            "$ref": "#/definitions/dtos.ProjectCreatedInfo"
+                            "$ref": "#/definitions/handlers.SuccessResponse"
                         }
                     },
                     "400": {
@@ -324,9 +452,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/projects/{id}": {
+        "/api/projects/{id}": {
             "get": {
-                "description": "获取指定项目的详细信息，包括翻译、校对、嵌字、审核、发布等状态",
+                "description": "获取指定项目的详细信息，包括各类状态和分工信息",
                 "produces": [
                     "application/json"
                 ],
@@ -347,7 +475,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dtos.ProjectDetail"
+                            "$ref": "#/definitions/handlers.ProjectInfo"
                         }
                     },
                     "400": {
@@ -429,7 +557,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dtos.UpdateProjectRequest"
+                            "$ref": "#/definitions/handlers.UpdateProjectRequest"
                         }
                     }
                 ],
@@ -455,7 +583,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/teams/{id}/members": {
+        "/api/teams": {
             "get": {
                 "description": "注意当列表为空，会返回 null 而不是空数组",
                 "produces": [
@@ -464,7 +592,7 @@ const docTemplate = `{
                 "tags": [
                     "team"
                 ],
-                "summary": "获取汉化组成员列表分页",
+                "summary": "获取汉化组列表",
                 "parameters": [
                     {
                         "type": "integer",
@@ -480,76 +608,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "要模糊搜索的成员（部分）昵称",
-                        "name": "member_nickname",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "要搜索的成员的 QQ 号，使用 interger 加速查找",
-                        "name": "member_qq",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "所属汉化组 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dtos.MemberBasic"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/teams/{id}/worksets": {
-            "get": {
-                "description": "注意当列表为空，会返回 null 而不是空数组",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "team"
-                ],
-                "summary": "获取特定汉化组的工作集列表分页，按 ID 倒序",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "页码，默认值为 1",
-                        "name": "page_serial",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量，默认值为 10",
-                        "name": "page_size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "所属汉化组 ID",
-                        "name": "id",
+                        "description": "当前用户的 ID",
+                        "name": "user_id",
                         "in": "query",
                         "required": true
                     }
@@ -560,7 +620,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dtos.WorksetBasic"
+                                "$ref": "#/definitions/handlers.TeamInfo"
                             }
                         }
                     },
@@ -579,52 +639,21 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/{id}/applications": {
+        "/api/users/me": {
             "get": {
-                "description": "根据分页参数获取用户的申请列表，支持分页和排序\\n当列表为空时，会返回 null 而不是空数组\\n如果 id 不是当前登录的用户 ID，则返回 400 错误",
+                "description": "获取指定用户的详细信息，本质上是一次重定向到 /users/{id}/detail",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "user"
                 ],
-                "summary": "获取当前用户的申请（发出或收到）列表，支持分页",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "页码，默认值为 1",
-                        "name": "page_serial",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量，默认值为 10",
-                        "name": "page_size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "用户 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "申请类型，0：发送的申请，1：收到的申请",
-                        "name": "kind",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
+                "summary": "利用 cookie，获取当前用户的详情",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dtos.ApplicationBasic"
-                            }
+                            "$ref": "#/definitions/handlers.UserInfo"
                         }
                     },
                     "400": {
@@ -642,7 +671,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/{id}/detail": {
+        "/api/users/{id}": {
             "get": {
                 "description": "获取指定用户的详细信息，包括 ID、昵称、QQ 等",
                 "produces": [
@@ -665,7 +694,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dtos.UserDetail"
+                            "$ref": "#/definitions/handlers.UserInfo"
                         }
                     },
                     "400": {
@@ -683,16 +712,16 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/{id}/invitations": {
+        "/api/worksets": {
             "get": {
-                "description": "根据分页参数获取用户的邀请列表，支持分页和排序\\n当列表为空时，会返回 null 而不是空数组\\n如果 id 不是当前登录的用户 ID，则返回 400 错误",
+                "description": "注意当列表为空，会返回 null 而不是空数组",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "user"
+                    "workset"
                 ],
-                "summary": "获取当前用户的邀请（发出或者收到）列表，支持分页",
+                "summary": "获取工作集列表",
                 "parameters": [
                     {
                         "type": "integer",
@@ -707,16 +736,9 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "integer",
-                        "description": "用户 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
                         "type": "string",
-                        "description": "邀请类型，0：发送的邀请，1：收到的邀请",
-                        "name": "kind",
+                        "description": "汉化组 ID",
+                        "name": "user_id",
                         "in": "query",
                         "required": true
                     }
@@ -727,7 +749,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dtos.InvitationBasic"
+                                "$ref": "#/definitions/handlers.WorksetInfo"
                             }
                         }
                     },
@@ -744,65 +766,35 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/users/{id}/projects": {
-            "get": {
-                "description": "获取指定用户参与的所有项目列表，支持分页和复合查询",
+            },
+            "post": {
+                "description": "创建一个新的工作集，必须提供名称和所属团队 ID",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "user"
+                    "workset"
                 ],
-                "summary": "获取用户参与的项目列表",
+                "summary": "创建新的工作集",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "页码，默认值为 1",
-                        "name": "page_serial",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量，默认值为 10",
-                        "name": "page_size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "项目状态（位掩码），用于复合查询，默认不筛选查询",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "项目所属的作品集 ID，默认不筛选作品集",
-                        "name": "workset_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "项目的索引或 legacy ID，默认不筛选",
-                        "name": "index",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "用户 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
+                        "description": "创建工作集请求参数",
+                        "name": "body_params",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateWorksetRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "创建成功",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dtos.ProjectBasic"
-                            }
+                            "$ref": "#/definitions/handlers.SuccessResponse"
                         }
                     },
                     "400": {
@@ -820,63 +812,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/{id}/teams": {
-            "get": {
-                "description": "获取指定用户参与的所有汉化组列表，支持分页和排序",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "获取当前用户参与的汉化组列表",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "页码，默认值为 1",
-                        "name": "page_serial",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量，默认值为 10",
-                        "name": "page_size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "用户 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dtos.TeamBasic"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/worksets/{id}/stats": {
+        "/api/worksets/{id}/stats": {
             "get": {
                 "description": "获取所有项目的统计信息，包括总数、翻译、校对、嵌字，审核、发布对应数量等",
                 "produces": [
@@ -899,7 +835,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dtos.ProjectStats"
+                            "$ref": "#/definitions/handlers.WorksetStats"
                         }
                     },
                     "400": {
@@ -919,57 +855,108 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dtos.ApplicationBasic": {
+        "handlers.ApplicationInfo": {
             "type": "object",
             "properties": {
-                "applicant_id": {
-                    "description": "申请者 ID",
+                "applicant_member_id": {
+                    "description": "申请者成员 ID\n@example 112233",
                     "type": "integer"
                 },
-                "id": {
-                    "description": "申请 ID",
-                    "type": "integer"
-                },
-                "nickname": {
-                    "description": "申请者昵称",
+                "applicant_nickname": {
+                    "description": "申请者成员昵称\n@example [coder_cat]小猫",
                     "type": "string"
                 },
-                "project": {
-                    "description": "所属项目的基本信息",
+                "id": {
+                    "description": "申请 ID\n@example 789012",
+                    "type": "integer"
+                },
+                "processor_member_id": {
+                    "description": "处理者成员 ID\n@example 445566",
+                    "type": "integer"
+                },
+                "processor_nickname": {
+                    "description": "处理者成员昵称\n@example [pm_king]老王",
+                    "type": "string"
+                },
+                "target_labor_mask": {
+                    "description": "申请分工掩码\n@example 3",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dtos.InnerProject"
+                            "$ref": "#/definitions/handlers.LaborMask"
                         }
                     ]
                 },
-                "role": {
-                    "description": "申请的角色，使用位掩码表示",
+                "target_project_id": {
+                    "description": "目标项目 ID\n@example 98765",
                     "type": "integer"
                 },
-                "status": {
-                    "description": "申请状态，0 pending, 1 accepted, 2 rejected",
-                    "type": "integer"
+                "target_project_name": {
+                    "description": "目标项目名称\n@example S001",
+                    "type": "string"
+                },
+                "time": {
+                    "description": "申请时间\n@example \"2023-11-01 10:00:00\"",
+                    "type": "string"
                 }
             }
         },
-        "dtos.ApplyProjectRequest": {
+        "handlers.CreateApplicationRequest": {
             "type": "object",
             "required": [
-                "apply_role",
-                "project_id"
+                "applicant_member_id",
+                "target_labor_mask",
+                "target_project_id"
             ],
             "properties": {
-                "apply_role": {
-                    "description": "申请加入的职位 (使用 uint 存储位掩码)",
+                "applicant_member_id": {
+                    "description": "申请者成员 ID\n@example 112233",
                     "type": "integer"
                 },
-                "project_id": {
-                    "description": "项目 ID",
+                "target_labor_mask": {
+                    "description": "申请分工掩码\n@example 3",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/services.LaborMask"
+                        }
+                    ]
+                },
+                "target_project_id": {
+                    "description": "目标项目 ID\n@example 98765",
                     "type": "integer"
                 }
             }
         },
-        "dtos.CreateProjectRequest": {
+        "handlers.CreateInvitationRequest": {
+            "type": "object",
+            "required": [
+                "invitor_member_id",
+                "target_labor_mask",
+                "target_project_id"
+            ],
+            "properties": {
+                "invitee_member_id": {
+                    "description": "接收者成员 ID\n@example 123456",
+                    "type": "integer"
+                },
+                "invitor_member_id": {
+                    "description": "邀请者成员 ID\n@example 654321",
+                    "type": "integer"
+                },
+                "target_labor_mask": {
+                    "description": "目标分工掩码\n@example 5",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/services.LaborMask"
+                        }
+                    ]
+                },
+                "target_project_id": {
+                    "description": "目标项目 ID\n@example 114514",
+                    "type": "integer"
+                }
+            }
+        },
+        "handlers.CreateProjectRequest": {
             "type": "object",
             "required": [
                 "title",
@@ -979,6 +966,10 @@ const docTemplate = `{
                 "allow_auto_join": {
                     "description": "是否允许自动加入，默认为 false",
                     "type": "boolean"
+                },
+                "applicant_member_id": {
+                    "description": "申请者的成员 ID",
+                    "type": "integer"
                 },
                 "description": {
                     "description": "项目描述",
@@ -998,488 +989,23 @@ const docTemplate = `{
                 }
             }
         },
-        "dtos.InnerProject": {
-            "type": "object",
-            "properties": {
-                "project_id": {
-                    "description": "所属项目 ID",
-                    "type": "integer"
-                },
-                "project_title": {
-                    "description": "项目标题",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "项目状态，使用位",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/dtos.ProjectOverallStatus"
-                        }
-                    ]
-                },
-                "workset_id": {
-                    "description": "所属作品",
-                    "type": "integer"
-                },
-                "workset_index": {
-                    "description": "作品集内的序号",
-                    "type": "integer"
-                }
-            }
-        },
-        "dtos.InvitationBasic": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "description": "邀请 ID",
-                    "type": "integer"
-                },
-                "invite_role": {
-                    "description": "邀请的角色，使用位掩码表示",
-                    "type": "integer"
-                },
-                "invitee_id": {
-                    "description": "InviterNickname string ` + "`" + `json:\"inviter_nickname\"` + "`" + ` // 邀请者昵称",
-                    "type": "integer"
-                },
-                "invitee_nickname": {
-                    "description": "被邀请者昵称",
-                    "type": "string"
-                },
-                "inviter_id": {
-                    "description": "邀请者 ID",
-                    "type": "integer"
-                },
-                "project": {
-                    "description": "所属项目的基本信息",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/dtos.InnerProject"
-                        }
-                    ]
-                },
-                "status": {
-                    "description": "邀请状态，0 pending, 1 accepted, 2 rejected",
-                    "type": "integer"
-                }
-            }
-        },
-        "dtos.InviteMemberRequest": {
+        "handlers.CreateWorksetRequest": {
             "type": "object",
             "required": [
-                "invite_role",
-                "member_id",
-                "project_id"
-            ],
-            "properties": {
-                "invite_role": {
-                    "description": "邀请加入的职位 (使用 uint 存储位掩码)",
-                    "type": "integer"
-                },
-                "member_id": {
-                    "description": "成员的 ID",
-                    "type": "integer"
-                },
-                "project_id": {
-                    "description": "项目 ID",
-                    "type": "integer"
-                }
-            }
-        },
-        "dtos.MemberBasic": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "description": "成员 ID",
-                    "type": "integer"
-                },
-                "nickname": {
-                    "description": "昵称",
-                    "type": "string"
-                },
-                "role": {
-                    "description": "成员在组内的职责",
-                    "type": "integer"
-                },
-                "team_id": {
-                    "description": "所属团队 ID",
-                    "type": "integer"
-                },
-                "user_id": {
-                    "description": "实际上的用户 ID",
-                    "type": "integer"
-                }
-            }
-        },
-        "dtos.MemberLabor": {
-            "type": "object",
-            "properties": {
-                "joined_time": {
-                    "description": "加入的",
-                    "type": "string"
-                },
-                "labor_role": {
-                    "description": "成员在项目中的角色，使用位掩码表示",
-                    "type": "integer"
-                },
-                "nickname": {
-                    "description": "昵称",
-                    "type": "string"
-                },
-                "user_id": {
-                    "description": "用户 ID",
-                    "type": "integer"
-                }
-            }
-        },
-        "dtos.ProcessApplicationRequest": {
-            "type": "object",
-            "required": [
-                "accept",
-                "application_id"
-            ],
-            "properties": {
-                "accept": {
-                    "description": "是否接受申请",
-                    "type": "boolean"
-                },
-                "application_id": {
-                    "description": "申请的 ID",
-                    "type": "integer"
-                }
-            }
-        },
-        "dtos.ProcessInvitationRequest": {
-            "type": "object",
-            "required": [
-                "accept",
-                "invitation_id"
-            ],
-            "properties": {
-                "accept": {
-                    "description": "是否接受邀请",
-                    "type": "boolean"
-                },
-                "invitation_id": {
-                    "description": "邀请的 ID",
-                    "type": "integer"
-                }
-            }
-        },
-        "dtos.ProjectBasic": {
-            "type": "object",
-            "properties": {
-                "allow_auto_join": {
-                    "description": "是否允许自动加入",
-                    "type": "boolean"
-                },
-                "id": {
-                    "description": "项目 ID",
-                    "type": "integer"
-                },
-                "is_hidden": {
-                    "description": "是否是隐藏项目",
-                    "type": "boolean"
-                },
-                "is_published": {
-                    "description": "是否已发布",
-                    "type": "boolean"
-                },
-                "labors": {
-                    "description": "补充的成员分工信息",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dtos.MemberLabor"
-                    }
-                },
-                "legacy_id": {
-                    "description": "历史遗留序号",
-                    "type": "integer"
-                },
-                "moetran_id": {
-                    "description": "龙译 ID",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "项目状态，使用位掩码表示",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/dtos.ProjectOverallStatus"
-                        }
-                    ]
-                },
-                "title": {
-                    "description": "项目名称",
-                    "type": "string"
-                },
-                "workset_id": {
-                    "description": "所属作品集 ID",
-                    "type": "integer"
-                },
-                "workset_index": {
-                    "description": "作品集内的序号",
-                    "type": "integer"
-                }
-            }
-        },
-        "dtos.ProjectCreatedInfo": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "description": "响应消息",
-                    "type": "string"
-                },
-                "moetran_id": {
-                    "description": "龙译项目 ID",
-                    "type": "string"
-                },
-                "project_id": {
-                    "description": "创建的项目 ID",
-                    "type": "integer"
-                }
-            }
-        },
-        "dtos.ProjectDetail": {
-            "type": "object",
-            "properties": {
-                "allow_auto_join": {
-                    "description": "是否允许自动加入",
-                    "type": "boolean"
-                },
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string"
-                },
-                "description": {
-                    "description": "项目描述",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "项目 ID",
-                    "type": "integer"
-                },
-                "is_hidden": {
-                    "description": "是否是隐藏项目",
-                    "type": "boolean"
-                },
-                "is_published": {
-                    "description": "是否已发布",
-                    "type": "boolean"
-                },
-                "labors": {
-                    "description": "补充的成员分工信息",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dtos.MemberLabor"
-                    }
-                },
-                "legacy_id": {
-                    "description": "历史遗留序号",
-                    "type": "integer"
-                },
-                "moetran_id": {
-                    "description": "龙译 ID",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "项目状态，使用位掩码表示",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/dtos.ProjectOverallStatus"
-                        }
-                    ]
-                },
-                "title": {
-                    "description": "项目名称",
-                    "type": "string"
-                },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string"
-                },
-                "workset_id": {
-                    "description": "所属作品集 ID",
-                    "type": "integer"
-                },
-                "workset_index": {
-                    "description": "作品集内的序号",
-                    "type": "integer"
-                }
-            }
-        },
-        "dtos.ProjectOverallStatus": {
-            "type": "integer",
-            "enum": [
-                3,
-                12,
-                48,
-                192,
-                768
-            ],
-            "x-enum-comments": {
-                "PROJECT_STATUS_LETTER_MASK": "二进制 48",
-                "PROJECT_STATUS_PROOF_MASK": "二进制 12",
-                "PROJECT_STATUS_PUBLISH_MASK": "二进制 768",
-                "PROJECT_STATUS_REVIEW_MASK": "二进制 192",
-                "PROJECT_STATUS_TRANSLATE_MASK": "二进制 3"
-            },
-            "x-enum-varnames": [
-                "PROJECT_STATUS_TRANSLATE_MASK",
-                "PROJECT_STATUS_PROOF_MASK",
-                "PROJECT_STATUS_LETTER_MASK",
-                "PROJECT_STATUS_REVIEW_MASK",
-                "PROJECT_STATUS_PUBLISH_MASK"
-            ]
-        },
-        "dtos.ProjectStats": {
-            "type": "object",
-            "properties": {
-                "lettered_count": {
-                    "description": "已嵌字的项目数量",
-                    "type": "integer"
-                },
-                "lettering_count": {
-                    "description": "正在嵌字的项目数量",
-                    "type": "integer"
-                },
-                "not_lettering_count": {
-                    "description": "未开始嵌字的项目数量",
-                    "type": "integer"
-                },
-                "not_prooving_count": {
-                    "description": "未开始校对的项目数量",
-                    "type": "integer"
-                },
-                "not_reviewing_count": {
-                    "description": "未开始审核的项目数量",
-                    "type": "integer"
-                },
-                "not_translating_count": {
-                    "description": "未开始翻译的项目数量",
-                    "type": "integer"
-                },
-                "prooved_count": {
-                    "description": "已校对的项目数量",
-                    "type": "integer"
-                },
-                "prooving_count": {
-                    "description": "正在校对的项目数量",
-                    "type": "integer"
-                },
-                "published_count": {
-                    "description": "已发布项目数量",
-                    "type": "integer"
-                },
-                "reviewed_count": {
-                    "description": "已审核的项目数量",
-                    "type": "integer"
-                },
-                "reviewing_count": {
-                    "description": "正在审核的项目数量",
-                    "type": "integer"
-                },
-                "total_count": {
-                    "description": "总项目数量",
-                    "type": "integer"
-                },
-                "translated_count": {
-                    "description": "已翻译的项目数量",
-                    "type": "integer"
-                },
-                "translating_count": {
-                    "description": "正在翻译的项目数量",
-                    "type": "integer"
-                },
-                "workset_id": {
-                    "description": "对应作品集 ID",
-                    "type": "integer"
-                }
-            }
-        },
-        "dtos.TeamBasic": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "description": "团队 ID",
-                    "type": "integer"
-                },
-                "name": {
-                    "description": "团队名称",
-                    "type": "string"
-                }
-            }
-        },
-        "dtos.UpdateProjectRequest": {
-            "type": "object",
-            "required": [
-                "project_id",
-                "title"
+                "name",
+                "team_id"
             ],
             "properties": {
                 "description": {
-                    "description": "项目描述",
+                    "description": "工作集描述\n@example 这是一个测试工作集",
                     "type": "string"
-                },
-                "project_id": {
-                    "description": "项目 ID，必填",
-                    "type": "integer"
-                },
-                "status": {
-                    "description": "项目状态，使用位掩码表示",
-                    "type": "integer"
-                },
-                "title": {
-                    "description": "项目标题",
-                    "type": "string"
-                }
-            }
-        },
-        "dtos.UserDetail": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "description": "邮箱",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "用户 ID",
-                    "type": "integer"
-                },
-                "last_active": {
-                    "description": "上次活跃时间",
-                    "type": "string"
-                },
-                "nickname": {
-                    "description": "昵称",
-                    "type": "string"
-                },
-                "poplar_is_admin": {
-                    "description": "是否是 panel 管理员",
-                    "type": "boolean"
-                },
-                "qq_number": {
-                    "description": "QQ 号",
-                    "type": "string"
-                },
-                "remark": {
-                    "description": "备注",
-                    "type": "string"
-                }
-            }
-        },
-        "dtos.WorksetBasic": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "description": "作品集 ID",
-                    "type": "integer"
                 },
                 "name": {
-                    "description": "作品集名称",
+                    "description": "工作集名称\n@example C105",
                     "type": "string"
                 },
                 "team_id": {
-                    "description": "所属团队 ID",
+                    "description": "所属团队 ID\n@example 114514",
                     "type": "integer"
                 }
             }
@@ -1496,16 +1022,452 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.InvitationInfo": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "邀请 ID\n@example 123456",
+                    "type": "integer"
+                },
+                "invitee_member_id": {
+                    "description": "接收者成员 ID\n@example 123456",
+                    "type": "integer"
+                },
+                "invitee_nickname": {
+                    "description": "接收者成员昵称\n@example [influ3nza]翻校",
+                    "type": "string"
+                },
+                "invitor_member_id": {
+                    "description": "邀请者成员 ID\n@example 654321",
+                    "type": "integer"
+                },
+                "invitor_nickname": {
+                    "description": "邀请者成员昵称\n@example [influ3nza]翻校",
+                    "type": "string"
+                },
+                "target_labor_mask": {
+                    "description": "目标分工掩码\n@example 5",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/handlers.LaborMask"
+                        }
+                    ]
+                },
+                "target_project_id": {
+                    "description": "目标项目 ID\n@example 114514",
+                    "type": "integer"
+                },
+                "target_project_name": {
+                    "description": "目标项目名称\n@example C105",
+                    "type": "string"
+                },
+                "time": {
+                    "description": "邀请时间\n@example \"2023-10-01 12:00:00\"",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.JSONMap": {
+            "type": "object",
+            "additionalProperties": {}
+        },
+        "handlers.LaborInfo": {
+            "type": "object",
+            "properties": {
+                "labor_mask": {
+                    "description": "分工掩码，使用",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/handlers.LaborMask"
+                        }
+                    ]
+                },
+                "member_id": {
+                    "description": "成员 ID",
+                    "type": "integer"
+                },
+                "nickname": {
+                    "description": "成员昵称",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.LaborMask": {
+            "description": "分工掩码与成员在汉化组中的职责相关，使用位掩码表示不同的职责 第 0 位表示监制/负责人 第 1 位表示图源 第 2 位表示美工 第 3 位表示翻译 第 4 位表示校对 第 5 位表示嵌字 第 6 位表示嵌字审核 第 7 位表示发布",
+            "type": "integer",
+            "enum": [
+                1,
+                2,
+                4,
+                8,
+                16,
+                32,
+                64,
+                128
+            ],
+            "x-enum-comments": {
+                "LABOR_LETTERER_MASK": "嵌字",
+                "LABOR_PERFECTOR_MASK": "美工",
+                "LABOR_PRINCIPAL_MASK": "创建者 + 负责人",
+                "LABOR_PROOFREADER_MASK": "校对",
+                "LABOR_PUBLISHER_MASK": "发布者",
+                "LABOR_REVIEWER_MASK": "嵌字审核",
+                "LABOR_SRC_PROV_MASK": "图源",
+                "LABOR_TRANSLATOR_MASK": "翻译"
+            },
+            "x-enum-varnames": [
+                "LABOR_PRINCIPAL_MASK",
+                "LABOR_SRC_PROV_MASK",
+                "LABOR_PERFECTOR_MASK",
+                "LABOR_TRANSLATOR_MASK",
+                "LABOR_PROOFREADER_MASK",
+                "LABOR_LETTERER_MASK",
+                "LABOR_REVIEWER_MASK",
+                "LABOR_PUBLISHER_MASK"
+            ]
+        },
+        "handlers.MemberInfo": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "成员 ID",
+                    "type": "integer"
+                },
+                "role": {
+                    "description": "在组内的职责（掩码格式）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/handlers.LaborMask"
+                        }
+                    ]
+                },
+                "team": {
+                    "description": "对应的汉化组信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/handlers.TeamInfo"
+                        }
+                    ]
+                },
+                "user": {
+                    "description": "对应的用户信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/handlers.UserInfo"
+                        }
+                    ]
+                }
+            }
+        },
+        "handlers.ProcessApplicationRequest": {
+            "type": "object",
+            "required": [
+                "accept",
+                "application_id",
+                "processor_member_id"
+            ],
+            "properties": {
+                "accept": {
+                    "description": "是否接受申请\n@example true",
+                    "type": "boolean"
+                },
+                "application_id": {
+                    "description": "申请 ID\n@example 789012",
+                    "type": "integer"
+                },
+                "processor_member_id": {
+                    "description": "处理者成员 ID\n@example 445566",
+                    "type": "integer"
+                }
+            }
+        },
+        "handlers.ProcessInvitationRequest": {
+            "type": "object",
+            "required": [
+                "accept",
+                "invitation_id",
+                "processor_member_id"
+            ],
+            "properties": {
+                "accept": {
+                    "description": "是否接受邀请\n@example false",
+                    "type": "boolean"
+                },
+                "invitation_id": {
+                    "description": "邀请 ID\n@example 123456",
+                    "type": "integer"
+                },
+                "processor_member_id": {
+                    "description": "处理者成员 ID\n@example 654321",
+                    "type": "integer"
+                }
+            }
+        },
+        "handlers.ProjectInfo": {
+            "type": "object",
+            "properties": {
+                "allow_auto_join": {
+                    "description": "是否允许自动加入，如果未指定将不会返回",
+                    "type": "boolean"
+                },
+                "description": {
+                    "description": "项目描述，如果为空将不会返回",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "项目 ID",
+                    "type": "integer"
+                },
+                "labors": {
+                    "description": "相关的分工，如果未指定将不会返回",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.LaborInfo"
+                    }
+                },
+                "legacy_id": {
+                    "description": "Legacy ID，如果未指定将不会返回",
+                    "type": "integer"
+                },
+                "moetran_id": {
+                    "description": "龙译 ID",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "项目状态，使用位掩码表示",
+                    "type": "integer"
+                },
+                "title": {
+                    "description": "项目标题",
+                    "type": "string"
+                },
+                "workset_id": {
+                    "description": "作品集 ID",
+                    "type": "integer"
+                },
+                "workset_index": {
+                    "description": "作品集索引",
+                    "type": "integer"
+                }
+            }
+        },
         "handlers.SuccessResponse": {
             "type": "object",
             "properties": {
                 "detail": {
-                    "description": "可选，提供额外的成功信息"
+                    "description": "可选，提供额外的成功信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/handlers.JSONMap"
+                        }
+                    ]
                 },
                 "message": {
                     "type": "string"
                 }
             }
+        },
+        "handlers.TeamInfo": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "汉化组描述\n@example 这是一个测试汉化组",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "汉化组 ID\n@example 114514",
+                    "type": "integer"
+                },
+                "moetran_id": {
+                    "description": "汉化组对应的龙译 ID\n@example 64aac7d91b3",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "汉化组名称\n@example 白杨汉化组",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.UpdateProjectRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "项目描述",
+                    "type": "string"
+                },
+                "operator_member_id": {
+                    "description": "操作成员的 ID，即进行更新这个操作的成员 ID",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "项目状态，使用位掩码表示，不使用的未应当使用 0b11 填充\n@example 0b11111011",
+                    "type": "integer"
+                },
+                "title": {
+                    "description": "项目标题",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.UserInfo": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "description": "邮箱\n@example 1919810@163.com",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "用户 ID\n@example 123456",
+                    "type": "integer"
+                },
+                "members": {
+                    "description": "在各个汉化组中的成员信息",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.MemberInfo"
+                    }
+                },
+                "nickname": {
+                    "description": "昵称\n@example [influ3nza]翻校",
+                    "type": "string"
+                },
+                "poplar_is_admin": {
+                    "description": "是否是 panel 管理员\n@example true",
+                    "type": "boolean"
+                },
+                "qq_number": {
+                    "description": "QQ 号\n@example 123456789",
+                    "type": "integer"
+                },
+                "remark": {
+                    "description": "补充备注\n@example 这是一个测试用户",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.WorksetInfo": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "工作集的创建时间\n@example \"2023-10-01 12:00:00\"",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "工作集描述\n@example 这是一个测试工作集",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "工作集 ID\n@example 123456",
+                    "type": "integer"
+                },
+                "moetran_id": {
+                    "description": "工作集对应的龙译 ID\n@example 64aac7d91b3",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "工作集名称\n@example C105",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.WorksetStats": {
+            "type": "object",
+            "properties": {
+                "lettered_count": {
+                    "description": "嵌字完成的项目数量",
+                    "type": "integer"
+                },
+                "not_lettering_count": {
+                    "description": "未开始嵌字的项目数量",
+                    "type": "integer"
+                },
+                "not_proofreading_count": {
+                    "description": "未开始校对的项目数量",
+                    "type": "integer"
+                },
+                "not_reviewing_count": {
+                    "description": "未开始审核的项目数量",
+                    "type": "integer"
+                },
+                "not_translating_count": {
+                    "description": "未开始翻译的项目数量",
+                    "type": "integer"
+                },
+                "on_lettering_count": {
+                    "description": "嵌字中的项目数量",
+                    "type": "integer"
+                },
+                "on_proofreading_count": {
+                    "description": "校对中的项目数量",
+                    "type": "integer"
+                },
+                "on_reviewing_count": {
+                    "description": "审核中的项目数量",
+                    "type": "integer"
+                },
+                "on_translating_count": {
+                    "description": "翻译中的项目数量",
+                    "type": "integer"
+                },
+                "proofread_count": {
+                    "description": "校对完成的项目数量",
+                    "type": "integer"
+                },
+                "published_count": {
+                    "description": "已发布的项目数量",
+                    "type": "integer"
+                },
+                "reviewed_count": {
+                    "description": "审核完成的项目数量",
+                    "type": "integer"
+                },
+                "total_project_count": {
+                    "description": "总项目数量",
+                    "type": "integer"
+                },
+                "translated_count": {
+                    "description": "翻译完成的项目数量",
+                    "type": "integer"
+                },
+                "workset_id": {
+                    "description": "作品集 ID",
+                    "type": "integer"
+                }
+            }
+        },
+        "services.LaborMask": {
+            "description": "分工掩码与成员在汉化组中的职责相关，使用位掩码表示不同的职责 第 0 位表示监制/负责人 第 1 位表示图源 第 2 位表示美工 第 3 位表示翻译 第 4 位表示校对 第 5 位表示嵌字 第 6 位表示嵌字审核 第 7 位表示发布",
+            "type": "integer",
+            "enum": [
+                1,
+                2,
+                4,
+                8,
+                16,
+                32,
+                64,
+                128
+            ],
+            "x-enum-comments": {
+                "LABOR_LETTERER_MASK": "嵌字",
+                "LABOR_PERFECTOR_MASK": "美工",
+                "LABOR_PRINCIPAL_MASK": "创建者 + 负责人",
+                "LABOR_PROOFREADER_MASK": "校对",
+                "LABOR_PUBLISHER_MASK": "发布者",
+                "LABOR_REVIEWER_MASK": "嵌字审核",
+                "LABOR_SRC_PROV_MASK": "图源",
+                "LABOR_TRANSLATOR_MASK": "翻译"
+            },
+            "x-enum-varnames": [
+                "LABOR_PRINCIPAL_MASK",
+                "LABOR_SRC_PROV_MASK",
+                "LABOR_PERFECTOR_MASK",
+                "LABOR_TRANSLATOR_MASK",
+                "LABOR_PROOFREADER_MASK",
+                "LABOR_LETTERER_MASK",
+                "LABOR_REVIEWER_MASK",
+                "LABOR_PUBLISHER_MASK"
+            ]
         }
     }
 }`

@@ -8,48 +8,48 @@ import (
 	"gorm.io/gorm"
 )
 
-// RoleMask 定义了成员角色的掩码
-type RoleMask uint32
+// LaborMask 定义了分工的掩码类型
+type LaborMask uint32
 
-// RoleMask 的掩码常量定义
 const (
-	ROLE_PRINCIPAL_MASK   RoleMask = 1 << iota // 管理员
-	ROLE_SRC_PROV_MASK                         // 图源
-	ROLE_PERFECTOR_MASK                        // 美工
-	ROLE_TRANSLATOR_MASK                       // 翻译
-	ROLE_PROOFREADER_MASK                      // 校对
-	ROLE_LETTERER_MASK                         // 嵌字
-	ROLE_REVIEWER_MASK                         // 嵌字审核
-	ROLE_PUBLISHER_MASK                        // 发布者
+	LABOR_PRINCIPAL_MASK   LaborMask = 1 << iota // 创建者 + 负责人
+	LABOR_SRC_PROV_MASK                          // 图源
+	LABOR_PERFECTOR_MASK                         // 美工
+	LABOR_TRANSLATOR_MASK                        // 翻译
+	LABOR_PROOFREADER_MASK                       // 校对
+	LABOR_LETTERER_MASK                          // 嵌字
+	LABOR_REVIEWER_MASK                          // 嵌字审核
+	LABOR_PUBLISHER_MASK                         // 发布者
 )
 
-// NewRoleMask 根据多个职责掩码创建一个新的复合掩码
-func NewRoleMask(roles ...RoleMask) RoleMask {
-	var mask RoleMask
-	for _, role := range roles {
-		mask |= role
-	}
-	return mask
+// HasRole 检查 LaborMask 是否包含某个职责
+func (m LaborMask) HasRole(roleMask LaborMask) bool {
+	return (m & roleMask) != 0
 }
 
-// AddRole 为 RoleMask 添加一个职责
-func (m *RoleMask) AddRole(roleMask RoleMask) {
+// AddRole 为 LaborMask 添加一个职责
+func (m *LaborMask) AddRole(roleMask LaborMask) {
 	*m |= roleMask
+}
+
+// RemoveRole 从 LaborMask 中移除一个职责
+func (m *LaborMask) RemoveRole(roleMask LaborMask) {
+	*m &= ^roleMask
 }
 
 // MemberListParams 定义了成员列表的查询参数
 type MemberListParams struct {
 	Offset int  // 偏移量
 	Limit  int  // 限制数量
-	UserId uint // 用户 ID
+	TeamId uint // 汉化组 ID
 }
 
 // MemberInfo 定义了成员的基本信息
 type MemberInfo struct {
-	Id   uint     // 成员 ID
-	User UserInfo // 对应的用户信息
-	Team TeamInfo // 对应的团队信息
-	Role RoleMask // 在组内的职责（掩码格式）
+	Id   uint      // 成员 ID
+	User UserInfo  // 对应的用户信息
+	Team TeamInfo  // 对应的团队信息
+	Role LaborMask // 在组内的职责（掩码格式）
 }
 
 // MemberService 接口定义了成员服务的基本操作
@@ -74,10 +74,10 @@ func NewMemberService(hdl *gorm.DB, lgr *slog.Logger) MemberService {
 
 // GetTeams 实现 MemberService 接口的方法
 func (s *memberServiceImpl) GetMembers(params *MemberListParams) ([]*MemberInfo, error) {
-	// 查询条件为用户 ID
-	userPKey := models.PKey(params.UserId)
+	// 查询条件为汉化组 ID
+	teamPKey := models.PKey(params.TeamId)
 	memberSpec := &models.MemberSpec{
-		UserId: &userPKey,
+		TeamId: &teamPKey,
 	}
 	// 查询的字段
 	memberFields := &models.MemberFields{
@@ -98,73 +98,83 @@ func (s *memberServiceImpl) GetMembers(params *MemberListParams) ([]*MemberInfo,
 		&params.Offset, &params.Limit)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			s.logger.Warn("没有找到指定用户的成员信息",
-				slog.Any("user_id", params.UserId),
+			s.logger.Warn("GetMembers 没有找到指定汉化组的成员信息",
+				slog.Any("team_id", params.TeamId),
 				slog.Any("error", err))
-			return nil, errors.New("没有找到指定用户的成员信息")
+			return nil, errors.New("没有找到指定汉化组的成员信息")
 		}
 
-		s.logger.Error("获取指定用户",
-			slog.Any("user_id", params.UserId),
+		s.logger.Error("GetMembers 查询指定汉化组的成员信息失败",
+			slog.Any("team_id", params.TeamId),
 			slog.Any("error", err))
-		return nil, errors.New("查询用户的成员信息失败")
+		return nil, errors.New("查询指定汉化组的成员信息失败")
 	}
 
 	// 将查询结果转换为 MemberInfo
 	var memberInfos []*MemberInfo
 
 	for _, m := range members {
-		// 先构建 RoleMask
-		roleMask := buildRoleMask(m)
-
 		// 转换成 MemberInfo
-		memberInfos = append(memberInfos, &MemberInfo{
-			Id: uint(m.BaseModel.Id),
-			User: UserInfo{
-				Id:       uint(m.UserId),
-				Nickname: m.FkUser.Nickname,
-			},
-			Team: TeamInfo{
-				Id:          uint(m.TeamId),
-				Name:        m.FkTeam.Name,
-				Description: m.FkTeam.Description,
-				MoetranId:   m.FkTeam.MoetranId,
-			},
-			Role: roleMask,
-		})
+		memberInfos = append(memberInfos, memberModelToInfo(m))
 	}
 
 	return memberInfos, nil
 }
 
-// buildRoleMask 将数据库的角色字段转换为 RoleMask
-func buildRoleMask(member *models.Member) RoleMask {
-	var mask RoleMask
+// buildLaborMask 将数据库的角色字段转换为 LaborMask
+func buildLaborMask(member *models.Member) LaborMask {
+	var mask LaborMask
 
 	if member.IsAdmin {
-		mask.AddRole(ROLE_PRINCIPAL_MASK)
-	}
-	if member.IsPerfector {
-		mask.AddRole(ROLE_PERFECTOR_MASK)
-	}
-	if member.IsSourceProvider {
-		mask.AddRole(ROLE_SRC_PROV_MASK)
+		mask.AddRole(LABOR_PRINCIPAL_MASK)
 	}
 	if member.IsTranslator {
-		mask.AddRole(ROLE_TRANSLATOR_MASK)
+		mask.AddRole(LABOR_TRANSLATOR_MASK)
 	}
 	if member.IsProofreader {
-		mask.AddRole(ROLE_PROOFREADER_MASK)
+		mask.AddRole(LABOR_PROOFREADER_MASK)
 	}
 	if member.IsLetterer {
-		mask.AddRole(ROLE_LETTERER_MASK)
+		mask.AddRole(LABOR_LETTERER_MASK)
 	}
 	if member.IsReviewer {
-		mask.AddRole(ROLE_REVIEWER_MASK)
+		mask.AddRole(LABOR_REVIEWER_MASK)
 	}
 	if member.IsPublisher {
-		mask.AddRole(ROLE_PUBLISHER_MASK)
+		mask.AddRole(LABOR_PUBLISHER_MASK)
+	}
+	if member.IsSourceProvider {
+		mask.AddRole(LABOR_SRC_PROV_MASK)
+	}
+	if member.IsPerfector {
+		mask.AddRole(LABOR_PERFECTOR_MASK)
 	}
 
 	return mask
+}
+
+// memberModelToInfo 将 Member 模型转换为 MemberInfo
+func memberModelToInfo(member *models.Member) *MemberInfo {
+	m := &MemberInfo{
+		Id: uint(member.BaseModel.Id),
+		User: UserInfo{
+			Id: uint(member.UserId),
+		},
+		Team: TeamInfo{
+			Id: uint(member.TeamId),
+		},
+		Role: buildLaborMask(member),
+	}
+
+	if member.FkUser != nil {
+		m.User.Nickname = member.FkUser.Nickname
+	}
+
+	if member.FkTeam != nil {
+		m.Team.Name = member.FkTeam.Name
+		m.Team.Description = member.FkTeam.Description
+		m.Team.MoetranId = member.FkTeam.MoetranId
+	}
+
+	return m
 }

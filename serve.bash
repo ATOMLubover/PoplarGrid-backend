@@ -66,10 +66,10 @@ run_swag_init() {
         echo "[ 错误：Go 源码目录 '$GO_MAIN_DIR' 不存在。请检查 server_name 是否正确 ]"
         exit 1
     fi
-
-        # 定义 handlers 目录的完整路径
+    
+    # 定义 handlers 目录的完整路径
     local HANDLERS_DIR="$ROOT_DIR/internal/${SERVER_NAME}_server/handlers"
-
+    
     # 新增检查：如果 handlers 目录不存在，则提前返回
     if [[ ! -d "$HANDLERS_DIR" ]]; then
         echo "[ 注意：handlers 目录 '$HANDLERS_DIR' 不存在，跳过 Swagger 文档生成 ]"
@@ -82,8 +82,8 @@ run_swag_init() {
     echo "[ 开始生成 Swagger API 文档... ]"
     
     if ! swag init \
-        -o "$SWAG_OUTPUT_DIR" \
-        --dir "$GO_MAIN_DIR","$ROOT_DIR/internal/${SERVER_NAME}_server/handlers","$ROOT_DIR/internal/${SERVER_NAME}_server/dtos"; then
+    -o "$SWAG_OUTPUT_DIR" \
+    --dir "$GO_MAIN_DIR","$ROOT_DIR/internal/${SERVER_NAME}_server/handlers","$ROOT_DIR/internal/${SERVER_NAME}_server/services"; then
         echo "[ Swagger API 文档生成失败 ]"
         exit 1
     fi
@@ -109,7 +109,7 @@ compile_server() {
     fi
     
     echo "[ 编译成功，二进制文件输出路径：$GO_OUT ]"
-
+    
     if [[ ! -f "$CONFIG_SOURCE_PATH" ]]; then
         echo "[ 警告：未找到配置文件 '$CONFIG_SOURCE_PATH'，跳过创建软链接 ]"
     else
@@ -117,11 +117,11 @@ compile_server() {
         # 移除旧的软链接或文件（如果存在）
         if [[ -L "$CONFIG_DEST_PATH" ]]; then
             rm "$CONFIG_DEST_PATH"
-        elif [[ -f "$CONFIG_DEST_PATH" ]]; then
+            elif [[ -f "$CONFIG_DEST_PATH" ]]; then
             echo "[ 警告：目标目录 '$BIN_DIR' 中存在同名文件 '$CONFIG_FILE_NAME'，将被覆盖 ]"
             rm "$CONFIG_DEST_PATH"
         fi
-
+        
         # 创建新的软链接
         if ! ln -s "$CONFIG_SOURCE_PATH" "$CONFIG_DEST_PATH"; then
             echo "[ 错误：创建配置文件软链接失败 ]"

@@ -6,7 +6,6 @@ import (
 	"poplargrid/internal/api_server/apiclient"
 	"poplargrid/internal/api_server/config"
 	"poplargrid/internal/api_server/handlers"
-	"poplargrid/internal/api_server/repos"
 	"poplargrid/internal/api_server/services"
 	"poplargrid/internal/shared/configutil"
 	"poplargrid/internal/shared/logutils"
@@ -179,29 +178,20 @@ func ApplyMvc(irisApp *iris.Application) *iris.Application {
 	// 直接包装整个根路由
 	mvcApp := mvc.New(irisApp)
 
-	// 获取各个 repo 的实例
+	// 初始化数据库句柄
 	handle := InitDatabase()
-
-	userRepo := repos.NewUserRepo(handle)
-	projRepo := repos.NewProjectRepo(handle)
-	// teamRepo := repos.NewTeamRepo(handle)
-	worksetRepo := repos.NewWorksetRepo(handle)
-	appliRepo := repos.NewAppliRepo(handle)
-	invitationRepo := repos.NewInvitationRepo(handle)
-	laborRepo := repos.NewLaborRepo(handle)
-	memberRepo := repos.NewTeamMemberRepo(handle)
-	materialView := repos.NewMaterialView(handle)
 
 	// 注册龙译 API Client
 	apiClient := apiclient.NewApiClient(cfg.Api.BaseUrl, *slog.Default())
 
 	// 注册各个 service 的依赖
 	mvcApp.Register(
-		services.NewLaborService(invitationRepo, appliRepo, laborRepo, projRepo, memberRepo, slog.Default()),
-		services.NewUserService(userRepo),
-		services.NewProjectService(projRepo, laborRepo, userRepo, apiClient, slog.Default()),
-		services.NewTeamService(memberRepo, slog.Default()),
-		services.NewWorksetService(worksetRepo, materialView, slog.Default()),
+		services.NewApplicationService(handle, apiClient, slog.Default()),
+		services.NewInvitationService(handle, apiClient, slog.Default()),
+		services.NewProjectService(handle, apiClient, slog.Default()),
+		services.NewTeamService(handle, slog.Default()),
+		services.NewUserService(handle, slog.Default()),
+		services.NewWorksetService(handle, apiClient, slog.Default()),
 	)
 
 	// 注册中间件
@@ -219,11 +209,7 @@ func ApplyMvc(irisApp *iris.Application) *iris.Application {
 	)
 
 	// 注册路由处理器
-	handlers.RouteUserHandler(mvcApp)
-	handlers.RouteProjectHandler(mvcApp)
-	handlers.RouteWorksetHandler(mvcApp)
-	handlers.RouteTeamHandler(mvcApp)
-	handlers.RouteLaborProcHandler(mvcApp)
+	handlers.RouteAPIHandler(mvcApp)
 
 	return irisApp
 }

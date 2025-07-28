@@ -1,15 +1,36 @@
 package handlers
 
+import (
+	"github.com/kataras/iris/v12/mvc"
+)
+
 // ErrorResponse 统一定义发生错误时的 JSON 响应格式
 type ErrorResponse struct {
 	Error  string `json:"error"`
 	Detail string `json:"detail,omitempty"` // 可选，在 service 层发生错误时提供详细信息
 }
 
+// JSONMap 用于在响应中返回一个 JSON 对象
+type JSONMap *map[string]any
+
 // SuccessResponse 统一定义成功响应的 JSON 格式
 type SuccessResponse struct {
-	Message string `json:"message"`
-	Detail  any    `json:"detail,omitempty"` // 可选，提供额外的成功信息
+	Message string  `json:"message"`
+	Detail  JSONMap `json:"detail,omitempty"` // 可选，提供额外的成功信息
+}
+
+// RouteAPIHandler 注册 API 相关的路由
+func RouteAPIHandler(root *mvc.Application) {
+	// 创建 /api 路由组
+	api := root.Party("/api")
+
+	// 注册各个 handler 的路由
+	RouteUserHandler(api)
+	RouteTeamHandler(api)
+	RouteWorksetHandler(api)
+	RouteMemberHandler(api)
+	RouteInvitationHandler(api)
+	RouteApplicationHandler(api)
 }
 
 // // handlerPair 集成了 handler 和取消时的 respond 函数

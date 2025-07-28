@@ -2,41 +2,12 @@ package models
 
 import "gorm.io/gorm"
 
-// LaborMask 定义了分工的掩码类型
-type LaborMask uint32
-
-const (
-	LABOR_PRINCIPAL_MASK   LaborMask = 1 << iota // 创建者 + 负责人
-	LABOR_SRC_PROV_MASK                          // 图源
-	LABOR_PERFECTOR_MASK                         // 美工
-	LABOR_TRANSLATOR_MASK                        // 翻译
-	LABOR_PROOFREADER_MASK                       // 校对
-	LABOR_LETTERER_MASK                          // 嵌字
-	LABOR_REVIEWER_MASK                          // 嵌字审核
-	LABOR_PUBLISHER_MASK                         // 发布者
-)
-
-// HasRole 检查 LaborMask 是否包含某个职责
-func (m LaborMask) HasRole(roleMask LaborMask) bool {
-	return (m & roleMask) != 0
-}
-
-// AddRole 为 LaborMask 添加一个职责
-func (m *LaborMask) AddRole(roleMask LaborMask) {
-	*m |= roleMask
-}
-
-// RemoveRole 从 LaborMask 中移除一个职责
-func (m *LaborMask) RemoveRole(roleMask LaborMask) {
-	*m &= ^roleMask
-}
-
 // Labor 定义了 project 中一个 member 的基本信息
 type Labor struct {
 	BaseModel
 
 	// 分工，按掩码存储，因为没有查询需求
-	LaborMask LaborMask `gorm:"not null;default:0"`
+	LaborMask uint32 `gorm:"not null;default:0"`
 
 	// 所属项目外键
 	ProjectId PKey     `gorm:"not null;index"`
@@ -129,4 +100,91 @@ func (l *LaborFields) Apply(query *gorm.DB) {
 	}
 
 	query.Select(fields)
+}
+
+// Insert 插入 Labor 实例到数据库
+func (*Labor) Insert(hdl *gorm.DB, labor *Labor) error {
+	if labor == nil {
+		return &InvalidParameterError{}
+	}
+
+	return hdl.
+		Model(&Labor{}).
+		Create(labor).Error
+}
+
+// SelectFirst 查询一个 Labor 实例
+func (*Labor) SelectFirst(
+	hdl *gorm.DB, cnd *LaborSpec, fields *LaborFields,
+) (*Labor, error) {
+	var labor Labor
+
+	query := hdl.Model(&Labor{})
+
+	if cnd != nil {
+		cnd.Apply(query)
+	}
+
+	if fields != nil {
+		fields.Apply(query)
+	}
+
+	if err := query.
+		First(&labor).Error; err != nil {
+		return nil, err
+	}
+
+	return &labor, nil
+}
+
+// SelectMany 查询多个 Labor 实例
+func (*Labor) SelectMany(
+	hdl *gorm.DB, cnd *LaborSpec, fields *LaborFields,
+) ([]*Labor, error) {
+	var labors []*Labor
+
+	query := hdl.Model(&Labor{})
+
+	if cnd != nil {
+		cnd.Apply(query)
+	}
+
+	if fields != nil {
+		fields.Apply(query)
+	}
+
+	if err := query.
+		Find(&labors).Error; err != nil {
+		return nil, err
+	}
+
+	return labors, nil
+}
+
+// Update 更新 Labor 实例
+func (*Labor) Update(hdl *gorm.DB, labor *Labor) error {
+	if labor == nil {
+		return &InvalidParameterError{}
+	}
+
+	if labor.BaseModel.Id == 0 {
+		return &LackOfPrimaryKeyError{}
+	}
+
+	return hdl.
+		Model(&Labor{}).
+		Where("id = ?", labor.BaseModel.Id).
+		Updates(labor).Error
+}
+
+// Delete 删除 Labor 实例
+func (*Labor) Delete(hdl *gorm.DB, laborId PKey) error {
+	if laborId == 0 {
+		return &InvalidParameterError{}
+	}
+
+	return hdl.
+		Model(&Labor{}).
+		Where("id = ?", laborId).
+		Delete(&Labor{}).Error
 }

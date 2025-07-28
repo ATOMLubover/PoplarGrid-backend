@@ -14,7 +14,11 @@ import (
 // ApiClient 定义了与尨译 API 服务器交互的客户端接口
 type ApiClient interface {
 	// CreateProject 创建一个新的项目
-	CreateProject(info *CreateProjectInfo) (*MoetranCreateProjectResponse, error)
+	CreateProject(info *CreateProjectInfo) (*moetranCreateProjectResponse, error)
+	// CreateProjectSet 创建一个新的项目集
+	CreateProjectSet(info *CreateProjectSetInfo) (*moetranCreateProjectSetResponse, error)
+	// InviteMemberToProject 邀请成员加入项目
+	InviteMemberToProject(info *InviteMemberInfo) (*moetranInviteMemberResponse, error)
 }
 
 // NewApiClient 创建一个新的 ApiClient 实例
@@ -42,12 +46,12 @@ type apiClientImpl struct {
 }
 
 // CreateProject 实现 ApiClient 接口的 CreateProject 方法
-func (c *apiClientImpl) CreateProject(info *CreateProjectInfo) (*MoetranCreateProjectResponse, error) {
+func (c *apiClientImpl) CreateProject(info *CreateProjectInfo) (*moetranCreateProjectResponse, error) {
 	// 截断标题到 40 bytes，以满足龙译的限制
 	title := truncateStringByRune(info.Title, 40)
 
 	// 组装 POST 请求体
-	body := MoetranCreateProjectRequest{
+	body := moetranCreateProjectRequest{
 		Name:  title,
 		Intro: info.Description,
 
@@ -100,11 +104,127 @@ func (c *apiClientImpl) CreateProject(info *CreateProjectInfo) (*MoetranCreatePr
 	}
 
 	// 解析响应体
-	var response MoetranCreateProjectResponse
+	var response moetranCreateProjectResponse
 
 	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
 		c.logger.Error("解析龙译 create project 响应失败", slog.Any("error", err))
 		return nil, errors.New("解析龙译 create project 响应失败")
+	}
+
+	return &response, nil
+}
+
+// CreateProjectSet 实现 ApiClient 接口的 CreateProjectSet 方法
+func (c *apiClientImpl) CreateProjectSet(info *CreateProjectSetInfo) (*moetranCreateProjectSetResponse, error) {
+	// 组装 POST 请求体
+	body := moetranCreateProjectSetRequest{
+		Name: info.Name,
+	}
+
+	// 转换为 JSON
+	bodyJson, err := json.Marshal(body)
+	if err != nil {
+		c.logger.Error("转换龙译 create project set 请求体失败", slog.Any("error", err))
+		return nil, errors.New("转换龙译 create project set 请求体失败")
+	}
+
+	// 组装请求 URL
+	url := fmt.Sprintf("%s/teams/%s/project-sets",
+		c.baseUrl, info.MoetranTeamId)
+
+	// 创建 HTTP POST 请求
+	req, err := http.NewRequest("POST", url, bytes.NewReader(bodyJson))
+	if err != nil {
+		c.logger.Error("创建龙译 create project set 请求失败", slog.Any("error", err))
+		return nil, errors.New("无法构建龙译 create project set 请求")
+	}
+
+	// 设置一些必要的请求头
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", info.MoetranAuth))
+
+	// 发送请求
+	res, err := c.client.Do(req)
+	if err != nil {
+		c.logger.Error("发送龙译 create project set 请求失败", slog.Any("error", err))
+		return nil, errors.New("请求龙译 create project set 失败")
+	}
+	defer res.Body.Close()
+
+	// 检查响应状态码
+	if res.StatusCode != http.StatusOK {
+		c.logger.Error("龙译 create project set 请求失败",
+			slog.Int("status_code", res.StatusCode),
+			slog.String("url", url),
+		)
+		return nil, fmt.Errorf("龙译 create project set 请求失败，状态码: %d", res.StatusCode)
+	}
+
+	// 解析响应体
+	var response moetranCreateProjectSetResponse
+
+	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+		c.logger.Error("解析龙译 create project set 响应失败", slog.Any("error", err))
+		return nil, errors.New("解析龙译 create project set 响应失败")
+	}
+
+	return &response, nil
+}
+
+// InviteMemberToProject 实现 ApiClient 接口的 InviteMemberToProject 方法
+func (c *apiClientImpl) InviteMemberToProject(info *InviteMemberInfo) (*moetranInviteMemberResponse, error) {
+	// 组装 POST 请求体
+	body := moetranInviteMemberRequest{
+		UserId:  info.MoetranInviteeID,
+		RoleId:  string(info.InviteRole),
+		Message: "", // 暂时直接留空
+	}
+
+	// 转换为 JSON
+	bodyJson, err := json.Marshal(body)
+	if err != nil {
+		c.logger.Error("转换龙译 invite member 请求体失败", slog.Any("error", err))
+		return nil, errors.New("转换龙译 invite member 请求体失败")
+	}
+
+	// 组装请求 URL
+	url := fmt.Sprintf("%s/projects/%s/invitations",
+		c.baseUrl, info.MoetranProjectId)
+
+	// 创建 HTTP POST 请求
+	req, err := http.NewRequest("POST", url, bytes.NewReader(bodyJson))
+	if err != nil {
+		c.logger.Error("创建龙译 invite member 请求失败", slog.Any("error", err))
+		return nil, errors.New("无法构建龙译 invite member 请求")
+	}
+
+	// 设置一些必要的请求头
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", info.MoetranAuth))
+	
+	// 发送请求
+	res, err := c.client.Do(req)
+	if err != nil {
+		c.logger.Error("发送龙译 invite member 请求失败", slog.Any("error", err))
+		return nil, errors.New("请求龙译 invite member 失败")
+	}
+	defer res.Body.Close()
+
+	// 检查响应状态码
+	if res.StatusCode != http.StatusOK {
+		c.logger.Error("龙译 invite member 请求失败",
+			slog.Int("status_code", res.StatusCode),
+			slog.String("url", url),
+		)
+		return nil, fmt.Errorf("龙译 invite member 请求失败，状态码: %d", res.StatusCode)
+	}
+
+	// 解析响应体
+	var response moetranInviteMemberResponse
+
+	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+		c.logger.Error("解析龙译 invite member 响应失败", slog.Any("error", err))
+		return nil, errors.New("解析龙译 invite member 响应失败")
 	}
 
 	return &response, nil

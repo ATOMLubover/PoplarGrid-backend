@@ -11,7 +11,7 @@ type User struct {
 	// 基本信息
 	Nickname     string `gorm:"unique;size:128;not null"`
 	Email        string `gorm:"unique;size:128"`
-	QqNumber     int    `gorm:"unique;index"`
+	QQNumber     int    `gorm:"unique;index"`
 	PasswordHash string `gorm:"size:256;not null"`
 
 	// 控制信息
@@ -43,7 +43,7 @@ type UserSpec struct {
 
 	Nickname *string
 	Email    *string
-	QqNumber *int
+	QQNumber *int
 
 	IsAdmin *bool
 
@@ -63,8 +63,8 @@ func (s *UserSpec) Apply(query *gorm.DB) {
 	if s.Email != nil {
 		query = query.Where("email = ?", *s.Email)
 	}
-	if s.QqNumber != nil {
-		query = query.Where("qq_number = ?", *s.QqNumber)
+	if s.QQNumber != nil {
+		query = query.Where("qq_number = ?", *s.QQNumber)
 	}
 
 	if s.IsAdmin != nil {
@@ -87,7 +87,7 @@ type UserFields struct {
 	// User 字段
 	Nickname     bool
 	Email        bool
-	QqNumber     bool
+	QQNumber     bool
 	PasswordHash bool
 
 	IsAdmin bool
@@ -114,7 +114,7 @@ func (u *UserFields) Apply(query *gorm.DB) {
 	if u.Email {
 		fields = append(fields, "email")
 	}
-	if u.QqNumber {
+	if u.QQNumber {
 		fields = append(fields, "qq_number")
 	}
 	if u.PasswordHash {

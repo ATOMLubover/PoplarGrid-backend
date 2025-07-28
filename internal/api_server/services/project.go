@@ -1,11 +1,13 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
 	"poplargrid/internal/api_server/apiclient"
 	"poplargrid/internal/shared/models"
+	"poplargrid/internal/shared/txutils"
 
 	"gorm.io/gorm"
 )
@@ -16,10 +18,10 @@ type ProjectStatus uint32
 
 // ProjectStatus 常量定义了项目状态的位掩码
 const (
-	PROJECT_STATUS_NOT_USED    uint32 = iota // 未使用
-	PROJECT_STATUS_UNSET                     // 未设置
+	PROJECT_STATUS_UNSET       uint32 = iota // 未设置
 	PROJECT_STATUS_IN_PROGRESS               // 进行中
 	PROJECT_STATUS_COMPLETED                 // 已完成
+	PROJECT_STATUS_NOT_USED                  // 未使用
 )
 
 const (
@@ -95,12 +97,19 @@ func (s *ProjectStatus) SetPublishedStatus(status bool) {
 
 // ProjectListParams 定义了获取项目列表的查询参数
 type ProjectListParams struct {
-	Offset    int             // 偏移量
-	Limit     int             // 限制数量
-	WorksetId uint            // 作品集 ID，为 0 时忽略
-	Index     uint            // 作品集索引，为 0 时忽略
-	MemberId  uint            // 成员 ID，为 0 时忽略
-	Status    []ProjectStatus // 项目状态，默认值时忽略
+	Offset      int             // 偏移量
+	Limit       int             // 限制数量
+	WorksetId   uint            // 作品集 ID，为 0 时忽略
+	Index       uint            // 作品集索引，为 0 时忽略
+	MemberId    uint            // 成员 ID，为 0 时忽略
+	StatusMasks []ProjectStatus // 项目状态，默认值时忽略
+}
+
+// LaborInfo 定义了成员参与的分工信息
+type LaborInfo struct {
+	MemberId  uint      // 成员 ID
+	Nickname  string    // 成员昵称
+	LaborMask LaborMask // 分工掩码，表示成员在项目中的职责
 }
 
 // ProjectInfo 定义了项目的基本信息
@@ -115,18 +124,47 @@ type ProjectInfo struct {
 	Status        ProjectStatus // 项目状态
 	IsPublished   bool          // 是否已发布
 	AllowAutoJoin bool          // 是否允许自动加入
-	Labors        []*MemberInfo // 成员参与的分工信息
+	Labors        []*LaborInfo  // 成员参与的分工信息
 }
 
 // CreateProjectParams 定义了创建项目所需的信息
 type CreateProjectParams struct {
+	CreatorMemberId  uint              // 创建者的成员 ID
+	CurrentMemberIds map[uint]struct{} // 当前用户的成员 ID集合
+
 	Title       string // 项目标题
 	Description string // 项目简介
 	WorksetId   uint   // 作品集 ID
 
-	CreatorUserId uint // 创建者的用户 ID
 	AllowAutoJoin bool // 允许加入的权限
 	IsHidden      bool // 是否隐藏项目
+}
+
+// ProjectCreatedInfo 定义了创建项目后的返回信息
+type ProjectCreatedInfo struct {
+	Message   string // 创建结果消息
+	ProjectId uint   // 创建的项目 ID
+	MoetranId string // 龙译项目 ID
+}
+
+// UpdateProjectParams 定义了更新项目所需的信息
+type UpdateProjectParams struct {
+	UsingMemberId    uint              // 传入的参数成员 ID
+	CurrentMemberIds map[uint]struct{} // 当前用户的成员 ID集合
+
+	ProjectId   uint   // 项目 ID
+	Title       string // 项目标题
+	Description string // 项目简介
+
+	Status uint // 项目状态，使用位掩码表示
+}
+
+// DeleteProjectParams 定义了删除项目所需的信息
+type DeleteProjectParams struct {
+	UsingMemberId    uint              // 传入的参数成员 ID
+	CurrentMemberIds map[uint]struct{} // 当前用户的成员 ID集合
+
+	ProjectId uint // 项目 ID
 }
 
 // ProjectService 接口定义了项目服务的基本操作
@@ -136,27 +174,14 @@ type ProjectService interface {
 	// GetProjectDetail 获取指定项目的详细信息
 	GetProjectDetail(projectId uint) (*ProjectInfo, error)
 
-	// // GetBasicPageWithParams 获取项目列表，支持分页和排序以及复合条件查询
-	// GetBasicPageWithParams(
-	// 	worksetId, index uint, userId uint,
-	// 	pageSerial, pageSize int, sort int,
-	// 	status dtos.ProjectOverallStatus,
-	// ) ([]*dtos.ProjectBasic, error)
+	// CreateProject 创建一个新的项目
+	CreateProject(params *CreateProjectParams) (*ProjectCreatedInfo, error)
 
-	// // GetDetail 获取指定 ID 的项目详情
-	// GetDetail(projectId uint) (*dtos.ProjectDetail, error)
+	// UpdateProject 更新指定项目的信息
+	UpdateProject(params *UpdateProjectParams) error
 
-	// // GetLaborDivision 获取指定项目 ID 的团队成员分工
-	// GetLaborDivision(projectId uint) ([]*dtos.LaborDivision, error)
-
-	// // CreateProject 创建一个新的项目
-	// CreateProject(request *dtos.CreateProjectParams) (*dtos.ProjectCreatedInfo, error)
-
-	// // UpdateProject 更新指定 ID 的项目
-	// UpdateProject(projectId uint, request *dtos.UpdateProjectRequest) error
-
-	// // DeleteProject 删除指定 ID 的项目
-	// DeleteProject(projectId uint) error
+	// DeleteProject 删除指定的项目
+	DeleteProject(params *DeleteProjectParams) error
 }
 
 // projectServiceImpl 是 ProjectService 的实现
@@ -189,14 +214,13 @@ func (s *projectServiceImpl) GetProjects(params *ProjectListParams) ([]*ProjectI
 		projectSpec := s.buildQueryParams(params)
 		// 查询的字段
 		projectFields := &models.ProjectFields{
-			Id:            true,
-			Title:         true,
-			WorksetId:     true,
-			WorksetIndex:  true,
-			LegacyId:      true,
-			MoetranId:     true,
-			Status:        true,
-			AllowAutoJoin: true,
+			Id:           true,
+			Title:        true,
+			WorksetId:    true,
+			WorksetIndex: true,
+			LegacyId:     true,
+			MoetranId:    true,
+			Status:       true,
 		}
 
 		// 直接基于 project 查询
@@ -222,7 +246,7 @@ func (s *projectServiceImpl) GetProjects(params *ProjectListParams) ([]*ProjectI
 				WorksetIndex:  p.WorksetIndex,
 				LegacyId:      p.LegacyId,
 				MoetranId:     p.MoetranId,
-				Status:        s.buildProjectStatus(p),
+				Status:        buildProjectStatus(p),
 				IsPublished:   p.IsPublished,
 				AllowAutoJoin: p.AllowAutoJoin,
 			})
@@ -236,6 +260,7 @@ func (s *projectServiceImpl) GetProjects(params *ProjectListParams) ([]*ProjectI
 			UserId          uint
 			Nickname        string
 			MemberId        uint
+			LaborMask       LaborMask
 			ProjectId       uint
 			ProjectTitle    string
 			WorksetId       uint
@@ -247,7 +272,6 @@ func (s *projectServiceImpl) GetProjects(params *ProjectListParams) ([]*ProjectI
 			ProofreadStatus uint8
 			LetterStatus    uint8
 			ReviewStatus    uint8
-			AllowAutoJoin   bool
 		}
 
 		var results []result
@@ -266,8 +290,11 @@ func (s *projectServiceImpl) GetProjects(params *ProjectListParams) ([]*ProjectI
 		s.buildQueryParams(params).Apply(query)
 
 		if err := query.
+			Offset(params.Offset).
+			Limit(params.Limit).
 			// 选择所有需要的列
 			Select(`
+				labors.labor_mask AS labor_mask,
             	users.id AS user_id,
             	users.nickname AS nickname,
             	members.id AS member_id,
@@ -281,8 +308,7 @@ func (s *projectServiceImpl) GetProjects(params *ProjectListParams) ([]*ProjectI
 				projects.translate_status AS translate_status,
 				projects.proofread_status AS proofread_status,
 				projects.letter_status AS letter_status,
-				projects.review_status AS review_status,
-				projects.allow_auto_join AS allow_auto_join
+				projects.review_status AS review_status
 			`).
 			Scan(&results).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -306,22 +332,19 @@ func (s *projectServiceImpl) GetProjects(params *ProjectListParams) ([]*ProjectI
 			status.SetPublishedStatus(r.IsPublished)
 
 			projectInfos = append(projectInfos, &ProjectInfo{
-				Id:            r.ProjectId,
-				Title:         r.ProjectTitle,
-				WorksetId:     r.WorksetId,
-				WorksetIndex:  r.WorksetIndex,
-				LegacyId:      r.LegacyId,
-				MoetranId:     r.MoetranId,
-				Status:        status,
-				IsPublished:   r.IsPublished,
-				AllowAutoJoin: r.AllowAutoJoin,
-				Labors: []*MemberInfo{
+				Id:           r.ProjectId,
+				Title:        r.ProjectTitle,
+				WorksetId:    r.WorksetId,
+				WorksetIndex: r.WorksetIndex,
+				LegacyId:     r.LegacyId,
+				MoetranId:    r.MoetranId,
+				Status:       status,
+				IsPublished:  r.IsPublished,
+				Labors: []*LaborInfo{
 					{
-						Id: r.MemberId,
-						User: UserInfo{
-							Id:       r.UserId,
-							Nickname: r.Nickname,
-						},
+						MemberId:  r.MemberId,
+						Nickname:  r.Nickname,
+						LaborMask: r.LaborMask,
 					},
 				},
 			})
@@ -357,102 +380,242 @@ func (s *projectServiceImpl) GetProjectDetail(projectId uint) (*ProjectInfo, err
 		WorksetIndex:  project.WorksetIndex,
 		LegacyId:      project.LegacyId,
 		MoetranId:     project.MoetranId,
-		Status:        s.buildProjectStatus(project),
+		Status:        buildProjectStatus(project),
 		IsPublished:   project.IsPublished,
 		AllowAutoJoin: project.AllowAutoJoin,
+	}
+
+	// 再查询响应的成员分工信息
+	laborSpec := &models.LaborSpec{
+		ProjectId: &projectPKey,
+	}
+	laborFields := &models.LaborFields{
+		MemberId: true,
+		MemberFields: &models.MemberFields{
+			UserId:     true,
+			UserFields: &models.UserFields{Nickname: true},
+		},
+	}
+
+	labors, err := models.GetLabor().SelectMany(s.handle, laborSpec, laborFields)
+	if err != nil {
+		s.logger.Error("GetProjectDetail 查询项目成员分工信息失败", slog.Any("error", err))
+		return nil, errors.New("查询项目成员分工信息失败")
+	}
+
+	// 将 labors 转换为 ProjectInfo 的 Labors 字段
+	for _, l := range labors {
+		projectInfo.Labors = append(projectInfo.Labors, &LaborInfo{
+			MemberId:  uint(l.MemberId),
+			Nickname:  l.FkMember.FkUser.Nickname,
+			LaborMask: LaborMask(l.LaborMask),
+		})
 	}
 
 	return projectInfo, nil
 }
 
-// // CreateProject 实现 ProjectService 接口的 CreateProject 方法
-// func (s *projectServiceImpl) CreateProject(createInfo *dtos.CreateProjectParams) (*dtos.ProjectCreatedInfo, error) {
-// 	// 构建一个事务协调器
-// 	coordinater := txutils.NewTransactionCoordinator(s.projectRepo.GetHandle())
+// CreateProject 实现 ProjectService 接口的 CreateProject 方法
+func (s *projectServiceImpl) CreateProject(params *CreateProjectParams) (*ProjectCreatedInfo, error) {
+	// 先检查是否是非法冒用
+	// 检查申请者的成员 ID 是否在上下文中
+	if _, exists := params.CurrentMemberIds[params.CreatorMemberId]; !exists {
+		s.logger.Warn("CreateProject 申请者成员 ID 不在当前用户的成员列表中",
+			slog.Uint64("creator_member_id", uint64(params.CreatorMemberId)),
+			// TODO: slog.Uint64
+			slog.Uint64("applicant_member_id", uint64(params.CreatorMemberId)))
+		return nil, errors.New("非法引用申请者成员 ID")
+	}
 
-// 	var createdInfo *dtos.ProjectCreatedInfo
+	// 构建一个事务协调器
+	c := txutils.NewTransactionCoordinator(s.handle)
 
-// 	// 在一个事务中协调数据库和调用龙译 API 的操作
-// 	if err := coordinater.RunInTransaction(context.Background(), func(tx *gorm.DB) (error, func() error) {
-// 		// 基于 transaction 上下文获取仓库实例
-// 		txProjectRepo := repos.NewProjectRepo(tx)
-// 		txLaborRepo := repos.NewLaborRepo(tx)
+	var createdInfo *ProjectCreatedInfo
 
-// 		// 创建一个新的项目
-// 		project := &dbmodels.Project{
-// 			Title:         createInfo.Title,
-// 			Description:   createInfo.Description,
-// 			WorksetId:     dbmodels.PrimaryKey(createInfo.WorksetId),
-// 			AllowAutoJoin: createInfo.AllowAutoJoin,
-// 			IsHidden:      createInfo.IsHidden,
-// 			PrincipalId:   dbmodels.PrimaryKey(createInfo.CreatorUserId), // 设置负责人为创建者
-// 		}
+	// 在一个事务中协调数据库和调用龙译 API 的操作
+	if err := c.RunInTransaction(context.Background(), func(tx *gorm.DB) (error, func() error) {
+		// 创建一个新的项目
+		project := &models.Project{
+			Title:         params.Title,
+			Description:   params.Description,
+			WorksetId:     models.PKey(params.WorksetId),
+			AllowAutoJoin: params.AllowAutoJoin,
+			IsHidden:      params.IsHidden,
+			PrincipalId:   models.PKey(params.CreatorMemberId), // 设置负责人为创建者
+		}
 
-// 		// 在数据库中创建项目，如果成功 project 的 Id、WorksetIndex 和 FkWorkset 应当被填充
-// 		if err := txProjectRepo.CreateProject(project); err != nil {
-// 			s.logger.Error("CreateProject 调用 CreateProject 中出现错误", slog.Any("error", err))
-// 			return errors.New("创建项目失败"), nil
-// 		}
+		// 在数据库中创建项目
+		if err := models.GetProject().Insert(tx, project); err != nil {
+			s.logger.Error("CreateProject 调用 CreateProject 中出现错误", slog.Any("error", err))
+			return errors.New("创建项目失败"), nil
+		}
 
-// 		// 创建 creator 的分工记录
-// 		creatorLabor := dbmodels.LaborMask(0)
-// 		creatorLabor.AddRole(dbmodels.LABOR_CREATOR_MASK)
-// 		creatorLabor.AddRole(dbmodels.LABOR_PRINCIPAL_MASK)
+		// 创建 creator 的分工记录
+		creatorLabor := LaborMask(0)
+		creatorLabor.AddRole(LABOR_PRINCIPAL_MASK)
 
-// 		laborDivision := &dbmodels.ProjectLaborDivision{
-// 			ProjectId: dbmodels.PrimaryKey(project.Id),
-// 			UserId:    dbmodels.PrimaryKey(createInfo.CreatorUserId),
-// 			LaborRole: creatorLabor,
-// 		}
+		labor := &models.Labor{
+			ProjectId: models.PKey(project.Id),
+			MemberId:  models.PKey(params.CreatorMemberId),
+			LaborMask: uint32(creatorLabor),
+		}
 
-// 		// 然后在团队成员分工表中插入 creator 记录
-// 		if err := txLaborRepo.CreateLaborDivision(laborDivision); err != nil {
-// 			s.logger.Error("CreateProject 调用 CreateLaborDivision 中出现错误", slog.Any("error", err))
-// 			return fmt.Errorf("创建团队成员分工失败"), nil
-// 		}
+		// 然后在团队成员分工表中插入 creator 记录
+		if err := models.GetLabor().Insert(tx, labor); err != nil {
+			s.logger.Error("CreateProject 调用 CreateLaborDivision 中出现错误", slog.Any("error", err))
+			return errors.New("创建团队成员分工失败"), nil
+		}
 
-// 		// 获取对应 user 的龙译 JWT
-// 		user, err := s.userRepo.SelectByUserId(dbmodels.PrimaryKey(createInfo.CreatorUserId))
-// 		if err != nil {
-// 			s.logger.Error("CreateProject 获取用户信息失败", slog.Any("error", err))
-// 			return fmt.Errorf("获取用户信息失败"), nil
-// 		}
+		// 获取对应 user 的龙译 JWT
+		creatorMemberPKey := models.PKey(params.CreatorMemberId)
+		member, err := models.GetMember().SelectFirst(
+			tx,
+			&models.MemberSpec{
+				Id: &creatorMemberPKey,
+			},
+			&models.MemberFields{
+				UserId:     true,
+				UserFields: &models.UserFields{MoetranJwt: true},
+			},
+		)
+		if err != nil {
+			s.logger.Error("CreateProject 获取用户信息失败", slog.Any("error", err))
+			return fmt.Errorf("获取用户信息失败"), nil
+		}
 
-// 		// 随后调用龙译 API 创建项目
-// 		projInfo := s.buildMoetranProjInfo(createInfo, project, user)
+		// 随后调用龙译 API 创建项目
+		projInfo := s.buildMoetranProjInfo(params, project, member)
+		moetranRes, err := s.apiClient.CreateProject(projInfo)
+		if err != nil {
+			s.logger.Error("CreateProject 调用 CreateProject API 中出现错误", slog.Any("error", err))
+			// TODO：由于不确定尨译的 API 是否是幂等的，这里需要考虑补偿操作，比如删除对应项目
+			// 但在不确定尨译实现的情况下，先不处理补偿
+			return errors.New("调用龙译 API 创建项目失败"), nil
+		}
 
-// 		moetranRes, err := s.apiClient.CreateProject(projInfo)
-// 		if err != nil {
-// 			s.logger.Error("CreateProject 调用 CreateProject API 中出现错误", slog.Any("error", err))
-// 			// TODO：由于不确定尨译的 API 是否是幂等的，这里需要考虑补偿操作，比如删除对应项目
-// 			// 但在不确定尨译实现的情况下，先不处理补偿
-// 			return errors.New("调用龙译 API 创建项目失败"), nil
-// 		}
+		// 将龙译返回的项目 ID 更新到本地项目中
+		if err := models.GetProject().Update(
+			tx,
+			&models.Project{
+				BaseModel: models.BaseModel{Id: project.Id},
+				MoetranId: moetranRes.Project.Id,
+			},
+		); err != nil {
+			s.logger.Error("CreateProject 更新本地项目龙译 ID 失败", slog.Any("error", err))
+			return fmt.Errorf("更新本地项目的龙译 ID 失败"), nil
+		}
 
-// 		// 将龙译返回的项目 ID 更新到本地项目中
-// 		if err := txProjectRepo.UpdateMoetranId(project.Id, moetranRes.Project.Id); err != nil {
-// 			s.logger.Error("CreateProject 更新本地项目龙译 ID 失败", slog.Any("error", err))
-// 			return fmt.Errorf("更新本地龙译 ID 失败"), nil
-// 		}
+		// 写入到返回结果
+		createdInfo = &ProjectCreatedInfo{
+			Message:   moetranRes.Message,
+			ProjectId: uint(project.Id),
+			MoetranId: moetranRes.Project.Id,
+		}
 
-// 		// 写入到返回结果
-// 		createdInfo = &dtos.ProjectCreatedInfo{
-// 			Message:   moetranRes.Message,
-// 			ProjectId: uint(project.Id),
-// 			MoetranId: moetranRes.Project.Id,
-// 		}
+		// 一切正常，则返回 nil 提交事务
+		return nil, nil
 
-// 		// 一切正常，则返回 nil 提交事务
-// 		return nil, nil
+	}); err != nil {
+		// 这里的 err 是上述事务中抛出的错误
+		s.logger.Error("CreateProject 事务执行失败", slog.Any("error", err))
+		return nil, errors.New("创建项目失败")
+	}
 
-// 	}); err != nil {
-// 		// 这里的 err 是上述事务中抛出的错误
-// 		s.logger.Error("CreateProject 事务执行失败", slog.Any("error", err))
-// 		return nil, errors.New("创建项目失败")
-// 	}
+	return createdInfo, nil
+}
 
-// 	return createdInfo, nil
-// }
+// UpdateProject 实现 ProjectService 接口的 UpdateProject 方法
+func (s *projectServiceImpl) UpdateProject(params *UpdateProjectParams) error {
+	// 先检查是否是非法冒用
+	// 检查申请者的成员 ID 是否在上下文中
+	if _, exists := params.CurrentMemberIds[params.UsingMemberId]; !exists {
+		s.logger.Warn("UpdateProject 所使用成员 ID 不在当前用户的成员列表中",
+			slog.Uint64("using_member_id", uint64(params.UsingMemberId)))
+		return errors.New("非法引用申请者成员 ID")
+	}
+
+	// 查询项目的负责是否是该成员
+	projectPKey := models.PKey(params.ProjectId)
+	projectSpec := &models.ProjectSpec{
+		Id: &projectPKey,
+	}
+	projectFields := &models.ProjectFields{
+		PrincipalId: true,
+	}
+
+	project, err := models.GetProject().SelectFirst(s.handle, projectSpec, projectFields)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logger.Warn("UpdateProject 查询没有结果", slog.Uint64("projectId", uint64(params.ProjectId)))
+			return errors.New("没有找到对应的项目")
+		}
+		s.logger.Error("UpdateProject 查询项目详情失败", slog.Any("error", err))
+		return errors.New("查询项目详情失败")
+	}
+
+	// 检查更新者是否是项目负责人
+	if project.PrincipalId != models.PKey(params.UsingMemberId) {
+		s.logger.Warn("UpdateProject 成员不是项目负责人", slog.Uint64("projectId", uint64(params.ProjectId)),
+			slog.Uint64("memberId", uint64(params.UsingMemberId)))
+		return errors.New("只有项目负责人才能更新项目信息")
+	}
+
+	// 更新项目信息
+	project.Title = params.Title
+	project.Description = params.Description
+	applyStatuses(project, ProjectStatus(params.Status))
+
+	if err := models.GetProject().Update(s.handle, project); err != nil {
+		s.logger.Error("UpdateProject 更新项目失败", slog.Any("error", err))
+		return errors.New("更新项目失败")
+	}
+
+	return nil
+}
+
+// DeleteProject 实现 ProjectService 接口的 DeleteProject 方法
+func (s *projectServiceImpl) DeleteProject(params *DeleteProjectParams) error {
+	// 先检查是否是非法冒用
+	// 检查申请者的成员 ID 是否在上下文中
+	if _, exists := params.CurrentMemberIds[params.UsingMemberId]; !exists {
+		s.logger.Warn("DeleteProject 所使用成员 ID 不在当前用户的成员列表中",
+			slog.Uint64("using_member_id", uint64(params.UsingMemberId)))
+		return errors.New("非法引用申请者成员 ID")
+	}
+
+	// 查询项目的负责是否是该成员
+	projectPKey := models.PKey(params.ProjectId)
+	projectSpec := &models.ProjectSpec{
+		Id: &projectPKey,
+	}
+	projectFields := &models.ProjectFields{
+		PrincipalId: true,
+	}
+
+	project, err := models.GetProject().SelectFirst(s.handle, projectSpec, projectFields)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logger.Warn("DeleteProject 查询没有结果", slog.Uint64("projectId", uint64(params.ProjectId)))
+			return errors.New("没有找到对应的项目")
+		}
+		s.logger.Error("DeleteProject 查询项目详情失败", slog.Any("error", err))
+		return errors.New("查询项目详情失败")
+	}
+
+	// 检查更新者是否是项目负责人
+	if project.PrincipalId != models.PKey(params.UsingMemberId) {
+		s.logger.Warn("DeleteProject 成员不是项目负责人", slog.Uint64("projectId", uint64(params.ProjectId)))
+		return errors.New("只有项目负责人才能删除项目信息")
+	}
+
+	// 删除项目信息
+	if err := models.GetProject().Delete(s.handle, project.Id); err != nil {
+		s.logger.Error("DeleteProject 删除项目失败", slog.Any("error", err))
+		return errors.New("删除项目失败")
+	}
+
+	return nil
+}
 
 // ================ 辅助函数 ================
 
@@ -471,9 +634,9 @@ func (srv *projectServiceImpl) buildQueryParams(params *ProjectListParams) *mode
 		projectSpec.WorksetIndex = &params.Index
 	}
 
-	if len(params.Status) != 0 {
+	if len(params.StatusMasks) != 0 {
 		// 如果传入了 Status 参数，则添加状态条件
-		for _, status := range params.Status {
+		for _, status := range params.StatusMasks {
 			if status == 0 {
 				// 如果 s 是默认值，说明有问题，直接跳过
 				continue
@@ -531,7 +694,7 @@ func (srv *projectServiceImpl) buildQueryParams(params *ProjectListParams) *mode
 }
 
 // buildProjectStatus 根据传入的状态参数构建 ProjectStatus
-func (s *projectServiceImpl) buildProjectStatus(model *models.Project) ProjectStatus {
+func buildProjectStatus(model *models.Project) ProjectStatus {
 	var status ProjectStatus
 
 	status.SetTranslatingStatus(uint32(model.TranslateStatus))
@@ -547,15 +710,15 @@ func (s *projectServiceImpl) buildProjectStatus(model *models.Project) ProjectSt
 func (s *projectServiceImpl) buildMoetranProjInfo(
 	info *CreateProjectParams,
 	project *models.Project,
-	user *models.User,
+	member *models.Member,
 ) *apiclient.CreateProjectInfo {
 	// 组装尨译的 title
 	title := fmt.Sprintf("[%d-%d]%s",
 		project.WorksetId, project.WorksetIndex, project.Title)
 
 	// 构造 AllowApplyType 和 ApplicationCheckType
-	allowApplyType := -1
-	applicationCheckType := -1
+	var allowApplyType apiclient.MoetranAllowApplyType
+	var applicationCheckType apiclient.MoetranAppliCheckType
 
 	switch info.AllowAutoJoin {
 	case true:
@@ -567,7 +730,7 @@ func (s *projectServiceImpl) buildMoetranProjInfo(
 	}
 
 	return &apiclient.CreateProjectInfo{
-		MoetranAuth: user.MoetranJwt,
+		MoetranAuth: member.FkUser.MoetranJwt,
 
 		Title:            title,
 		Description:      project.Description,
@@ -575,14 +738,33 @@ func (s *projectServiceImpl) buildMoetranProjInfo(
 		MoetranTeamId:    project.FkWorkset.FkTeam.MoetranId,
 		WorksetIndex:     project.WorksetIndex,
 
-		// TODO：先写死为 ja 到 zh-TW
+		// TODO：先写死为 ja 到 zh-CN
 		SourceLanguage:  apiclient.LangJapanese,
-		TargetLanguages: []string{apiclient.LangTraditionalChinese},
+		TargetLanguages: []string{apiclient.LangSimplifiedChinese},
 
 		AllowApplyType:       allowApplyType,
 		ApplicationCheckType: applicationCheckType,
 
 		// TODO：先写死默认角色为实习翻译
-		DefaultRole: apiclient.SystemRoleIDsMap[apiclient.ROLE_INTERN],
+		DefaultRole: apiclient.ROLE_INTERN,
+	}
+}
+
+// applyStatuses 将掩码的按需转换为 model 的状态
+func applyStatuses(project *models.Project, statuses ProjectStatus) {
+	if statuses.GetTranslatingStatus() != PROJECT_STATUS_NOT_USED {
+		project.TranslateStatus = uint8(statuses.GetTranslatingStatus())
+	}
+	if statuses.GetProofreadingStatus() != PROJECT_STATUS_NOT_USED {
+		project.ProofreadStatus = uint8(statuses.GetProofreadingStatus())
+	}
+	if statuses.GetLetteringStatus() != PROJECT_STATUS_NOT_USED {
+		project.LetterStatus = uint8(statuses.GetLetteringStatus())
+	}
+	if statuses.GetReviewingStatus() != PROJECT_STATUS_NOT_USED {
+		project.ReviewStatus = uint8(statuses.GetReviewingStatus())
+	}
+	if statuses.GetPublishedStatus() != PROJECT_STATUS_NOT_USED {
+		project.IsPublished = (statuses.GetPublishedStatus() == PROJECT_STATUS_COMPLETED)
 	}
 }

@@ -13,7 +13,7 @@ type UserInfo struct {
 	Id       uint   // 用户 ID
 	Nickname string // 昵称
 	Email    string // 邮箱
-	QqNumber int    // QQ 号
+	QQNumber int    // QQ 号
 	IsAdmin  bool   // 是否是管理员
 	Remark   string // 补充备注
 }
@@ -50,7 +50,7 @@ func (s *userServiceImpl) GetUserDetail(userId uint) (*UserInfo, error) {
 		Id:       true,
 		Nickname: true,
 		Email:    true,
-		QqNumber: true,
+		QQNumber: true,
 		IsAdmin:  true,
 		Remark:   true,
 	}
@@ -59,10 +59,13 @@ func (s *userServiceImpl) GetUserDetail(userId uint) (*UserInfo, error) {
 	user, err := models.GetUser().SelectFirst(s.handle, userSpec, userFields)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logger.Error("GetUserDetail 未获取到指定用户详情",
+				slog.Uint64("user_id", uint64(userId)),
+				slog.Any("error", err))
 			return nil, errors.New("用户不存在")
 		}
-		s.logger.Error("failed to get user detail", "error", err)
-		return nil, err // 返回错误
+		s.logger.Error("GetUserDetail 获取指定用户详情失败", "error", err)
+		return nil, errors.New("获取指定用户详情失败")
 	}
 
 	// 将查询结果转换为 UserInfo
@@ -70,7 +73,7 @@ func (s *userServiceImpl) GetUserDetail(userId uint) (*UserInfo, error) {
 		Id:       uint(user.Id),
 		Nickname: user.Nickname,
 		Email:    user.Email,
-		QqNumber: user.QqNumber,
+		QQNumber: user.QQNumber,
 		IsAdmin:  user.IsAdmin,
 		Remark:   user.Remark,
 	}

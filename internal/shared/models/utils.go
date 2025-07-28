@@ -21,3 +21,15 @@ type BaseModel struct {
 	// 默认是 null，表示未删除
 	DeletedAt *time.Time `gorm:"index"`
 }
+
+// Status 定义了邀请以及请求的状态
+type Status uint8
+
+const (
+	// STATUS_PENDING 表示待处理状态
+	STATUS_PENDING Status = iota
+	// STATUS_ACCEPTED 表示已接受状态
+	STATUS_ACCEPTED
+	// STATUS_REJECTED 表示已拒绝状态
+	STATUS_REJECTED
+)

@@ -8,18 +8,6 @@ import (
 	"github.com/kataras/iris/v12/mvc"
 )
 
-// RouteUserHandler 注册用户相关的路由
-func RouteUserHandler(root *mvc.Application) {
-	// 注册路由组和 handler
-	root.Party("/users").
-		Handle(new(UserHandler))
-}
-
-// UserHandler 处理用户相关的请求
-type UserHandler struct {
-	UserService services.UserService
-}
-
 // UserInfo 定义了用户的基本信息 DTO
 type UserInfo struct {
 	// 用户 ID
@@ -33,7 +21,7 @@ type UserInfo struct {
 	Email string `json:"email,omitempty"`
 	// QQ 号
 	// @example 123456789
-	QqNumber string `json:"qq_number,omitempty"`
+	QQNumber int `json:"qq_number,omitempty"`
 	// 是否是 panel 管理员
 	// @example true
 	PoplarIsAdmin bool `json:"poplar_is_admin"`
@@ -44,27 +32,39 @@ type UserInfo struct {
 	Members []MemberInfo `json:"members,omitempty"`
 }
 
+// RouteUserHandler 注册用户相关的路由
+func RouteUserHandler(root *mvc.Application) {
+	// 注册路由组和 handler
+	root.Party("/users").
+		Handle(new(UserHandler))
+}
+
+// UserHandler 处理用户相关的请求
+type UserHandler struct {
+	UserService services.UserService
+}
+
 // BeforeActivation 在控制器激活前注册路由和中间件
 func (h *UserHandler) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle("GET", "/me", "MyDetail")
-	b.Handle("GET", "/{id:uint}/detail", "UserDetail")
+	b.Handle("GET", "/{id:uint}", "Detail")
 
 	// 注册控制器特定的中间件
 	b.Router().Use(NewCheckUserIdMiddleware())
 }
 
-// UserDetail godoc
+// MyDetail godoc
 //
 // @Summary 	利用 cookie，获取当前用户的详情
 // @Description 获取指定用户的详细信息，本质上是一次重定向到 /users/{id}/detail
 //
 // @Tags 		user
 // @Produce 	json
-// @Success	 	200 {object} UserDetail
+// @Success	 	200 {object} UserInfo
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
 // @Failure     500 {object} ErrorResponse "服务器内部错误"
 //
-// @Router 		/users/me [get]
+// @Router 		/api/users/me [get]
 func (h *UserHandler) MyDetail(ctx iris.Context) {
 	// 从路径参数获取用户 ID
 	userId, err := ctx.Params().GetUint("id")
@@ -81,7 +81,7 @@ func (h *UserHandler) MyDetail(ctx iris.Context) {
 	ctx.Redirect(url, iris.StatusTemporaryRedirect)
 }
 
-// UserDetail godoc
+// Detail godoc
 //
 // @Summary 	获取用户详情
 // @Description 获取指定用户的详细信息，包括 ID、昵称、QQ 等
@@ -89,12 +89,12 @@ func (h *UserHandler) MyDetail(ctx iris.Context) {
 //
 // @Tags 		user
 // @Produce 	json
-// @Success	 	200 {object} UserDetail
+// @Success	 	200 {object} UserInfo
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
 // @Failure     500 {object} ErrorResponse "服务器内部错误"
 //
-// @Router 		/users/{id}/detail [get]
-func (h *UserHandler) UserDetail(ctx iris.Context) {
+// @Router 		/api/users/{id} [get]
+func (h *UserHandler) Detail(ctx iris.Context) {
 	// 从路径参数获取用户 ID
 	userId, err := ctx.Params().GetUint("id")
 	if err != nil || userId <= 0 {
@@ -106,7 +106,7 @@ func (h *UserHandler) UserDetail(ctx iris.Context) {
 	}
 
 	// 调用服务层获取用户详情
-	userDetail, err := h.UserService.GetUserDetail(userId)
+	user, err := h.UserService.GetUserDetail(userId)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ErrorResponse{
@@ -116,5 +116,13 @@ func (h *UserHandler) UserDetail(ctx iris.Context) {
 		return
 	}
 
-	ctx.JSON(userDetail)
+	// 将服务层的 UserInfo 转换为 DTO
+	ctx.JSON(UserInfo{
+		Id:            user.Id,
+		Nickname:      user.Nickname,
+		Email:         user.Email,
+		QQNumber:      user.QQNumber,
+		PoplarIsAdmin: user.IsAdmin,
+		Remark:        user.Remark,
+	})
 }
