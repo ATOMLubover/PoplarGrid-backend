@@ -10,16 +10,12 @@ import (
 // TeamInfo 定义了汉化组的基本信息 DTO
 type TeamInfo struct {
 	// 汉化组 ID
-	// @example 114514
 	Id uint `json:"id"`
 	// 汉化组名称
-	// @example 白杨汉化组
 	Name string `json:"name"`
 	// 汉化组对应的龙译 ID
-	// @example 64aac7d91b3
 	MoetranId string `json:"moetran_id,omitempty"`
 	// 汉化组描述
-	// @example 这是一个测试汉化组
 	Description string `json:"description,omitempty"`
 }
 

@@ -11,22 +11,16 @@ import (
 // UserInfo 定义了用户的基本信息 DTO
 type UserInfo struct {
 	// 用户 ID
-	// @example 123456
 	Id uint `json:"id"`
-	// 昵称
-	// @example [influ3nza]翻校
+	// 昵
 	Nickname string `json:"nickname"`
 	// 邮箱
-	// @example 1919810@163.com
 	Email string `json:"email,omitempty"`
 	// QQ 号
-	// @example 123456789
 	QQNumber int `json:"qq_number,omitempty"`
 	// 是否是 panel 管理员
-	// @example true
 	PoplarIsAdmin bool `json:"poplar_is_admin"`
 	// 补充备注
-	// @example 这是一个测试用户
 	Remark string `json:"remark,omitempty"`
 	// 在各个汉化组中的成员信息
 	Members []MemberInfo `json:"members,omitempty"`

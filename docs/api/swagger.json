@@ -10,7 +10,7 @@
     "paths": {
         "/api/applications": {
             "get": {
-                "description": "获取当前用户的申请列表",
+                "description": "获取当前用户的申请列表，根据参数的选择来确定到底是返回申请者的申请还是处理者的申请",
                 "produces": [
                     "application/json"
                 ],
@@ -18,6 +18,38 @@
                     "application"
                 ],
                 "summary": "获取申请列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，默认值为 1",
+                        "name": "page_serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认值为 10",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "申请人的成员 ID，与处理者的成员 ID 只能二选一",
+                        "name": "applicant_member_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "处理者的成员 ID，与申请人的成员 ID 只能二选一",
+                        "name": "processor_member_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "目标项目 ID，如果需要筛选特定项目的申请，可以使用此参数",
+                        "name": "target_project_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -142,7 +174,7 @@
         },
         "/api/invitations": {
             "get": {
-                "description": "获取当前用户的邀请列表",
+                "description": "获取当前用户的邀请列表，通过参数的选择来确定到底是返回邀请者的邀请还是被邀请者的邀请",
                 "produces": [
                     "application/json"
                 ],
@@ -150,6 +182,38 @@
                     "invitation"
                 ],
                 "summary": "获取邀请列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，默认值为 1",
+                        "name": "page_serial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量，默认值为 10",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "邀请人的成员 ID，与被邀请人的成员 ID 只能二选一",
+                        "name": "invitor_member_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "被邀请人的成员 ID，与邀请人的成员 ID 只能二选一",
+                        "name": "invitee_member_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "目标项目 ID，如果需要筛选特定项目的邀请，可以使用此参数",
+                        "name": "target_project_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -852,27 +916,27 @@
             "type": "object",
             "properties": {
                 "applicant_member_id": {
-                    "description": "申请者成员 ID\n@example 112233",
+                    "description": "申请者成员 ID\n@Example 112233",
                     "type": "integer"
                 },
                 "applicant_nickname": {
-                    "description": "申请者成员昵称\n@example [coder_cat]小猫",
+                    "description": "申请者成员昵称\n@Example [coder_cat]小猫",
                     "type": "string"
                 },
                 "id": {
-                    "description": "申请 ID\n@example 789012",
+                    "description": "申请 ID\n@Example 789012",
                     "type": "integer"
                 },
                 "processor_member_id": {
-                    "description": "处理者成员 ID\n@example 445566",
+                    "description": "处理者成员 ID\n@Example 445566",
                     "type": "integer"
                 },
                 "processor_nickname": {
-                    "description": "处理者成员昵称\n@example [pm_king]老王",
+                    "description": "处理者成员昵称\n@Example [pm_king]老王",
                     "type": "string"
                 },
                 "target_labor_mask": {
-                    "description": "申请分工掩码\n@example 3",
+                    "description": "申请分工掩码\n@Example 3",
                     "allOf": [
                         {
                             "$ref": "#/definitions/handlers.LaborMask"
@@ -880,15 +944,15 @@
                     ]
                 },
                 "target_project_id": {
-                    "description": "目标项目 ID\n@example 98765",
+                    "description": "目标项目 ID\n@Example 98765",
                     "type": "integer"
                 },
                 "target_project_name": {
-                    "description": "目标项目名称\n@example S001",
+                    "description": "目标项目名称\n@Example S001",
                     "type": "string"
                 },
                 "time": {
-                    "description": "申请时间\n@example \"2023-11-01 10:00:00\"",
+                    "description": "申请时间\n@Example \"2023-11-01 10:00:00\"",
                     "type": "string"
                 }
             }
@@ -902,11 +966,11 @@
             ],
             "properties": {
                 "applicant_member_id": {
-                    "description": "申请者成员 ID\n@example 112233",
+                    "description": "申请者成员 ID\n@Example 112233",
                     "type": "integer"
                 },
                 "target_labor_mask": {
-                    "description": "申请分工掩码\n@example 3",
+                    "description": "申请分工掩码\n@Example 3",
                     "allOf": [
                         {
                             "$ref": "#/definitions/services.LaborMask"
@@ -914,7 +978,7 @@
                     ]
                 },
                 "target_project_id": {
-                    "description": "目标项目 ID\n@example 98765",
+                    "description": "目标项目 ID\n@Example 98765",
                     "type": "integer"
                 }
             }
@@ -928,15 +992,15 @@
             ],
             "properties": {
                 "invitee_member_id": {
-                    "description": "接收者成员 ID\n@example 123456",
+                    "description": "接收者成员 ID\n@Example 123456",
                     "type": "integer"
                 },
                 "invitor_member_id": {
-                    "description": "邀请者成员 ID\n@example 654321",
+                    "description": "邀请者成员 ID\n@Example 654321",
                     "type": "integer"
                 },
                 "target_labor_mask": {
-                    "description": "目标分工掩码\n@example 5",
+                    "description": "目标分工掩码\n@Example 5",
                     "allOf": [
                         {
                             "$ref": "#/definitions/services.LaborMask"
@@ -944,7 +1008,7 @@
                     ]
                 },
                 "target_project_id": {
-                    "description": "目标项目 ID\n@example 114514",
+                    "description": "目标项目 ID\n@Example 114514",
                     "type": "integer"
                 }
             }
@@ -990,15 +1054,15 @@
             ],
             "properties": {
                 "description": {
-                    "description": "工作集描述\n@example 这是一个测试工作集",
+                    "description": "工作集描述\n@Example 这是一个测试工作集",
                     "type": "string"
                 },
                 "name": {
-                    "description": "工作集名称\n@example C105",
+                    "description": "工作集名称\n@Example C105",
                     "type": "string"
                 },
                 "team_id": {
-                    "description": "所属团队 ID\n@example 114514",
+                    "description": "所属团队 ID\n@Example 114514",
                     "type": "integer"
                 }
             }
@@ -1019,27 +1083,27 @@
             "type": "object",
             "properties": {
                 "id": {
-                    "description": "邀请 ID\n@example 123456",
+                    "description": "邀请 ID\n@Example 123456",
                     "type": "integer"
                 },
                 "invitee_member_id": {
-                    "description": "接收者成员 ID\n@example 123456",
+                    "description": "接收者成员 ID\n@Example 123456",
                     "type": "integer"
                 },
                 "invitee_nickname": {
-                    "description": "接收者成员昵称\n@example [influ3nza]翻校",
+                    "description": "接收者成员昵称\n@Example [influ3nza]翻校",
                     "type": "string"
                 },
                 "invitor_member_id": {
-                    "description": "邀请者成员 ID\n@example 654321",
+                    "description": "邀请者成员 ID\n@Example 654321",
                     "type": "integer"
                 },
                 "invitor_nickname": {
-                    "description": "邀请者成员昵称\n@example [influ3nza]翻校",
+                    "description": "邀请者成员昵称\n@Example [influ3nza]翻校",
                     "type": "string"
                 },
                 "target_labor_mask": {
-                    "description": "目标分工掩码\n@example 5",
+                    "description": "目标分工掩码\n@Example 5",
                     "allOf": [
                         {
                             "$ref": "#/definitions/handlers.LaborMask"
@@ -1047,15 +1111,15 @@
                     ]
                 },
                 "target_project_id": {
-                    "description": "目标项目 ID\n@example 114514",
+                    "description": "目标项目 ID\n@Example 114514",
                     "type": "integer"
                 },
                 "target_project_name": {
-                    "description": "目标项目名称\n@example C105",
+                    "description": "目标项目名称\n@Example C105",
                     "type": "string"
                 },
                 "time": {
-                    "description": "邀请时间\n@example \"2023-10-01 12:00:00\"",
+                    "description": "邀请时间\n@Example \"2023-10-01 12:00:00\"",
                     "type": "string"
                 }
             }
@@ -1161,15 +1225,15 @@
             ],
             "properties": {
                 "accept": {
-                    "description": "是否接受申请\n@example true",
+                    "description": "是否接受申请\n@Example true",
                     "type": "boolean"
                 },
                 "application_id": {
-                    "description": "申请 ID\n@example 789012",
+                    "description": "申请 ID\n@Example 789012",
                     "type": "integer"
                 },
                 "processor_member_id": {
-                    "description": "处理者成员 ID\n@example 445566",
+                    "description": "处理者成员 ID\n@Example 445566",
                     "type": "integer"
                 }
             }
@@ -1183,15 +1247,15 @@
             ],
             "properties": {
                 "accept": {
-                    "description": "是否接受邀请\n@example false",
+                    "description": "是否接受邀请\n@Example false",
                     "type": "boolean"
                 },
                 "invitation_id": {
-                    "description": "邀请 ID\n@example 123456",
+                    "description": "邀请 ID\n@Example 123456",
                     "type": "integer"
                 },
                 "processor_member_id": {
-                    "description": "处理者成员 ID\n@example 654321",
+                    "description": "处理者成员 ID\n@Example 654321",
                     "type": "integer"
                 }
             }
@@ -1264,19 +1328,19 @@
             "type": "object",
             "properties": {
                 "description": {
-                    "description": "汉化组描述\n@example 这是一个测试汉化组",
+                    "description": "汉化组描述\n@Example 这是一个测试汉化组",
                     "type": "string"
                 },
                 "id": {
-                    "description": "汉化组 ID\n@example 114514",
+                    "description": "汉化组 ID\n@Example 114514",
                     "type": "integer"
                 },
                 "moetran_id": {
-                    "description": "汉化组对应的龙译 ID\n@example 64aac7d91b3",
+                    "description": "汉化组对应的龙译 ID\n@Example 64aac7d91b3",
                     "type": "string"
                 },
                 "name": {
-                    "description": "汉化组名称\n@example 白杨汉化组",
+                    "description": "汉化组名称\n@Example 白杨汉化组",
                     "type": "string"
                 }
             }
@@ -1293,7 +1357,7 @@
                     "type": "integer"
                 },
                 "status": {
-                    "description": "项目状态，使用位掩码表示，不使用的未应当使用 0b11 填充\n@example 0b11111011",
+                    "description": "项目状态，使用位掩码表示，不使用的未应当使用 0b11 填充\n@Example 0b11111011",
                     "type": "integer"
                 },
                 "title": {
@@ -1306,11 +1370,11 @@
             "type": "object",
             "properties": {
                 "email": {
-                    "description": "邮箱\n@example 1919810@163.com",
+                    "description": "邮箱\n@Example 1919810@163.com",
                     "type": "string"
                 },
                 "id": {
-                    "description": "用户 ID\n@example 123456",
+                    "description": "用户 ID\n@Example 123456",
                     "type": "integer"
                 },
                 "members": {
@@ -1321,19 +1385,19 @@
                     }
                 },
                 "nickname": {
-                    "description": "昵称\n@example [influ3nza]翻校",
+                    "description": "昵称\n@Example [influ3nza]翻校",
                     "type": "string"
                 },
                 "poplar_is_admin": {
-                    "description": "是否是 panel 管理员\n@example true",
+                    "description": "是否是 panel 管理员\n@Example true",
                     "type": "boolean"
                 },
                 "qq_number": {
-                    "description": "QQ 号\n@example 123456789",
+                    "description": "QQ 号\n@Example 123456789",
                     "type": "integer"
                 },
                 "remark": {
-                    "description": "补充备注\n@example 这是一个测试用户",
+                    "description": "补充备注\n@Example 这是一个测试用户",
                     "type": "string"
                 }
             }
@@ -1342,23 +1406,23 @@
             "type": "object",
             "properties": {
                 "created_at": {
-                    "description": "工作集的创建时间\n@example \"2023-10-01 12:00:00\"",
+                    "description": "工作集的创建时间\n@Example \"2023-10-01 12:00:00\"",
                     "type": "string"
                 },
                 "description": {
-                    "description": "工作集描述\n@example 这是一个测试工作集",
+                    "description": "工作集描述\n@Example 这是一个测试工作集",
                     "type": "string"
                 },
                 "id": {
-                    "description": "工作集 ID\n@example 123456",
+                    "description": "工作集 ID\n@Example 123456",
                     "type": "integer"
                 },
                 "moetran_id": {
-                    "description": "工作集对应的龙译 ID\n@example 64aac7d91b3",
+                    "description": "工作集对应的龙译 ID\n@Example 64aac7d91b3",
                     "type": "string"
                 },
                 "name": {
-                    "description": "工作集名称\n@example C105",
+                    "description": "工作集名称\n@Example C105",
                     "type": "string"
                 }
             }

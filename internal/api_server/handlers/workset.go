@@ -10,32 +10,24 @@ import (
 // WorksetInfo 定义了工作集的基本信息 DTO
 type WorksetInfo struct {
 	// 工作集 ID
-	// @example 123456
 	Id uint `json:"id"`
 	// 工作集名称
-	// @example C105
 	Name string `json:"name"`
 	// 工作集描述
-	// @example 这是一个测试工作集
 	Description string `json:"description,omitempty"`
 	// 工作集对应的龙译 ID
-	// @example 64aac7d91b3
 	MoetranId string `json:"moetran_id,omitempty"`
 	// 工作集的创建时间
-	// @example "2023-10-01 12:00:00"
 	CreatedAt string `json:"created_at"`
 }
 
 // CreateWorksetRequest 定义了创建工作集的请求参数
 type CreateWorksetRequest struct {
 	// 工作集名称
-	// @example C105
 	Name string `json:"name" validate:"required"`
 	// 工作集描述
-	// @example 这是一个测试工作集
 	Description string `json:"description"`
 	// 所属团队 ID
-	// @example 114514
 	TeamId uint `json:"team_id" validate:"required"`
 }
 

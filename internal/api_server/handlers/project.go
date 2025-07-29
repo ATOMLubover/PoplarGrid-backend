@@ -46,7 +46,6 @@ type UpdateProjectRequest struct {
 	// 项目描述
 	Description string `json:"description"`
 	// 项目状态，使用位掩码表示，不使用的未应当使用 0b11 填充
-	// @example 0b11111011
 	Status Status `json:"status"`
 }
 

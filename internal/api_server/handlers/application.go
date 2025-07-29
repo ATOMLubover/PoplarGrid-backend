@@ -12,57 +12,42 @@ import (
 // ApplicationInfo 定义了申请的基本信息 DTO
 type ApplicationInfo struct {
 	// 申请 ID
-	// @example 789012
 	Id uint `json:"id"`
 	// 申请时间
-	// @example "2023-11-01 10:00:00"
 	Time string `json:"time"`
 	// 申请者成员 ID
-	// @example 112233
 	ApplicantMemberId uint `json:"applicant_member_id"`
 	// 申请者成员昵称
-	// @example [coder_cat]小猫
 	ApplicantNickname string `json:"applicant_nickname"`
 	// 处理者成员 ID
-	// @example 445566
 	ProcessorMemberId uint `json:"processor_member_id"`
 	// 处理者成员昵称
-	// @example [pm_king]老王
 	ProcessorNickname string `json:"processor_nickname"`
 	// 目标项目 ID
-	// @example 98765
 	TargetProjectId uint `json:"target_project_id"`
 	// 目标项目名称
-	// @example S001
 	TargetProjectName string `json:"target_project_name"`
 	// 申请分工掩码
-	// @example 3
 	TargetLaborMask LaborMask `json:"target_labor_mask"`
 }
 
 // CreateApplicationRequest 定义了创建申请的请求参数
 type CreateApplicationRequest struct {
 	// 申请者成员 ID
-	// @example 112233
 	ApplicantMemberId uint `json:"applicant_member_id" binding:"required"`
 	// 目标项目 ID
-	// @example 98765
 	TargetProjectId uint `json:"target_project_id" binding:"required"`
 	// 申请分工掩码
-	// @example 3
 	TargetLaborMask services.LaborMask `json:"target_labor_mask" binding:"required"`
 }
 
 // ProcessApplicationRequest 定义了处理申请的请求参数
 type ProcessApplicationRequest struct {
 	// 申请 ID
-	// @example 789012
 	ApplicationId uint `json:"application_id" binding:"required"`
 	// 处理者成员 ID
-	// @example 445566
 	ProcessorMemberId uint `json:"processor_member_id" binding:"required"`
 	// 是否接受申请
-	// @example true
 	Accept bool `json:"accept" binding:"required"`
 }
 
@@ -86,13 +71,13 @@ func (h *ApplicationHandler) BeforeActivation(b mvc.BeforeActivation) {
 
 // List godoc
 // @Summary 	获取申请列表
-// @Description 获取当前用户的申请列表
+// @Description 获取当前用户的申请列表，根据参数的选择来确定到底是返回申请者的申请还是处理者的申请
 //
-// @Params page_serial query int false "页码，默认值为 1"
-// @Params page_size query int false "每页数量，默认值为 10"
-// @Params applicant_member_id query int false "申请人的成员 ID，与处理者的成员 ID 只能二选一"
-// @Params processor_member_id query int false "处理者的成员 ID，与申请人的成员 ID 只能二选一"
-// @Params target_project_id query int false "目标项目 ID，如果需要筛选特定项目的申请，可以使用此参数"
+// @Param 		page_serial query int false "页码，默认值为 1"
+// @Param 		page_size query int false "每页数量，默认值为 10"
+// @Param       applicant_member_id query int false "申请人的成员 ID，与处理者的成员 ID 只能二选一"
+// @Param       processor_member_id query int false "处理者的成员 ID，与申请人的成员 ID 只能二选一"
+// @Param       target_project_id query int false "目标项目 ID，如果需要筛选特定项目的申请，可以使用此参数"
 //
 // @Tags 		application
 // @Produce 	json

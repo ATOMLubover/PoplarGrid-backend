@@ -12,60 +12,44 @@ import (
 // InvitationInfo 定义了邀请的基本信息 DTO
 type InvitationInfo struct {
 	// 邀请 ID
-	// @example 123456
 	Id uint `json:"id"`
 	// 邀请时间
-	// @example "2023-10-01 12:00:00"
 	Time string `json:"time"`
 	// 邀请者成员 ID
-	// @example 654321
 	InvitorMemberId uint `json:"invitor_member_id"`
 	// 邀请者成员昵称
-	// @example [influ3nza]翻校
 	InvitorNickname string `json:"invitor_nickname"`
 	// 接收者成员 ID
-	// @example 123456
 	InviteeMemberId uint `json:"invitee_member_id"`
 	// 接收者成员昵称
-	// @example [influ3nza]翻校
 	InviteeNickname string `json:"invitee_nickname"`
 	// 目标项目 ID
-	// @example 114514
 	TargetProjectId uint `json:"target_project_id"`
 	// 目标项目名称
-	// @example C105
 	TargetProjectName string `json:"target_project_name"`
 	// 目标分工掩码
-	// @example 5
 	TargetLaborMask LaborMask `json:"target_labor_mask"`
 }
 
 // CreateInvitationRequest 定义了创建邀请的请求参数
 type CreateInvitationRequest struct {
 	// 邀请者成员 ID
-	// @example 654321
 	InvitorMemberId uint `json:"invitor_member_id" binding:"required"`
 	// 接收者成员 ID
-	// @example 123456
 	InviteeMemberId uint `json:"invitee_member_id" bindging:"required"`
 	// 目标项目 ID
-	// @example 114514
 	TargetProjectId uint `json:"target_project_id" binding:"required"`
 	// 目标分工掩码
-	// @example 5
 	TargetLaborMask services.LaborMask `json:"target_labor_mask" binding:"required"`
 }
 
 // ProcessInvitationRequest 定义了处理邀请的请求参数
 type ProcessInvitationRequest struct {
 	// 邀请 ID
-	// @example 123456
 	InvitationId uint `json:"invitation_id" binding:"required"`
 	// 处理者成员 ID
-	// @example 654321
 	ProcessorMemberId uint `json:"processor_member_id" binding:"required"`
 	// 是否接受邀请
-	// @example false
 	Accept bool `json:"accept" binding:"required"`
 }
 
@@ -90,13 +74,13 @@ func (h *InvitationHandler) BeforeActivation(b mvc.BeforeActivation) {
 
 // List godoc
 // @Summary 	获取邀请列表
-// @Description 获取当前用户的邀请列表
+// @Description 获取当前用户的邀请列表，通过参数的选择来确定到底是返回邀请者的邀请还是被邀请者的邀请
 //
-// @Params page_serial query int false "页码，默认值为 1"
-// @Params page_size query int false "每页数量，默认值为 10"
-// @Params invitor_member_id query int false "邀请人的成员 ID，与被邀请人的成员 ID 只能二选一"
-// @Params invitee_member_id query int false "被邀请人的成员 ID，与邀请人的成员 ID 只能二选一"
-// @Params target_project_id query int false "目标项目 ID，如果需要筛选特定项目的邀请，可以使用此参数"
+// @Param 		page_serial query int false "页码，默认值为 1"
+// @Param 		page_size query int false "每页数量，默认值为 10"
+// @Param 		invitor_member_id query int false "邀请人的成员 ID，与被邀请人的成员 ID 只能二选一"
+// @Param 		invitee_member_id query int false "被邀请人的成员 ID，与邀请人的成员 ID 只能二选一"
+// @Param 		target_project_id query int false "目标项目 ID，如果需要筛选特定项目的邀请，可以使用此参数"
 //
 // @Tags 		invitation
 // @Produce 	json

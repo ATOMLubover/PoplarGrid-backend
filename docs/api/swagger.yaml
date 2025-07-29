@@ -4,48 +4,48 @@ definitions:
       applicant_member_id:
         description: |-
           申请者成员 ID
-          @example 112233
+          @Example 112233
         type: integer
       applicant_nickname:
         description: |-
           申请者成员昵称
-          @example [coder_cat]小猫
+          @Example [coder_cat]小猫
         type: string
       id:
         description: |-
           申请 ID
-          @example 789012
+          @Example 789012
         type: integer
       processor_member_id:
         description: |-
           处理者成员 ID
-          @example 445566
+          @Example 445566
         type: integer
       processor_nickname:
         description: |-
           处理者成员昵称
-          @example [pm_king]老王
+          @Example [pm_king]老王
         type: string
       target_labor_mask:
         allOf:
         - $ref: '#/definitions/handlers.LaborMask'
         description: |-
           申请分工掩码
-          @example 3
+          @Example 3
       target_project_id:
         description: |-
           目标项目 ID
-          @example 98765
+          @Example 98765
         type: integer
       target_project_name:
         description: |-
           目标项目名称
-          @example S001
+          @Example S001
         type: string
       time:
         description: |-
           申请时间
-          @example "2023-11-01 10:00:00"
+          @Example "2023-11-01 10:00:00"
         type: string
     type: object
   handlers.CreateApplicationRequest:
@@ -53,18 +53,18 @@ definitions:
       applicant_member_id:
         description: |-
           申请者成员 ID
-          @example 112233
+          @Example 112233
         type: integer
       target_labor_mask:
         allOf:
         - $ref: '#/definitions/services.LaborMask'
         description: |-
           申请分工掩码
-          @example 3
+          @Example 3
       target_project_id:
         description: |-
           目标项目 ID
-          @example 98765
+          @Example 98765
         type: integer
     required:
     - applicant_member_id
@@ -76,23 +76,23 @@ definitions:
       invitee_member_id:
         description: |-
           接收者成员 ID
-          @example 123456
+          @Example 123456
         type: integer
       invitor_member_id:
         description: |-
           邀请者成员 ID
-          @example 654321
+          @Example 654321
         type: integer
       target_labor_mask:
         allOf:
         - $ref: '#/definitions/services.LaborMask'
         description: |-
           目标分工掩码
-          @example 5
+          @Example 5
       target_project_id:
         description: |-
           目标项目 ID
-          @example 114514
+          @Example 114514
         type: integer
     required:
     - invitor_member_id
@@ -128,17 +128,17 @@ definitions:
       description:
         description: |-
           工作集描述
-          @example 这是一个测试工作集
+          @Example 这是一个测试工作集
         type: string
       name:
         description: |-
           工作集名称
-          @example C105
+          @Example C105
         type: string
       team_id:
         description: |-
           所属团队 ID
-          @example 114514
+          @Example 114514
         type: integer
     required:
     - name
@@ -157,48 +157,48 @@ definitions:
       id:
         description: |-
           邀请 ID
-          @example 123456
+          @Example 123456
         type: integer
       invitee_member_id:
         description: |-
           接收者成员 ID
-          @example 123456
+          @Example 123456
         type: integer
       invitee_nickname:
         description: |-
           接收者成员昵称
-          @example [influ3nza]翻校
+          @Example [influ3nza]翻校
         type: string
       invitor_member_id:
         description: |-
           邀请者成员 ID
-          @example 654321
+          @Example 654321
         type: integer
       invitor_nickname:
         description: |-
           邀请者成员昵称
-          @example [influ3nza]翻校
+          @Example [influ3nza]翻校
         type: string
       target_labor_mask:
         allOf:
         - $ref: '#/definitions/handlers.LaborMask'
         description: |-
           目标分工掩码
-          @example 5
+          @Example 5
       target_project_id:
         description: |-
           目标项目 ID
-          @example 114514
+          @Example 114514
         type: integer
       target_project_name:
         description: |-
           目标项目名称
-          @example C105
+          @Example C105
         type: string
       time:
         description: |-
           邀请时间
-          @example "2023-10-01 12:00:00"
+          @Example "2023-10-01 12:00:00"
         type: string
     type: object
   handlers.JSONMap:
@@ -271,17 +271,17 @@ definitions:
       accept:
         description: |-
           是否接受申请
-          @example true
+          @Example true
         type: boolean
       application_id:
         description: |-
           申请 ID
-          @example 789012
+          @Example 789012
         type: integer
       processor_member_id:
         description: |-
           处理者成员 ID
-          @example 445566
+          @Example 445566
         type: integer
     required:
     - accept
@@ -293,17 +293,17 @@ definitions:
       accept:
         description: |-
           是否接受邀请
-          @example false
+          @Example false
         type: boolean
       invitation_id:
         description: |-
           邀请 ID
-          @example 123456
+          @Example 123456
         type: integer
       processor_member_id:
         description: |-
           处理者成员 ID
-          @example 654321
+          @Example 654321
         type: integer
     required:
     - accept
@@ -359,22 +359,22 @@ definitions:
       description:
         description: |-
           汉化组描述
-          @example 这是一个测试汉化组
+          @Example 这是一个测试汉化组
         type: string
       id:
         description: |-
           汉化组 ID
-          @example 114514
+          @Example 114514
         type: integer
       moetran_id:
         description: |-
           汉化组对应的龙译 ID
-          @example 64aac7d91b3
+          @Example 64aac7d91b3
         type: string
       name:
         description: |-
           汉化组名称
-          @example 白杨汉化组
+          @Example 白杨汉化组
         type: string
     type: object
   handlers.UpdateProjectRequest:
@@ -388,7 +388,7 @@ definitions:
       status:
         description: |-
           项目状态，使用位掩码表示，不使用的未应当使用 0b11 填充
-          @example 0b11111011
+          @Example 0b11111011
         type: integer
       title:
         description: 项目标题
@@ -399,12 +399,12 @@ definitions:
       email:
         description: |-
           邮箱
-          @example 1919810@163.com
+          @Example 1919810@163.com
         type: string
       id:
         description: |-
           用户 ID
-          @example 123456
+          @Example 123456
         type: integer
       members:
         description: 在各个汉化组中的成员信息
@@ -414,22 +414,22 @@ definitions:
       nickname:
         description: |-
           昵称
-          @example [influ3nza]翻校
+          @Example [influ3nza]翻校
         type: string
       poplar_is_admin:
         description: |-
           是否是 panel 管理员
-          @example true
+          @Example true
         type: boolean
       qq_number:
         description: |-
           QQ 号
-          @example 123456789
+          @Example 123456789
         type: integer
       remark:
         description: |-
           补充备注
-          @example 这是一个测试用户
+          @Example 这是一个测试用户
         type: string
     type: object
   handlers.WorksetInfo:
@@ -437,27 +437,27 @@ definitions:
       created_at:
         description: |-
           工作集的创建时间
-          @example "2023-10-01 12:00:00"
+          @Example "2023-10-01 12:00:00"
         type: string
       description:
         description: |-
           工作集描述
-          @example 这是一个测试工作集
+          @Example 这是一个测试工作集
         type: string
       id:
         description: |-
           工作集 ID
-          @example 123456
+          @Example 123456
         type: integer
       moetran_id:
         description: |-
           工作集对应的龙译 ID
-          @example 64aac7d91b3
+          @Example 64aac7d91b3
         type: string
       name:
         description: |-
           工作集名称
-          @example C105
+          @Example C105
         type: string
     type: object
   handlers.WorksetStats:
@@ -548,7 +548,28 @@ info:
 paths:
   /api/applications:
     get:
-      description: 获取当前用户的申请列表
+      description: 获取当前用户的申请列表，根据参数的选择来确定到底是返回申请者的申请还是处理者的申请
+      parameters:
+      - description: 页码，默认值为 1
+        in: query
+        name: page_serial
+        type: integer
+      - description: 每页数量，默认值为 10
+        in: query
+        name: page_size
+        type: integer
+      - description: 申请人的成员 ID，与处理者的成员 ID 只能二选一
+        in: query
+        name: applicant_member_id
+        type: integer
+      - description: 处理者的成员 ID，与申请人的成员 ID 只能二选一
+        in: query
+        name: processor_member_id
+        type: integer
+      - description: 目标项目 ID，如果需要筛选特定项目的申请，可以使用此参数
+        in: query
+        name: target_project_id
+        type: integer
       produces:
       - application/json
       responses:
@@ -635,7 +656,28 @@ paths:
       - application
   /api/invitations:
     get:
-      description: 获取当前用户的邀请列表
+      description: 获取当前用户的邀请列表，通过参数的选择来确定到底是返回邀请者的邀请还是被邀请者的邀请
+      parameters:
+      - description: 页码，默认值为 1
+        in: query
+        name: page_serial
+        type: integer
+      - description: 每页数量，默认值为 10
+        in: query
+        name: page_size
+        type: integer
+      - description: 邀请人的成员 ID，与被邀请人的成员 ID 只能二选一
+        in: query
+        name: invitor_member_id
+        type: integer
+      - description: 被邀请人的成员 ID，与邀请人的成员 ID 只能二选一
+        in: query
+        name: invitee_member_id
+        type: integer
+      - description: 目标项目 ID，如果需要筛选特定项目的邀请，可以使用此参数
+        in: query
+        name: target_project_id
+        type: integer
       produces:
       - application/json
       responses:
