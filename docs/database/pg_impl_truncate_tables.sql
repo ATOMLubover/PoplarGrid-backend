@@ -26,10 +26,4 @@ BEGIN
     END LOOP;
 END $$;
 
-DROP TRIGGER IF EXISTS trg_create_workset_project_sequence ON worksets;
-DROP FUNCTION IF EXISTS create_workset_project_sequence();
-
-DROP TRIGGER IF EXISTS trg_set_project_workset_index ON projects;
-DROP FUNCTION IF EXISTS set_project_workset_index();
-
 COMMIT;

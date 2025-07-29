@@ -264,7 +264,7 @@ func (s *worksetServiceImpl) CreateWorkset(params *CreateWorksetParams) (*Workse
 		}
 
 		// 调用龙译创建作品集
-		projSetInfo, err := s.apiClient.CreateProjectSet(&apiclient.CreateProjectSetInfo{
+		projSetInfo, err := s.apiClient.CreateProjectSet(&apiclient.CreateProjectSetParams{
 			Name:          params.Name,
 			MoetranAuth:   member.FkUser.MoetranJwt,
 			MoetranTeamId: team.MoetranId,

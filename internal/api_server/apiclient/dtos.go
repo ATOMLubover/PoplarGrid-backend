@@ -44,8 +44,14 @@ const (
 	LangEnglish string = "en" // 英语
 )
 
-// CreateProjectInfo 定义了创建项目的基本信息
-type CreateProjectInfo struct {
+// GetProjectParams 定义了获取项目的参数
+type GetProjectParams struct {
+	MoetranAuth string // 龙译 JWT
+	ProjectId   string // 尨译项目 ID
+}
+
+// CreateProjectParams 定义了创建项目的基本信息
+type CreateProjectParams struct {
 	MoetranAuth string // 龙译 JWT
 
 	Title       string // 项目标题
@@ -84,8 +90,8 @@ type moetranCreateProjectResponse struct {
 	} `json:"project"` // 项目详情
 }
 
-// CreateProjectSetInfo 定义了创建项目集的基本信息
-type CreateProjectSetInfo struct {
+// CreateProjectSetParams 定义了创建项目集的基本信息
+type CreateProjectSetParams struct {
 	MoetranAuth string // 龙译 JWT
 
 	MoetranTeamId string // 龙译团队 ID
@@ -105,8 +111,8 @@ type moetranCreateProjectSetResponse struct {
 	} `json:"project_set"` // 项目集详情
 }
 
-// InviteMemberInfo 定义了邀请成员加入特定项目的基本信息
-type InviteMemberInfo struct {
+// InviteMemberParams 定义了邀请成员加入特定项目的基本信息
+type InviteMemberParams struct {
 	MoetranAuth string // 龙译 JWT
 
 	MoetranProjectId string      // 龙译项目 ID
@@ -124,4 +130,25 @@ type moetranInviteMemberRequest struct {
 // moetranInviteMemberResponse 定义了邀请成员的响应结构体
 type moetranInviteMemberResponse struct {
 	Message string `json:"message"` // 响应消息
+}
+
+// LoginParams 定义了登录龙译账号的参数
+type LoginParams struct {
+	Email       string // 龙译账号邮箱
+	Password    string // 龙译账号密码
+	Captcha     string // 验证码
+	CaptchaInfo string // 验证码信息
+}
+
+// moetranLoginRequest 定义了登录请求的结构体
+type moetranLoginRequest struct {
+	Email       string `json:"email"`        // 账号邮箱
+	Password    string `json:"password"`     // 账号密码
+	Captcha     string `json:"captcha"`      // 验证码
+	CaptchaInfo string `json:"captcha_info"` // 验证码信息
+}
+
+// moetranLoginResponse 定义了登录响应的结构体
+type moetranLoginResponse struct {
+	Token string `json:"token"` // JWT token
 }

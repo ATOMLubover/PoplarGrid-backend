@@ -105,6 +105,12 @@ type ProjectListParams struct {
 	StatusMasks []ProjectStatus // 项目状态，默认值时忽略
 }
 
+// ProjectDetailParams 定义了获取项目详情的查询参数
+type ProjectDetailParams struct {
+	ProjectId uint // 项目 ID
+	UserId    uint // 用户 ID，用于调用龙译 API
+}
+
 // LaborInfo 定义了成员参与的分工信息
 type LaborInfo struct {
 	MemberId  uint      // 成员 ID
@@ -125,6 +131,7 @@ type ProjectInfo struct {
 	IsPublished   bool          // 是否已发布
 	AllowAutoJoin bool          // 是否允许自动加入
 	Labors        []*LaborInfo  // 成员参与的分工信息
+	MoetranInfo   string        // 尨译项目的信息，直接以 string 形式返回
 }
 
 // CreateProjectParams 定义了创建项目所需的信息
@@ -172,7 +179,7 @@ type ProjectService interface {
 	// GetProjects 获取指定条件下的项目列表
 	GetProjects(params *ProjectListParams) ([]*ProjectInfo, error)
 	// GetProjectDetail 获取指定项目的详细信息
-	GetProjectDetail(projectId uint) (*ProjectInfo, error)
+	GetProjectDetail(params *ProjectDetailParams) (*ProjectInfo, error)
 
 	// CreateProject 创建一个新的项目
 	CreateProject(params *CreateProjectParams) (*ProjectCreatedInfo, error)
@@ -355,9 +362,9 @@ func (s *projectServiceImpl) GetProjects(params *ProjectListParams) ([]*ProjectI
 }
 
 // GetProjectDetail 实现 ProjectService 接口的 GetProjectDetail 方法
-func (s *projectServiceImpl) GetProjectDetail(projectId uint) (*ProjectInfo, error) {
+func (s *projectServiceImpl) GetProjectDetail(params *ProjectDetailParams) (*ProjectInfo, error) {
 	// 查询项目的基本信息
-	projectPKey := models.PKey(projectId)
+	projectPKey := models.PKey(params.ProjectId)
 	projectSpec := &models.ProjectSpec{
 		Id: &projectPKey,
 	}
@@ -365,7 +372,7 @@ func (s *projectServiceImpl) GetProjectDetail(projectId uint) (*ProjectInfo, err
 	project, err := models.GetProject().SelectFirst(s.handle, projectSpec, nil)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			s.logger.Warn("GetProjectDetail 查询没有结果", slog.Uint64("projectId", uint64(projectId)))
+			s.logger.Warn("GetProjectDetail 查询没有结果", slog.Uint64("projectId", uint64(params.ProjectId)))
 			return nil, errors.New("没有找到对应的项目")
 		}
 		s.logger.Error("GetProjectDetail 查询项目详情失败", slog.Any("error", err))
@@ -384,6 +391,34 @@ func (s *projectServiceImpl) GetProjectDetail(projectId uint) (*ProjectInfo, err
 		IsPublished:   project.IsPublished,
 		AllowAutoJoin: project.AllowAutoJoin,
 	}
+
+	// 获取查询用户的龙译 JWT
+	userPKey := models.PKey(params.UserId)
+	userSpec := &models.UserSpec{
+		Id: &userPKey,
+	}
+	userFields := &models.UserFields{
+		Id:         true,
+		MoetranJwt: true,
+	}
+
+	user, err := models.GetUser().SelectFirst(s.handle, userSpec, userFields)
+	if err != nil {
+		s.logger.Error("GetProjectDetail 查询用户信息失败", slog.Any("error", err))
+		return nil, errors.New("查询用户信息失败")
+	}
+
+	// 查询龙译的项目详情
+	moetranInfo, err := s.apiClient.GetProjectInfo(&apiclient.GetProjectParams{
+		MoetranAuth: user.MoetranJwt,
+		ProjectId:   project.MoetranId,
+	})
+	if err != nil {
+		s.logger.Error("GetProjectDetail 调用龙译 API 获取项目详情失败", slog.Any("error", err))
+		return nil, errors.New("调用龙译 API 获取项目详情失败")
+	}
+
+	projectInfo.MoetranInfo = moetranInfo
 
 	// 再查询响应的成员分工信息
 	laborSpec := &models.LaborSpec{
@@ -711,7 +746,7 @@ func (s *projectServiceImpl) buildMoetranProjInfo(
 	info *CreateProjectParams,
 	project *models.Project,
 	member *models.Member,
-) *apiclient.CreateProjectInfo {
+) *apiclient.CreateProjectParams {
 	// 组装尨译的 title
 	title := fmt.Sprintf("[%d-%d]%s",
 		project.WorksetId, project.WorksetIndex, project.Title)
@@ -729,7 +764,7 @@ func (s *projectServiceImpl) buildMoetranProjInfo(
 		applicationCheckType = apiclient.APPLI_ADMIN_CHECK
 	}
 
-	return &apiclient.CreateProjectInfo{
+	return &apiclient.CreateProjectParams{
 		MoetranAuth: member.FkUser.MoetranJwt,
 
 		Title:            title,

@@ -390,7 +390,7 @@ func (s *applicationServiceImpl) ProcessApplication(params *ProcessApplicationPa
 			return errors.New("查询处理者成员信息失败"), nil
 		}
 
-		inviteInfo := &apiclient.InviteMemberInfo{
+		inviteInfo := &apiclient.InviteMemberParams{
 			MoetranAuth:      processor.FkUser.MoetranJwt,
 			MoetranProjectId: application.FkProject.MoetranId,
 			MoetranInviteeID: applicant.FkUser.MoetranId,

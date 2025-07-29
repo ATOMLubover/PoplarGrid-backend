@@ -19,7 +19,7 @@ type UserInfo struct {
 	// QQ 号
 	QQNumber int `json:"qq_number,omitempty"`
 	// 是否是 panel 管理员
-	PoplarIsAdmin bool `json:"poplar_is_admin"`
+	IsAdmin bool `json:"is_admin"`
 	// 补充备注
 	Remark string `json:"remark,omitempty"`
 	// 在各个汉化组中的成员信息
@@ -112,11 +112,11 @@ func (h *UserHandler) Detail(ctx iris.Context) {
 
 	// 将服务层的 UserInfo 转换为 DTO
 	ctx.JSON(UserInfo{
-		Id:            user.Id,
-		Nickname:      user.Nickname,
-		Email:         user.Email,
-		QQNumber:      user.QQNumber,
-		PoplarIsAdmin: user.IsAdmin,
-		Remark:        user.Remark,
+		Id:       user.Id,
+		Nickname: user.Nickname,
+		Email:    user.Email,
+		QQNumber: user.QQNumber,
+		IsAdmin:  user.IsAdmin,
+		Remark:   user.Remark,
 	})
 }

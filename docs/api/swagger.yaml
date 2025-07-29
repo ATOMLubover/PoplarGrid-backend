@@ -2,69 +2,45 @@ definitions:
   handlers.ApplicationInfo:
     properties:
       applicant_member_id:
-        description: |-
-          申请者成员 ID
-          @Example 112233
+        description: 申请者成员 ID
         type: integer
       applicant_nickname:
-        description: |-
-          申请者成员昵称
-          @Example [coder_cat]小猫
+        description: 申请者成员昵称
         type: string
       id:
-        description: |-
-          申请 ID
-          @Example 789012
+        description: 申请 ID
         type: integer
       processor_member_id:
-        description: |-
-          处理者成员 ID
-          @Example 445566
+        description: 处理者成员 ID
         type: integer
       processor_nickname:
-        description: |-
-          处理者成员昵称
-          @Example [pm_king]老王
+        description: 处理者成员昵称
         type: string
       target_labor_mask:
         allOf:
         - $ref: '#/definitions/handlers.LaborMask'
-        description: |-
-          申请分工掩码
-          @Example 3
+        description: 申请分工掩码
       target_project_id:
-        description: |-
-          目标项目 ID
-          @Example 98765
+        description: 目标项目 ID
         type: integer
       target_project_name:
-        description: |-
-          目标项目名称
-          @Example S001
+        description: 目标项目名称
         type: string
       time:
-        description: |-
-          申请时间
-          @Example "2023-11-01 10:00:00"
+        description: 申请时间
         type: string
     type: object
   handlers.CreateApplicationRequest:
     properties:
       applicant_member_id:
-        description: |-
-          申请者成员 ID
-          @Example 112233
+        description: 申请者成员 ID
         type: integer
       target_labor_mask:
         allOf:
         - $ref: '#/definitions/services.LaborMask'
-        description: |-
-          申请分工掩码
-          @Example 3
+        description: 申请分工掩码
       target_project_id:
-        description: |-
-          目标项目 ID
-          @Example 98765
+        description: 目标项目 ID
         type: integer
     required:
     - applicant_member_id
@@ -74,25 +50,17 @@ definitions:
   handlers.CreateInvitationRequest:
     properties:
       invitee_member_id:
-        description: |-
-          接收者成员 ID
-          @Example 123456
+        description: 接收者成员 ID
         type: integer
       invitor_member_id:
-        description: |-
-          邀请者成员 ID
-          @Example 654321
+        description: 邀请者成员 ID
         type: integer
       target_labor_mask:
         allOf:
         - $ref: '#/definitions/services.LaborMask'
-        description: |-
-          目标分工掩码
-          @Example 5
+        description: 目标分工掩码
       target_project_id:
-        description: |-
-          目标项目 ID
-          @Example 114514
+        description: 目标项目 ID
         type: integer
     required:
     - invitor_member_id
@@ -126,19 +94,13 @@ definitions:
   handlers.CreateWorksetRequest:
     properties:
       description:
-        description: |-
-          工作集描述
-          @Example 这是一个测试工作集
+        description: 工作集描述
         type: string
       name:
-        description: |-
-          工作集名称
-          @Example C105
+        description: 工作集名称
         type: string
       team_id:
-        description: |-
-          所属团队 ID
-          @Example 114514
+        description: 所属团队 ID
         type: integer
     required:
     - name
@@ -155,50 +117,32 @@ definitions:
   handlers.InvitationInfo:
     properties:
       id:
-        description: |-
-          邀请 ID
-          @Example 123456
+        description: 邀请 ID
         type: integer
       invitee_member_id:
-        description: |-
-          接收者成员 ID
-          @Example 123456
+        description: 接收者成员 ID
         type: integer
       invitee_nickname:
-        description: |-
-          接收者成员昵称
-          @Example [influ3nza]翻校
+        description: 接收者成员昵称
         type: string
       invitor_member_id:
-        description: |-
-          邀请者成员 ID
-          @Example 654321
+        description: 邀请者成员 ID
         type: integer
       invitor_nickname:
-        description: |-
-          邀请者成员昵称
-          @Example [influ3nza]翻校
+        description: 邀请者成员昵称
         type: string
       target_labor_mask:
         allOf:
         - $ref: '#/definitions/handlers.LaborMask'
-        description: |-
-          目标分工掩码
-          @Example 5
+        description: 目标分工掩码
       target_project_id:
-        description: |-
-          目标项目 ID
-          @Example 114514
+        description: 目标项目 ID
         type: integer
       target_project_name:
-        description: |-
-          目标项目名称
-          @Example C105
+        description: 目标项目名称
         type: string
       time:
-        description: |-
-          邀请时间
-          @Example "2023-10-01 12:00:00"
+        description: 邀请时间
         type: string
     type: object
   handlers.JSONMap:
@@ -269,19 +213,13 @@ definitions:
   handlers.ProcessApplicationRequest:
     properties:
       accept:
-        description: |-
-          是否接受申请
-          @Example true
+        description: 是否接受申请
         type: boolean
       application_id:
-        description: |-
-          申请 ID
-          @Example 789012
+        description: 申请 ID
         type: integer
       processor_member_id:
-        description: |-
-          处理者成员 ID
-          @Example 445566
+        description: 处理者成员 ID
         type: integer
     required:
     - accept
@@ -291,19 +229,13 @@ definitions:
   handlers.ProcessInvitationRequest:
     properties:
       accept:
-        description: |-
-          是否接受邀请
-          @Example false
+        description: 是否接受邀请
         type: boolean
       invitation_id:
-        description: |-
-          邀请 ID
-          @Example 123456
+        description: 邀请 ID
         type: integer
       processor_member_id:
-        description: |-
-          处理者成员 ID
-          @Example 654321
+        description: 处理者成员 ID
         type: integer
     required:
     - accept
@@ -332,6 +264,9 @@ definitions:
       moetran_id:
         description: 龙译 ID
         type: string
+      moetran_project_info:
+        description: 尨译项目的信息，直接以 string 形式返回，后端不做解析
+        type: string
       status:
         description: 项目状态，使用位掩码表示
         type: integer
@@ -357,24 +292,16 @@ definitions:
   handlers.TeamInfo:
     properties:
       description:
-        description: |-
-          汉化组描述
-          @Example 这是一个测试汉化组
+        description: 汉化组描述
         type: string
       id:
-        description: |-
-          汉化组 ID
-          @Example 114514
+        description: 汉化组 ID
         type: integer
       moetran_id:
-        description: |-
-          汉化组对应的龙译 ID
-          @Example 64aac7d91b3
+        description: 汉化组对应的龙译 ID
         type: string
       name:
-        description: |-
-          汉化组名称
-          @Example 白杨汉化组
+        description: 汉化组名称
         type: string
     type: object
   handlers.UpdateProjectRequest:
@@ -386,9 +313,7 @@ definitions:
         description: 操作成员的 ID，即进行更新这个操作的成员 ID
         type: integer
       status:
-        description: |-
-          项目状态，使用位掩码表示，不使用的未应当使用 0b11 填充
-          @Example 0b11111011
+        description: 项目状态，使用位掩码表示，不使用的未应当使用 0b11 填充
         type: integer
       title:
         description: 项目标题
@@ -397,14 +322,10 @@ definitions:
   handlers.UserInfo:
     properties:
       email:
-        description: |-
-          邮箱
-          @Example 1919810@163.com
+        description: 邮箱
         type: string
       id:
-        description: |-
-          用户 ID
-          @Example 123456
+        description: 用户 ID
         type: integer
       members:
         description: 在各个汉化组中的成员信息
@@ -412,52 +333,34 @@ definitions:
           $ref: '#/definitions/handlers.MemberInfo'
         type: array
       nickname:
-        description: |-
-          昵称
-          @Example [influ3nza]翻校
+        description: 昵
         type: string
       poplar_is_admin:
-        description: |-
-          是否是 panel 管理员
-          @Example true
+        description: 是否是 panel 管理员
         type: boolean
       qq_number:
-        description: |-
-          QQ 号
-          @Example 123456789
+        description: QQ 号
         type: integer
       remark:
-        description: |-
-          补充备注
-          @Example 这是一个测试用户
+        description: 补充备注
         type: string
     type: object
   handlers.WorksetInfo:
     properties:
       created_at:
-        description: |-
-          工作集的创建时间
-          @Example "2023-10-01 12:00:00"
+        description: 工作集的创建时间
         type: string
       description:
-        description: |-
-          工作集描述
-          @Example 这是一个测试工作集
+        description: 工作集描述
         type: string
       id:
-        description: |-
-          工作集 ID
-          @Example 123456
+        description: 工作集 ID
         type: integer
       moetran_id:
-        description: |-
-          工作集对应的龙译 ID
-          @Example 64aac7d91b3
+        description: 工作集对应的龙译 ID
         type: string
       name:
-        description: |-
-          工作集名称
-          @Example C105
+        description: 工作集名称
         type: string
     type: object
   handlers.WorksetStats:

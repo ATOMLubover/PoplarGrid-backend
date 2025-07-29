@@ -8,7 +8,7 @@ import (
 )
 
 // 不对外暴露 JWT 的实现细节
-type sCustomClaims[T any] struct {
+type customClaims[T any] struct {
 	jwt.RegisteredClaims
 	Inner T
 }
@@ -37,7 +37,7 @@ func (f *CliamsFactory[T]) GenToken(item T) (string, error) {
 	now := time.Now()
 	expireAt := now.Add(f.ExpirationTime)
 
-	claims := sCustomClaims[T]{
+	claims := customClaims[T]{
 		Inner: item,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expireAt),
@@ -54,7 +54,7 @@ func (f *CliamsFactory[T]) GenToken(item T) (string, error) {
 func (f *CliamsFactory[T]) ParseToken(signed string) (*T, error) {
 	token, err := jwt.ParseWithClaims(
 		signed,
-		&sCustomClaims[T]{},
+		&customClaims[T]{},
 		func(token *jwt.Token) (any, error) {
 			return []byte(f.SecretKey), nil
 		},
@@ -63,7 +63,7 @@ func (f *CliamsFactory[T]) ParseToken(signed string) (*T, error) {
 		return nil, err
 	}
 
-	claims, ok := token.Claims.(*sCustomClaims[T])
+	claims, ok := token.Claims.(*customClaims[T])
 	if !ok || !token.Valid {
 		return nil, errors.New("token无法解析")
 	}

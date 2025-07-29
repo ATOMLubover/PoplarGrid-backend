@@ -916,27 +916,27 @@
             "type": "object",
             "properties": {
                 "applicant_member_id": {
-                    "description": "申请者成员 ID\n@Example 112233",
+                    "description": "申请者成员 ID",
                     "type": "integer"
                 },
                 "applicant_nickname": {
-                    "description": "申请者成员昵称\n@Example [coder_cat]小猫",
+                    "description": "申请者成员昵称",
                     "type": "string"
                 },
                 "id": {
-                    "description": "申请 ID\n@Example 789012",
+                    "description": "申请 ID",
                     "type": "integer"
                 },
                 "processor_member_id": {
-                    "description": "处理者成员 ID\n@Example 445566",
+                    "description": "处理者成员 ID",
                     "type": "integer"
                 },
                 "processor_nickname": {
-                    "description": "处理者成员昵称\n@Example [pm_king]老王",
+                    "description": "处理者成员昵称",
                     "type": "string"
                 },
                 "target_labor_mask": {
-                    "description": "申请分工掩码\n@Example 3",
+                    "description": "申请分工掩码",
                     "allOf": [
                         {
                             "$ref": "#/definitions/handlers.LaborMask"
@@ -944,15 +944,15 @@
                     ]
                 },
                 "target_project_id": {
-                    "description": "目标项目 ID\n@Example 98765",
+                    "description": "目标项目 ID",
                     "type": "integer"
                 },
                 "target_project_name": {
-                    "description": "目标项目名称\n@Example S001",
+                    "description": "目标项目名称",
                     "type": "string"
                 },
                 "time": {
-                    "description": "申请时间\n@Example \"2023-11-01 10:00:00\"",
+                    "description": "申请时间",
                     "type": "string"
                 }
             }
@@ -966,11 +966,11 @@
             ],
             "properties": {
                 "applicant_member_id": {
-                    "description": "申请者成员 ID\n@Example 112233",
+                    "description": "申请者成员 ID",
                     "type": "integer"
                 },
                 "target_labor_mask": {
-                    "description": "申请分工掩码\n@Example 3",
+                    "description": "申请分工掩码",
                     "allOf": [
                         {
                             "$ref": "#/definitions/services.LaborMask"
@@ -978,7 +978,7 @@
                     ]
                 },
                 "target_project_id": {
-                    "description": "目标项目 ID\n@Example 98765",
+                    "description": "目标项目 ID",
                     "type": "integer"
                 }
             }
@@ -992,15 +992,15 @@
             ],
             "properties": {
                 "invitee_member_id": {
-                    "description": "接收者成员 ID\n@Example 123456",
+                    "description": "接收者成员 ID",
                     "type": "integer"
                 },
                 "invitor_member_id": {
-                    "description": "邀请者成员 ID\n@Example 654321",
+                    "description": "邀请者成员 ID",
                     "type": "integer"
                 },
                 "target_labor_mask": {
-                    "description": "目标分工掩码\n@Example 5",
+                    "description": "目标分工掩码",
                     "allOf": [
                         {
                             "$ref": "#/definitions/services.LaborMask"
@@ -1008,7 +1008,7 @@
                     ]
                 },
                 "target_project_id": {
-                    "description": "目标项目 ID\n@Example 114514",
+                    "description": "目标项目 ID",
                     "type": "integer"
                 }
             }
@@ -1054,15 +1054,15 @@
             ],
             "properties": {
                 "description": {
-                    "description": "工作集描述\n@Example 这是一个测试工作集",
+                    "description": "工作集描述",
                     "type": "string"
                 },
                 "name": {
-                    "description": "工作集名称\n@Example C105",
+                    "description": "工作集名称",
                     "type": "string"
                 },
                 "team_id": {
-                    "description": "所属团队 ID\n@Example 114514",
+                    "description": "所属团队 ID",
                     "type": "integer"
                 }
             }
@@ -1083,27 +1083,27 @@
             "type": "object",
             "properties": {
                 "id": {
-                    "description": "邀请 ID\n@Example 123456",
+                    "description": "邀请 ID",
                     "type": "integer"
                 },
                 "invitee_member_id": {
-                    "description": "接收者成员 ID\n@Example 123456",
+                    "description": "接收者成员 ID",
                     "type": "integer"
                 },
                 "invitee_nickname": {
-                    "description": "接收者成员昵称\n@Example [influ3nza]翻校",
+                    "description": "接收者成员昵称",
                     "type": "string"
                 },
                 "invitor_member_id": {
-                    "description": "邀请者成员 ID\n@Example 654321",
+                    "description": "邀请者成员 ID",
                     "type": "integer"
                 },
                 "invitor_nickname": {
-                    "description": "邀请者成员昵称\n@Example [influ3nza]翻校",
+                    "description": "邀请者成员昵称",
                     "type": "string"
                 },
                 "target_labor_mask": {
-                    "description": "目标分工掩码\n@Example 5",
+                    "description": "目标分工掩码",
                     "allOf": [
                         {
                             "$ref": "#/definitions/handlers.LaborMask"
@@ -1111,15 +1111,15 @@
                     ]
                 },
                 "target_project_id": {
-                    "description": "目标项目 ID\n@Example 114514",
+                    "description": "目标项目 ID",
                     "type": "integer"
                 },
                 "target_project_name": {
-                    "description": "目标项目名称\n@Example C105",
+                    "description": "目标项目名称",
                     "type": "string"
                 },
                 "time": {
-                    "description": "邀请时间\n@Example \"2023-10-01 12:00:00\"",
+                    "description": "邀请时间",
                     "type": "string"
                 }
             }
@@ -1225,15 +1225,15 @@
             ],
             "properties": {
                 "accept": {
-                    "description": "是否接受申请\n@Example true",
+                    "description": "是否接受申请",
                     "type": "boolean"
                 },
                 "application_id": {
-                    "description": "申请 ID\n@Example 789012",
+                    "description": "申请 ID",
                     "type": "integer"
                 },
                 "processor_member_id": {
-                    "description": "处理者成员 ID\n@Example 445566",
+                    "description": "处理者成员 ID",
                     "type": "integer"
                 }
             }
@@ -1247,15 +1247,15 @@
             ],
             "properties": {
                 "accept": {
-                    "description": "是否接受邀请\n@Example false",
+                    "description": "是否接受邀请",
                     "type": "boolean"
                 },
                 "invitation_id": {
-                    "description": "邀请 ID\n@Example 123456",
+                    "description": "邀请 ID",
                     "type": "integer"
                 },
                 "processor_member_id": {
-                    "description": "处理者成员 ID\n@Example 654321",
+                    "description": "处理者成员 ID",
                     "type": "integer"
                 }
             }
@@ -1288,6 +1288,10 @@
                 },
                 "moetran_id": {
                     "description": "龙译 ID",
+                    "type": "string"
+                },
+                "moetran_project_info": {
+                    "description": "尨译项目的信息，直接以 string 形式返回，后端不做解析",
                     "type": "string"
                 },
                 "status": {
@@ -1328,19 +1332,19 @@
             "type": "object",
             "properties": {
                 "description": {
-                    "description": "汉化组描述\n@Example 这是一个测试汉化组",
+                    "description": "汉化组描述",
                     "type": "string"
                 },
                 "id": {
-                    "description": "汉化组 ID\n@Example 114514",
+                    "description": "汉化组 ID",
                     "type": "integer"
                 },
                 "moetran_id": {
-                    "description": "汉化组对应的龙译 ID\n@Example 64aac7d91b3",
+                    "description": "汉化组对应的龙译 ID",
                     "type": "string"
                 },
                 "name": {
-                    "description": "汉化组名称\n@Example 白杨汉化组",
+                    "description": "汉化组名称",
                     "type": "string"
                 }
             }
@@ -1357,7 +1361,7 @@
                     "type": "integer"
                 },
                 "status": {
-                    "description": "项目状态，使用位掩码表示，不使用的未应当使用 0b11 填充\n@Example 0b11111011",
+                    "description": "项目状态，使用位掩码表示，不使用的未应当使用 0b11 填充",
                     "type": "integer"
                 },
                 "title": {
@@ -1370,11 +1374,11 @@
             "type": "object",
             "properties": {
                 "email": {
-                    "description": "邮箱\n@Example 1919810@163.com",
+                    "description": "邮箱",
                     "type": "string"
                 },
                 "id": {
-                    "description": "用户 ID\n@Example 123456",
+                    "description": "用户 ID",
                     "type": "integer"
                 },
                 "members": {
@@ -1385,19 +1389,19 @@
                     }
                 },
                 "nickname": {
-                    "description": "昵称\n@Example [influ3nza]翻校",
+                    "description": "昵",
                     "type": "string"
                 },
                 "poplar_is_admin": {
-                    "description": "是否是 panel 管理员\n@Example true",
+                    "description": "是否是 panel 管理员",
                     "type": "boolean"
                 },
                 "qq_number": {
-                    "description": "QQ 号\n@Example 123456789",
+                    "description": "QQ 号",
                     "type": "integer"
                 },
                 "remark": {
-                    "description": "补充备注\n@Example 这是一个测试用户",
+                    "description": "补充备注",
                     "type": "string"
                 }
             }
@@ -1406,23 +1410,23 @@
             "type": "object",
             "properties": {
                 "created_at": {
-                    "description": "工作集的创建时间\n@Example \"2023-10-01 12:00:00\"",
+                    "description": "工作集的创建时间",
                     "type": "string"
                 },
                 "description": {
-                    "description": "工作集描述\n@Example 这是一个测试工作集",
+                    "description": "工作集描述",
                     "type": "string"
                 },
                 "id": {
-                    "description": "工作集 ID\n@Example 123456",
+                    "description": "工作集 ID",
                     "type": "integer"
                 },
                 "moetran_id": {
-                    "description": "工作集对应的龙译 ID\n@Example 64aac7d91b3",
+                    "description": "工作集对应的龙译 ID",
                     "type": "string"
                 },
                 "name": {
-                    "description": "工作集名称\n@Example C105",
+                    "description": "工作集名称",
                     "type": "string"
                 }
             }

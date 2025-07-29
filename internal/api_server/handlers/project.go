@@ -84,6 +84,9 @@ type ProjectInfo struct {
 	AllowAutoJoin bool `json:"allow_auto_join,omitempty"`
 	// 相关的分工，如果未指定将不会返回
 	Labors []*LaborInfo `json:"labors,omitempty"`
+
+	// 尨译项目的信息，直接以 string 形式返回，后端不做解析
+	MoetranProjectInfo string `json:"moetran_project_info,omitempty"`
 }
 
 // RouteProjectHandler 注册项目相关的路由
@@ -191,6 +194,16 @@ func (h *ProjectHandler) List(ctx iris.Context) {
 //
 // @Router 		/api/projects/{id} [get]
 func (h *ProjectHandler) Detail(ctx iris.Context) {
+	// 读取上下文中的 user_id
+	userId, err := ctx.Values().GetUint("user_id")
+	if err != nil || userId <= 0 {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(ErrorResponse{
+			Error: "无法获取有效的 user_id",
+		})
+		return
+	}
+
 	// 从 path 参数中获取项目 ID
 	projectId, err := ctx.Params().GetUint("id")
 	if err != nil || projectId <= 0 {
@@ -202,7 +215,10 @@ func (h *ProjectHandler) Detail(ctx iris.Context) {
 	}
 
 	// 调用服务层获取数据
-	project, err := h.ProjectService.GetProjectDetail(projectId)
+	project, err := h.ProjectService.GetProjectDetail(&services.ProjectDetailParams{
+		ProjectId: projectId,
+		UserId:    userId,
+	})
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.JSON(ErrorResponse{
