@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"poplargrid/internal/shared/dbmodels"
+	"poplargrid/internal/shared/models"
 
 	"gorm.io/gorm"
 )
@@ -21,11 +21,11 @@ func NewMembersRepo(db *gorm.DB) *MembersRepo {
 
 // GetTable 获取 members 表的上下文引用
 func (r *MembersRepo) GetTable() *gorm.DB {
-	return r.DbCtx.Model(&dbmodels.TeamMember{})
+	return r.DbCtx.Model(&models.Member{})
 }
 
 // BulkUpsert 批量更新或者插入成员
-func (r *MembersRepo) BulkUpsert(inputMembers []*dbmodels.TeamMember) error {
+func (r *MembersRepo) BulkUpsert(inputMembers []*models.Member) error {
 	if len(inputMembers) == 0 {
 		return nil
 	}

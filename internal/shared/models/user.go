@@ -11,13 +11,13 @@ type User struct {
 	// 基本信息
 	Nickname     string `gorm:"unique;size:128;not null"`
 	Email        string `gorm:"unique;size:128"`
-	QQNumber     int    `gorm:"unique;index"`
+	QQNumber     *int   `gorm:"unique;index;default:null"`
 	PasswordHash string `gorm:"size:256;not null"`
 
 	// 控制信息
 	IsAdmin bool `gorm:"default:false"`
 	// 补充备注
-	Remark string `gorm:"type:text"`
+	Remark *string `gorm:"type:text;default:null"`
 
 	// 尨译相关信息
 	MoetranId  string `gorm:"type:text"`

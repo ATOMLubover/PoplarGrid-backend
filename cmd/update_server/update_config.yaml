@@ -24,4 +24,4 @@ api:
   # 尨译 API 基础 URL
   base_url: "https://api.moetran.com"
   # 尨译 API 的授权 Token（初始化时）
-  auth_token: "eyJhbGciOiJIUzUxMiIsImlhdCI6MTc1MTAzNzMwNywiZXhwIjoxNzUzNjI5MzA3fQ.eyJpZCI6IjY4NWViNTdiY2U2NmMwZTEwZTAyY2ZiOSIsInBjIjoiNTc1MzJhOTNkMGZmYjdjZiJ9.okzYOJgtYwhJXqED_cEx9ywKUXki0tGxBgX19vcPW4SSBJgTOrhgOfUYIgOcrJGl9jWzOmqvlR2J9Zh7nwmiRA"
+  auth_token: "eyJhbGciOiJIUzUxMiIsImlhdCI6MTc1MzY4OTgzNSwiZXhwIjoxNzU2MjgxODM1fQ.eyJpZCI6IjY4NWViNTdiY2U2NmMwZTEwZTAyY2ZiOSIsInBjIjoiNTc1MzJhOTNkMGZmYjdjZiJ9.7rXA9RjkJr8SPAX1nd7UExW-p__3nsvs1LHElkTtHh3PC4OiZcbQgQxruM0zHUk5ImgUi0NuVxwGK_M7aNx0aA"

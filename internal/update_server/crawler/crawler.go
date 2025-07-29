@@ -2,7 +2,7 @@ package crawler
 
 import (
 	"log/slog"
-	"poplargrid/internal/shared/dbmodels"
+	"poplargrid/internal/shared/models"
 	"poplargrid/internal/update_server/repository"
 	"poplargrid/internal/update_server/transformer"
 	"time"
@@ -120,7 +120,7 @@ func (c *Crawler) SyncMoetran() error {
 
 // SyncUsersOfTeam 从尨译获取指定汉化组的所有成员信息
 // 这个函数拆分了整体逻辑，方便重试和调试
-func (c *Crawler) SyncUsersOfTeam(team *dbmodels.Team) error {
+func (c *Crawler) SyncUsersOfTeam(team *models.Team) error {
 	slog.Info("开始从尨译获取成员信息",
 		"team_name", team.Name, "team_id", team.Id)
 
@@ -190,7 +190,7 @@ func (c *Crawler) SyncUsersOfTeam(team *dbmodels.Team) error {
 
 // SyncWorksetsOfTeam 从尨译获取指定汉化组的所有作品集信息
 // 这个函数拆分了整体逻辑，方便重试和调试
-func (c *Crawler) SyncWorksetsOfTeam(team *dbmodels.Team) error {
+func (c *Crawler) SyncWorksetsOfTeam(team *models.Team) error {
 	slog.Info("开始从尨译获取作品集信息",
 		"team_name", team.Name, "team_id", team.Id)
 
@@ -239,7 +239,7 @@ func (c *Crawler) SyncWorksetsOfTeam(team *dbmodels.Team) error {
 
 // SyncWorksOfWorkset 从尨译获取指定作品集的所有作品信息
 // 这个函数拆分了整体逻辑，方便重试和调试
-func (c *Crawler) SyncWorksOfWorkset(team *dbmodels.Team, workset *dbmodels.Workset) error {
+func (c *Crawler) SyncWorksOfWorkset(team *models.Team, workset *models.Workset) error {
 	slog.Info("开始处理作品集",
 		"workset_name", workset.Name, "workset_id", workset.Id)
 

@@ -73,9 +73,9 @@ func (s *userServiceImpl) GetUserDetail(userId uint) (*UserInfo, error) {
 		Id:       uint(user.Id),
 		Nickname: user.Nickname,
 		Email:    user.Email,
-		QQNumber: user.QQNumber,
+		QQNumber: *user.QQNumber,
 		IsAdmin:  user.IsAdmin,
-		Remark:   user.Remark,
+		Remark:   *user.Remark,
 	}
 
 	return userInfo, nil

@@ -1,18 +1,18 @@
 package transformer
 
 import (
-	"poplargrid/internal/shared/dbmodels"
+	"poplargrid/internal/shared/models"
 	"poplargrid/internal/update_server/apidto"
 	"regexp"
 	"strconv"
 )
 
 // UsersToLocalUsers 将尨译的用户信息转化为本地 Member 模型
-func UsersToLocalUsers(team *dbmodels.Team, users []apidto.MoetranUser) ([]*dbmodels.User, error) {
-	var localusers []*dbmodels.User
+func UsersToLocalUsers(team *models.Team, users []apidto.MoetranUser) ([]*models.User, error) {
+	var localusers []*models.User
 
 	for _, user := range users {
-		localusers = append(localusers, &dbmodels.User{
+		localusers = append(localusers, &models.User{
 			Nickname:  user.Name,
 			MoetranId: user.Id,
 
@@ -24,11 +24,11 @@ func UsersToLocalUsers(team *dbmodels.Team, users []apidto.MoetranUser) ([]*dbmo
 }
 
 // LocalUsersToTeamMembers 将尨译的用户信息转化为本地 TeamMember 模型
-func LocalUsersToTeamMembers(team *dbmodels.Team, users []*dbmodels.User) ([]*dbmodels.TeamMember, error) {
-	var members []*dbmodels.TeamMember
+func LocalUsersToTeamMembers(team *models.Team, users []*models.User) ([]*models.Member, error) {
+	var members []*models.Member
 
 	for _, user := range users {
-		members = append(members, &dbmodels.TeamMember{
+		members = append(members, &models.Member{
 			UserId: user.Id, // 使用转换后的用户 ID
 			TeamId: team.Id, // 使用传入的 team 的 ID
 		})
@@ -38,9 +38,9 @@ func LocalUsersToTeamMembers(team *dbmodels.Team, users []*dbmodels.User) ([]*db
 }
 
 // ProjSetsToWorksets 将尨译的 project-set 格式转化成 Workset 格式
-func ProjSetsToWorksets(team *dbmodels.Team, projsets []apidto.MoetranProjSet) (
-	[]*dbmodels.Workset, error) {
-	var worksets []*dbmodels.Workset
+func ProjSetsToWorksets(team *models.Team, projsets []apidto.MoetranProjSet) (
+	[]*models.Workset, error) {
+	var worksets []*models.Workset
 
 	for _, projset := range projsets {
 		name := projset.Name
@@ -48,8 +48,8 @@ func ProjSetsToWorksets(team *dbmodels.Team, projsets []apidto.MoetranProjSet) (
 			name = "未分组"
 		}
 
-		worksets = append(worksets, &dbmodels.Workset{
-			BaseModel: dbmodels.BaseModel{
+		worksets = append(worksets, &models.Workset{
+			BaseModel: models.BaseModel{
 				CreatedAt: projset.CreateTime.Time,
 				UpdatedAt: projset.EditTime.Time,
 			},
@@ -64,14 +64,14 @@ func ProjSetsToWorksets(team *dbmodels.Team, projsets []apidto.MoetranProjSet) (
 
 // ProjsToWorks 从尨译的 project 信息提取出 Project 格式信息
 // workset 是辅助处理的作品集信息，为当前 projs 所在的作品集
-func ProjsToProjects(projs []apidto.MoetranProj, workset *dbmodels.Workset) (
-	[]*dbmodels.Project, error) {
+func ProjsToProjects(projs []apidto.MoetranProj, workset *models.Workset) (
+	[]*models.Project, error) {
 	// 将 MoetranProj 信息转化为 dbmodel.Project
-	var projects []*dbmodels.Project
+	var projects []*models.Project
 
 	for _, proj := range projs {
-		projects = append(projects, &dbmodels.Project{
-			BaseModel: dbmodels.BaseModel{
+		projects = append(projects, &models.Project{
+			BaseModel: models.BaseModel{
 				CreatedAt: proj.CreateTime.Time,
 				UpdatedAt: proj.EditTime.Time,
 			},

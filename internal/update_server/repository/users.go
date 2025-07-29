@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"poplargrid/internal/shared/dbmodels"
+	"poplargrid/internal/shared/models"
 
 	"gorm.io/gorm"
 )
@@ -19,11 +19,11 @@ func NewUsersRepo(db *gorm.DB) *UsersRepo {
 
 // GetTable 获取 users 表的上下文引用
 func (r *UsersRepo) GetTable() *gorm.DB {
-	return r.dbCtx.Model(&dbmodels.User{})
+	return r.dbCtx.Model(&models.User{})
 }
 
 // BulkUpsert 批量更新或插入用户
-func (r *UsersRepo) BulkUpsert(users []*dbmodels.User) error {
+func (r *UsersRepo) BulkUpsert(users []*models.User) error {
 	if len(users) == 0 {
 		return nil
 	}

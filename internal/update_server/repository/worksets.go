@@ -3,7 +3,7 @@ package repository
 import (
 	"fmt"
 	"log/slog"
-	"poplargrid/internal/shared/dbmodels"
+	"poplargrid/internal/shared/models"
 
 	"gorm.io/gorm"
 )
@@ -25,11 +25,11 @@ func NewWorksetsRepo(db *gorm.DB) *WorksetsRepo {
 
 // GetTable 获取 worksets 表的上下文引用
 func (r *WorksetsRepo) GetTable() *gorm.DB {
-	return r.DbCtx.Model(&dbmodels.Workset{})
+	return r.DbCtx.Model(&models.Workset{})
 }
 
 // BulkUpsert 批量更新或者插入作品集
-func (r *WorksetsRepo) BulkUpsert(inputWorksets []*dbmodels.Workset) error {
+func (r *WorksetsRepo) BulkUpsert(inputWorksets []*models.Workset) error {
 	if len(inputWorksets) == 0 {
 		return nil
 	}
