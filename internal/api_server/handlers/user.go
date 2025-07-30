@@ -12,7 +12,7 @@ import (
 type UserInfo struct {
 	// 用户 ID
 	Id uint `json:"id"`
-	// 昵
+	// 昵称
 	Nickname string `json:"nickname"`
 	// 邮箱
 	Email string `json:"email,omitempty"`
@@ -22,6 +22,10 @@ type UserInfo struct {
 	IsAdmin bool `json:"is_admin"`
 	// 补充备注
 	Remark string `json:"remark,omitempty"`
+	// 龙译 ID
+	MoetranId string `json:"moetran_id,omitempty"`
+	// 龙译 JWT
+	MoetranJwt string `json:"moetran_jwt,omitempty"`
 	// 在各个汉化组中的成员信息
 	Members []MemberInfo `json:"members,omitempty"`
 }
@@ -102,7 +106,7 @@ func (h *UserHandler) Detail(ctx iris.Context) {
 	// 调用服务层获取用户详情
 	user, err := h.UserService.GetUserDetail(userId)
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
 			Error:  "获取特定用户详情失败",
 			Detail: err.Error(),
@@ -111,12 +115,31 @@ func (h *UserHandler) Detail(ctx iris.Context) {
 	}
 
 	// 将服务层的 UserInfo 转换为 DTO
-	ctx.JSON(UserInfo{
-		Id:       user.Id,
-		Nickname: user.Nickname,
-		Email:    user.Email,
-		QQNumber: user.QQNumber,
-		IsAdmin:  user.IsAdmin,
-		Remark:   user.Remark,
-	})
+	userInfo := &UserInfo{
+		Id:         user.Id,
+		Nickname:   user.Nickname,
+		Email:      user.Email,
+		QQNumber:   user.QQNumber,
+		IsAdmin:    user.IsAdmin,
+		Remark:     user.Remark,
+		MoetranId:  user.MoetranId,
+		MoetranJwt: user.MoetranJwt,
+	}
+
+	// 如果用户有成员信息，则填充
+	if user.Members != nil {
+		userInfo.Members = make([]MemberInfo, len(user.Members))
+		for i, member := range user.Members {
+			userInfo.Members[i] = MemberInfo{
+				Id: member.Id,
+				Team: &TeamInfo{
+					Id:   member.Team.Id,
+					Name: member.Team.Name,
+				},
+				Role: member.Role,
+			}
+		}
+	}
+
+	ctx.JSON(userInfo)
 }

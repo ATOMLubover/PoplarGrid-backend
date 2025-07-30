@@ -13,7 +13,7 @@ type LoginParams struct {
 	// Email 是龙译账号的邮箱
 	Email string `json:"email" binding:"required"`
 	// Password 是龙译账号的密码
-	Password string `json:"password" validate:"required"`
+	Password string `json:"password" binding:"required"`
 	// Captcha 是验证码
 	Captcha string `json:"captcha" binding:"required"`
 	// CaptchaInfo 是验证码信息
@@ -44,7 +44,7 @@ type AuthHandler struct {
 // BeforeActivation 在控制器激活前注册路由
 func (h *AuthHandler) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle("POST", "/login", "Login")
-	b.Handle("POST", "/register", "Register")
+	// b.Handle("POST", "/register", "Register")
 }
 
 // Login godoc
@@ -60,7 +60,7 @@ func (h *AuthHandler) BeforeActivation(b mvc.BeforeActivation) {
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
 // @Failure     500 {object} ErrorResponse "服务器内部错误"
 //
-// @Router 		/api/auth/login [post]
+// @Router 		/auth/login [post]
 func (h *AuthHandler) Login(ctx iris.Context) {
 	var params LoginParams
 
@@ -80,9 +80,10 @@ func (h *AuthHandler) Login(ctx iris.Context) {
 		CaptchaInfo: params.CaptchaInfo,
 	})
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
-			Error: err.Error(),
+			Error:  "登录失败",
+			Detail: err.Error(),
 		})
 		return
 	}

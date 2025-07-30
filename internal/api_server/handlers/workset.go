@@ -115,7 +115,7 @@ func (h *WorksetHandler) List(ctx iris.Context) {
 		Limit:  pageSize,
 	})
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
 			Error: "获取工作集列表失败",
 		})
@@ -164,7 +164,7 @@ func (h *WorksetHandler) Stats(ctx iris.Context) {
 	// 调用服务层获取统计数据
 	stats, err := h.WorksetService.GetWorksetStats(worksetId)
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ctx.JSON(ErrorResponse{
 			Error:  "获取特定作品集的项目统计信息失败",
 			Detail: err.Error(),
@@ -226,7 +226,7 @@ func (h *WorksetHandler) Create(ctx iris.Context) {
 		TeamId:      req.TeamId,
 	})
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
 			Error:  "创建工作集失败",
 			Detail: err.Error(),

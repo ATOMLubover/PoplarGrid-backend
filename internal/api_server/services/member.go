@@ -47,8 +47,8 @@ type MemberListParams struct {
 // MemberInfo 定义了成员的基本信息
 type MemberInfo struct {
 	Id   uint      // 成员 ID
-	User UserInfo  // 对应的用户信息
-	Team TeamInfo  // 对应的团队信息
+	User *UserInfo // 对应的用户信息
+	Team *TeamInfo // 对应的团队信息
 	Role LaborMask // 在组内的职责（掩码格式）
 }
 
@@ -157,10 +157,10 @@ func buildLaborMask(member *models.Member) LaborMask {
 func memberModelToInfo(member *models.Member) *MemberInfo {
 	m := &MemberInfo{
 		Id: uint(member.BaseModel.Id),
-		User: UserInfo{
+		User: &UserInfo{
 			Id: uint(member.UserId),
 		},
-		Team: TeamInfo{
+		Team: &TeamInfo{
 			Id: uint(member.TeamId),
 		},
 		Role: buildLaborMask(member),
@@ -168,6 +168,7 @@ func memberModelToInfo(member *models.Member) *MemberInfo {
 
 	if member.FkUser != nil {
 		m.User.Nickname = member.FkUser.Nickname
+		m.Team.MoetranId = member.FkTeam.MoetranId
 	}
 
 	if member.FkTeam != nil {

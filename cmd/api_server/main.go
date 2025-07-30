@@ -183,6 +183,8 @@ func ApplyMvc(irisApp *iris.Application) *iris.Application {
 
 	// 注册龙译 API Client
 	apiClient := apiclient.NewApiClient(cfg.Api.BaseUrl, *slog.Default())
+	// 创建 JWT 工厂
+	jwtFactory := services.NewAuthTokenFactory(cfg.JWT.SecretKey, time.Duration(cfg.JWT.ExpireTime)*time.Second)
 
 	// 注册各个 service 的依赖
 	mvcApp.Register(
@@ -192,6 +194,7 @@ func ApplyMvc(irisApp *iris.Application) *iris.Application {
 		services.NewTeamService(handle, slog.Default()),
 		services.NewUserService(handle, slog.Default()),
 		services.NewWorksetService(handle, apiClient, slog.Default()),
+		services.NewAuthService(jwtFactory, handle, apiClient, slog.Default()),
 	)
 
 	// 注册中间件
@@ -210,6 +213,7 @@ func ApplyMvc(irisApp *iris.Application) *iris.Application {
 
 	// 注册路由处理器
 	handlers.RouteAPIHandler(mvcApp)
+	handlers.RouteAuthHandler(mvcApp)
 
 	return irisApp
 }

@@ -10,12 +10,15 @@ import (
 
 // UserInfo 定义了用户的基本信息
 type UserInfo struct {
-	Id       uint   // 用户 ID
-	Nickname string // 昵称
-	Email    string // 邮箱
-	QQNumber int    // QQ 号
-	IsAdmin  bool   // 是否是管理员
-	Remark   string // 补充备注
+	Id         uint         // 用户 ID
+	Nickname   string       // 昵称
+	Email      string       // 邮箱
+	QQNumber   int          // QQ 号
+	IsAdmin    bool         // 是否是管理员
+	Remark     string       // 补充备注
+	MoetranId  string       // 龙译 ID
+	MoetranJwt string       // 龙译 JWT
+	Members    []MemberInfo // 在各个汉化组中的成员信息
 }
 
 // UserService 接口定义了用户服务的基本操作
@@ -47,12 +50,14 @@ func (s *userServiceImpl) GetUserDetail(userId uint) (*UserInfo, error) {
 	}
 	// 查询的字段
 	userFields := &models.UserFields{
-		Id:       true,
-		Nickname: true,
-		Email:    true,
-		QQNumber: true,
-		IsAdmin:  true,
-		Remark:   true,
+		Id:         true,
+		Nickname:   true,
+		Email:      true,
+		QQNumber:   true,
+		IsAdmin:    true,
+		Remark:     true,
+		MoetranId:  true,
+		MoetranJwt: true,
 	}
 
 	// 执行查询
@@ -70,16 +75,42 @@ func (s *userServiceImpl) GetUserDetail(userId uint) (*UserInfo, error) {
 
 	// 将查询结果转换为 UserInfo
 	userInfo := &UserInfo{
-		Id:       uint(user.Id),
-		Nickname: user.Nickname,
-		Email:    user.Email,
-		IsAdmin:  user.IsAdmin,
+		Id:         uint(user.Id),
+		Nickname:   user.Nickname,
+		Email:      user.Email,
+		IsAdmin:    user.IsAdmin,
+		MoetranId:  user.MoetranId,
+		MoetranJwt: user.MoetranJwt,
 	}
 	if user.QQNumber != nil {
 		userInfo.QQNumber = *user.QQNumber
 	}
 	if user.Remark != nil {
 		userInfo.Remark = *user.Remark
+	}
+
+	// 获取用户的成员信息
+	memberSpec := &models.MemberSpec{
+		UserId: &userPKey,
+	}
+	memberFields := &models.MemberFields{
+		Id:         true,
+		Roles:      true,
+		TeamId:     true,
+		TeamFields: true,
+	}
+
+	members, err := models.GetMember().SelectMany(
+		s.handle, memberSpec, memberFields,
+		nil, nil)
+	if err != nil {
+		s.logger.Error("GetUserDetail 查询用户成员失败", slog.Any("error", err))
+		return nil, errors.New("查询用户成员信息失败")
+	}
+
+	// 将成员信息转换为 MemberInfo
+	for _, member := range members {
+		userInfo.Members = append(userInfo.Members, *memberModelToInfo(member))
 	}
 
 	return userInfo, nil

@@ -129,7 +129,7 @@ func (h *InvitationHandler) List(ctx iris.Context) {
 		CurrentMemberIds: memberIds,
 	})
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
 			Error:  "获取邀请列表失败",
 			Detail: err.Error(),
@@ -202,7 +202,7 @@ func (h *InvitationHandler) Create(ctx iris.Context) {
 		TargetLaborMask:  req.TargetLaborMask,
 		CurrentMemberIds: memberIds,
 	}); err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
 			Error:  "创建邀请失败",
 			Detail: err.Error(),
@@ -260,7 +260,7 @@ func (h *InvitationHandler) Process(ctx iris.Context) {
 		Accept:            req.Accept,
 		CurrentMemberIds:  memberIds,
 	}); err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
 			Error:  "处理邀请失败",
 			Detail: err.Error(),

@@ -13,9 +13,6 @@ import (
 
 // ApiClient 定义了与尨译 API 服务器交互的客户端接口
 type ApiClient interface {
-	// GetProjectInfo 获取指定项目的详细信息，将响应体的 JSON 直接作为 string 返回
-	GetProjectInfo(params *GetProjectParams) (string, error)
-
 	// CreateProject 创建一个新的项目
 	CreateProject(params *CreateProjectParams) (*moetranCreateProjectResponse, error)
 	// CreateProjectSet 创建一个新的项目集
@@ -23,8 +20,21 @@ type ApiClient interface {
 	// InviteMemberToProject 邀请成员加入项目
 	InviteMemberToProject(params *InviteMemberParams) (*moetranInviteMemberResponse, error)
 
-	// Login 登录龙译账号，返回 JWT token
+	// Login 登录龙译账号，返回 JWT token 或者错误信息
 	Login(params *LoginParams) (string, error)
+	// Register 注册龙译账号，返回 JWT token 或者错误信息
+	Register(params *RegisterParams) (string, error)
+
+	// GetProjectDetail 获取指定项目的详细信息，将响应体的 JSON 直接作为 string 返回
+	GetProjectDetail(projectId string, moetranAuth string) (string, error)
+	// GetProjects 获取指定项目集下的部分项目
+	GetProjects(projectSetId string, page, limit int, moetranAuth string) ([]ProjectDTO, error)
+	// GetUserInfo 获取指定用户的详细信息
+	GetUserInfo(moetranAuth string) (*UserInfo, error)
+	// GetUserTeams 获取指定用户所在的团队列表
+	GetUserTeams(moetranAuth string) (*UserTeamInfo, error)
+	// GetTeamProjectSets 获取指定汉化组的项目集列表
+	GetTeamProjectSets(teamId string, moetranAuth string) (*ProjectSetInfo, error)
 }
 
 // NewApiClient 创建一个新的 ApiClient 实例
@@ -51,11 +61,11 @@ type apiClientImpl struct {
 	logger slog.Logger
 }
 
-// GetProjectInfo 实现 ApiClient 接口的 GetProjectInfo 方法
-func (c *apiClientImpl) GetProjectInfo(params *GetProjectParams) (string, error) {
+// GetProjectDetail 实现 ApiClient 接口的 GetProjectDetail 方法
+func (c *apiClientImpl) GetProjectDetail(projectId string, moetranAuth string) (string, error) {
 	// 组装请求 URL
 	url := fmt.Sprintf("%s/projects/%s",
-		c.baseUrl, params.ProjectId)
+		c.baseUrl, projectId)
 
 	// 创建 HTTP GET 请求
 	req, err := http.NewRequest("GET", url, nil)
@@ -66,7 +76,7 @@ func (c *apiClientImpl) GetProjectInfo(params *GetProjectParams) (string, error)
 
 	// 设置必要的请求头
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", params.MoetranAuth))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", moetranAuth))
 
 	// 发送请求
 	res, err := c.client.Do(req)
@@ -299,7 +309,7 @@ func (c *apiClientImpl) Login(params *LoginParams) (string, error) {
 	}
 
 	// 组装请求 URL
-	url := fmt.Sprintf("%s/login", c.baseUrl)
+	url := fmt.Sprintf("%s/user/token", c.baseUrl)
 
 	// 创建 HTTP POST 请求
 	req, err := http.NewRequest("POST", url, bytes.NewReader(bodyJson))
@@ -319,15 +329,6 @@ func (c *apiClientImpl) Login(params *LoginParams) (string, error) {
 	}
 	defer res.Body.Close()
 
-	// 检查响应状态码
-	if res.StatusCode != http.StatusOK {
-		c.logger.Error("龙译 login 请求失败",
-			slog.Int("status_code", res.StatusCode),
-			slog.String("url", url),
-		)
-		return "", fmt.Errorf("龙译 login 请求失败，状态码: %d", res.StatusCode)
-	}
-
 	var response moetranLoginResponse
 
 	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
@@ -335,7 +336,268 @@ func (c *apiClientImpl) Login(params *LoginParams) (string, error) {
 		return "", errors.New("解析龙译 login 响应失败")
 	}
 
+	// 检查响应状态码
+	if res.StatusCode != http.StatusOK {
+		c.logger.Error("龙译 login 请求失败",
+			slog.Int("status_code", res.StatusCode),
+			slog.String("url", url))
+		return "", fmt.Errorf("龙译 login 请求失败，状态码: %d，龙译错误：%v",
+			res.StatusCode, response.Message)
+	}
+
 	return response.Token, nil
+}
+
+// Register 实现 ApiClient 接口的 Register 方法
+func (c *apiClientImpl) Register(params *RegisterParams) (string, error) {
+	// 组装 POST 请求体
+	body := moetranRegisterRequest{
+		Email:    params.Email,
+		Password: params.Password,
+		Name:     params.Name,
+		VCode:    params.VCode,
+	}
+
+	// 转换为 JSON
+	bodyJson, err := json.Marshal(body)
+	if err != nil {
+		c.logger.Error("转换龙译 register 请求体失败", slog.Any("error", err))
+		return "", errors.New("转换龙译 register 请求体失败")
+	}
+
+	// 组装请求 URL
+	url := fmt.Sprintf("%s/users", c.baseUrl)
+
+	// 创建 HTTP POST 请求
+	req, err := http.NewRequest("POST", url, bytes.NewReader(bodyJson))
+	if err != nil {
+		c.logger.Error("创建龙译 register 请求失败", slog.Any("error", err))
+		return "", errors.New("无法构建龙译 register 请求")
+	}
+
+	// 设置一些必要的请求头
+	req.Header.Set("Content-Type", "application/json")
+
+	// 发送请求
+	res, err := c.client.Do(req)
+	if err != nil {
+		c.logger.Error("发送龙译 register 请求失败", slog.Any("error", err))
+		return "", errors.New("请求龙译 register 失败")
+	}
+	defer res.Body.Close()
+
+	// 检查响应状态码
+	if res.StatusCode != http.StatusOK {
+		c.logger.Error("龙译 register 请求失败",
+			slog.Int("status_code", res.StatusCode),
+			slog.String("url", url),
+		)
+		return "", fmt.Errorf("龙译 register 请求失败，状态码: %d", res.StatusCode)
+	}
+
+	var response moetranRegisterResponse
+
+	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+		c.logger.Error("解析龙译 register 响应失败", slog.Any("error", err))
+		return "", errors.New("解析龙译 register 响应失败")
+	}
+
+	return response.Token, nil
+}
+
+// GetUserInfo 实现 ApiClient 接口的 GetUserInfo 方法
+func (c *apiClientImpl) GetUserInfo(moetranAuth string) (*UserInfo, error) {
+	// 组装请求 URL
+	url := fmt.Sprintf("%s/user/info", c.baseUrl)
+
+	// 创建 HTTP GET 请求
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		c.logger.Error("创建龙译 get user info 请求失败", slog.Any("error", err))
+		return nil, errors.New("无法构建龙译 get user info 请求")
+	}
+
+	// 设置必要的请求头
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", moetranAuth))
+
+	// 发送请求
+	res, err := c.client.Do(req)
+	if err != nil {
+		c.logger.Error("发送龙译 get user info 请求失败", slog.Any("error", err))
+		return nil, errors.New("请求龙译获取用户信息失败")
+	}
+	defer res.Body.Close()
+
+	userInfo := &UserInfo{}
+
+	// 检查响应状态码
+	if res.StatusCode != http.StatusOK {
+		// 此时尝试读取为 error 信息
+		if err := json.NewDecoder(res.Body).Decode(&userInfo.Error); err != nil {
+			c.logger.Error("解析龙译 get user info 错误响应失败", slog.Any("error", err))
+			return nil, errors.New("解析龙译错误响应失败")
+		}
+
+		c.logger.Error("龙译 get user info 请求失败",
+			slog.Int("status_code", res.StatusCode),
+			slog.String("url", url),
+			slog.String("error_message", userInfo.Error.Message))
+		return userInfo, fmt.Errorf("龙译获取用户信息请求失败，状态码: %d", res.StatusCode)
+	}
+
+	// 解析正常的响应体
+	if err := json.NewDecoder(res.Body).Decode(&userInfo.Response); err != nil {
+		c.logger.Error("解析龙译 get user info 响应失败", slog.Any("error", err))
+		return nil, errors.New("解析龙译获取用户信息响应失败")
+	}
+
+	return userInfo, nil
+}
+
+// GetUserTeams 实现 ApiClient 接口的 GetUserTeams 方法
+func (c *apiClientImpl) GetUserTeams(moetranAuth string) (*UserTeamInfo, error) {
+	// 组装请求 URL
+	url := fmt.Sprintf("%s/user/teams", c.baseUrl)
+
+	// 创建 HTTP GET 请求
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		c.logger.Error("创建龙译 get user teams 请求失败", slog.Any("error", err))
+		return nil, errors.New("无法构建龙译 get user teams 请求")
+	}
+
+	// 设置必要的请求头
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", moetranAuth))
+
+	// 发送请求
+	res, err := c.client.Do(req)
+	if err != nil {
+		c.logger.Error("发送龙译 get user teams 请求失败", slog.Any("error", err))
+		return nil, errors.New("请求龙译获取用户团队信息失败")
+	}
+	defer res.Body.Close()
+
+	userTeamInfo := &UserTeamInfo{}
+
+	// 检查响应状态码
+	if res.StatusCode != http.StatusOK {
+		// 此时尝试读取为 error 信息
+		if err := json.NewDecoder(res.Body).Decode(&userTeamInfo.Error); err != nil {
+			c.logger.Error("解析龙译 get user teams 错误响应失败", slog.Any("error", err))
+			return nil, errors.New("解析龙译错误响应失败")
+		}
+
+		c.logger.Error("龙译 get user teams 请求失败",
+			slog.Int("status_code", res.StatusCode),
+			slog.String("url", url),
+			slog.String("error_message", userTeamInfo.Error.Message))
+		return userTeamInfo, fmt.Errorf("龙译获取用户团队信息请求失败，状态码: %d", res.StatusCode)
+	}
+
+	// 解析正常的响应体
+	if err := json.NewDecoder(res.Body).Decode(&userTeamInfo.Teams); err != nil {
+		c.logger.Error("解析龙译 get user teams 响应失败", slog.Any("error", err))
+		return nil, errors.New("解析龙译获取用户团队信息响应失败")
+	}
+
+	return userTeamInfo, nil
+}
+
+// GetTeamProjectSets 实现 ApiClient 接口的 GetTeamProjectSets 方法
+func (c *apiClientImpl) GetTeamProjectSets(teamId string, moetranAuth string) (*ProjectSetInfo, error) {
+	// 组装请求 URL
+	url := fmt.Sprintf("%s/teams/%s/project-sets", c.baseUrl, teamId)
+
+	// 创建 HTTP GET 请求
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		c.logger.Error("创建龙译 get team project sets 请求失败", slog.Any("error", err))
+		return nil, errors.New("无法构建龙译 get team project sets 请求")
+	}
+
+	// 设置必要的请求头
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", moetranAuth))
+
+	// 发送请求
+	res, err := c.client.Do(req)
+	if err != nil {
+		c.logger.Error("发送龙译 get team project sets 请求失败", slog.Any("error", err))
+		return nil, errors.New("请求龙译获取团队项目集信息失败")
+	}
+	defer res.Body.Close()
+
+	projectSetInfo := &ProjectSetInfo{}
+
+	// 检查响应状态码
+	if res.StatusCode != http.StatusOK {
+		// 此时尝试读取为 error 信息
+		if err := json.NewDecoder(res.Body).Decode(&projectSetInfo.Error); err != nil {
+			c.logger.Error("解析龙译 get team project sets 错误响应失败", slog.Any("error", err))
+			return nil, errors.New("解析龙译错误响应失败")
+		}
+
+		c.logger.Error("龙译 get team project sets 请求失败",
+			slog.Int("status_code", res.StatusCode),
+			slog.String("url", url),
+			slog.String("error_message", projectSetInfo.Error.Message))
+		return projectSetInfo, fmt.Errorf("龙译获取团队项目集信息请求失败，状态码: %d", res.StatusCode)
+	}
+
+	// 解析正常的响应体
+	if err := json.NewDecoder(res.Body).Decode(&projectSetInfo.Sets); err != nil {
+		c.logger.Error("解析龙译 get team project sets 响应失败", slog.Any("error", err))
+		return nil, errors.New("解析龙译获取团队项目集信息响应失败")
+	}
+
+	return projectSetInfo, nil
+}
+
+// GetProjects 实现 ApiClient 接口的 GetProjects 方法
+func (c *apiClientImpl) GetProjects(projectSetId string, page, limit int, moetranAuth string) ([]ProjectDTO, error) {
+	// 组装请求 URL
+	url := fmt.Sprintf("%s/project-sets/%s/projects?page=%d&limit=%d",
+		c.baseUrl, projectSetId, page, limit)
+
+	// 创建 HTTP GET 请求
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		c.logger.Error("创建龙译 get projects 请求失败", slog.Any("error", err))
+		return nil, errors.New("无法构建龙译 get projects 请求")
+	}
+
+	// 设置必要的请求头
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", moetranAuth))
+
+	// 发送请求
+	res, err := c.client.Do(req)
+	if err != nil {
+		c.logger.Error("发送龙译 get projects 请求失败", slog.Any("error", err))
+		return nil, errors.New("请求龙译获取项目列表失败")
+	}
+	defer res.Body.Close()
+
+	var projects []ProjectDTO
+
+	// 检查响应状态码
+	if res.StatusCode != http.StatusOK {
+		c.logger.Error("龙译 get projects 请求失败",
+			slog.Int("status_code", res.StatusCode),
+			slog.String("url", url),
+		)
+		return nil, fmt.Errorf("龙译获取项目列表请求失败，状态码: %d", res.StatusCode)
+	}
+
+	// 解析正常的响应体
+	if err := json.NewDecoder(res.Body).Decode(&projects); err != nil {
+		c.logger.Error("解析龙译 get projects 响应失败", slog.Any("error", err))
+		return nil, errors.New("解析龙译获取项目列表响应失败")
+	}
+
+	return projects, nil
 }
 
 // =========== 辅助函数 ===========

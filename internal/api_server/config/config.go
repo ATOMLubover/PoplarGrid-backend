@@ -18,6 +18,7 @@ type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Database DatabaseConfig `mapstructure:"database"`
 	Api      ApiConfig      `mapstructure:"api"`
+	JWT      JWTConfig      `mapstructure:"jwt"`
 }
 
 // 总体服务器配置结构体
@@ -67,6 +68,14 @@ type ApiConfig struct {
 	BaseUrl string `mapstructure:"base_url"`
 	// 尨译 API 的授权 Token（初始化时）
 	AuthToken string `mapstructure:"auth_token"`
+}
+
+// JWTConfig 配置结构体
+type JWTConfig struct {
+	// JWT 密钥
+	SecretKey string `mapstructure:"secret_key"`
+	// JWT 过期时间（单位：秒）
+	ExpireTime int `mapstructure:"expire_time"`
 }
 
 var (

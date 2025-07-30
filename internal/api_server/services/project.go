@@ -409,10 +409,7 @@ func (s *projectServiceImpl) GetProjectDetail(params *ProjectDetailParams) (*Pro
 	}
 
 	// 查询龙译的项目详情
-	moetranInfo, err := s.apiClient.GetProjectInfo(&apiclient.GetProjectParams{
-		MoetranAuth: user.MoetranJwt,
-		ProjectId:   project.MoetranId,
-	})
+	moetranInfo, err := s.apiClient.GetProjectDetail(project.MoetranId, user.MoetranJwt)
 	if err != nil {
 		s.logger.Error("GetProjectDetail 调用龙译 API 获取项目详情失败", slog.Any("error", err))
 		return nil, errors.New("调用龙译 API 获取项目详情失败")

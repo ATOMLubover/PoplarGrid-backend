@@ -44,10 +44,11 @@ const (
 	LangEnglish string = "en" // 英语
 )
 
-// GetProjectParams 定义了获取项目的参数
-type GetProjectParams struct {
-	MoetranAuth string // 龙译 JWT
-	ProjectId   string // 尨译项目 ID
+// normalErrorResponse 定义了尨译的标准错误响应格式
+type normalErrorResponse struct {
+	Code    int    `json:"code"`    // 错误代码
+	Error   string `json:"error"`   // 错误信息
+	Message string `json:"message"` // 错误详情
 }
 
 // CreateProjectParams 定义了创建项目的基本信息
@@ -150,5 +151,75 @@ type moetranLoginRequest struct {
 
 // moetranLoginResponse 定义了登录响应的结构体
 type moetranLoginResponse struct {
-	Token string `json:"token"` // JWT token
+	Token   string `json:"token"` // JWT token
+	Error   string `json:"error"`
+	Message struct {
+		Email    []string `json:"email"`    // 邮箱
+		Password []string `json:"password"` // 密码
+	} `json:"message"`
+}
+
+// RegisterParams 定义了注册龙译账号的参数
+type RegisterParams struct {
+	Email    string // 龙译账号邮箱
+	Password string // 龙译账号密码
+	Name     string // 龙译账号昵称
+	VCode    string // 龙译发送的邮箱验证码
+}
+
+// moetranRegisterRequest 定义了注册请求的结构体
+type moetranRegisterRequest struct {
+	Email    string `json:"email"`    // 账号邮箱
+	Password string `json:"password"` // 账号密码
+	Name     string `json:"name"`     // 账号昵称
+	VCode    string `json:"v_code"`   // 邮箱验证码
+}
+
+// moetranRegisterResponse 定义了注册响应的结构体
+type moetranRegisterResponse struct {
+	Message string `json:"message"` // 响应消息
+	Token   string `json:"token"`   // JWT token
+}
+
+// UserDTO 定义了获取用户信息的响应结构体
+type UserDTO struct {
+	ID   string `json:"id"`   // 用户 ID
+	Name string `json:"name"` // 用户昵称
+}
+
+// UserInfo 定义了获取的用户信息的结构体
+type UserInfo struct {
+	Error    normalErrorResponse // 错误发生时的响应
+	Response UserDTO             // 龙译用户信息响应
+}
+
+// TeamDTO 定义了获取汉化组信息的部分响应结构体
+type TeamDTO struct {
+	ID   string `json:"id"`   // 团队 ID
+	Name string `json:"name"` // 团队名称
+}
+
+// UserTeamInfo 定义了获取用户团队信息的结构体
+type UserTeamInfo struct {
+	Error normalErrorResponse // 错误发生时的响应
+	Teams []TeamDTO           // 用户所在的团队列表
+}
+
+// ProjectSetDTO 定义了获取项目集信息的部分响应结构体
+type ProjectSetDTO struct {
+	ID   string `json:"id"`   // 项目集 ID
+	Name string `json:"name"` // 项目集名称
+}
+
+// ProjectSetInfo 定义了获取项目集信息的结构体
+type ProjectSetInfo struct {
+	Error normalErrorResponse // 错误发生时的响应
+	Sets  []ProjectSetDTO     // 用户所在的项目集列表
+}
+
+// ProjectDTO 定义了获取项目信息的部分响应结构体
+type ProjectDTO struct {
+	ID    string `json:"id"`    // 项目 ID
+	Name  string `json:"name"`  // 项目名称
+	Intro string `json:"intro"` // 项目简介
 }

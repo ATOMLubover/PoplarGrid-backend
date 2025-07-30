@@ -126,7 +126,7 @@ func (h *ApplicationHandler) List(ctx iris.Context) {
 		CurrentMemberIds:  memberIds,
 	})
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
 			Error:  "获取申请列表失败",
 			Detail: err.Error(),
@@ -198,7 +198,7 @@ func (h *ApplicationHandler) Create(ctx iris.Context) {
 		TargetLaborMask:   req.TargetLaborMask,
 		CurrentMemberIds:  memberIds,
 	}); err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
 			Error:  "创建申请失败",
 			Detail: err.Error(),
@@ -256,7 +256,7 @@ func (h *ApplicationHandler) Process(ctx iris.Context) {
 		Accept:            req.Accept,
 		CurrentMemberIds:  memberIds,
 	}); err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
 			Error:  "处理申请失败",
 			Detail: err.Error(),

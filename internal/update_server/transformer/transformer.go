@@ -15,8 +15,6 @@ func UsersToLocalUsers(team *models.Team, users []apidto.MoetranUser) ([]*models
 		localusers = append(localusers, &models.User{
 			Nickname:  user.Name,
 			MoetranId: user.Id,
-
-			Email: user.Id, // 这里使用 user.Id 作为 Email 占位，防止新创建时违反 unique
 		})
 	}
 

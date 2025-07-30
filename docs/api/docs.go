@@ -916,6 +916,52 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/auth/login": {
+            "post": {
+                "description": "登录 PoplarGrid 以及龙译的账号，返回龙译的 JWT token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "登录账号",
+                "parameters": [
+                    {
+                        "description": "登录参数",
+                        "name": "params",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LoginParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1190,6 +1236,50 @@ const docTemplate = `{
                 "LABOR_PUBLISHER_MASK"
             ]
         },
+        "handlers.LoginParams": {
+            "type": "object",
+            "required": [
+                "captcha",
+                "captcha_info",
+                "email",
+                "password"
+            ],
+            "properties": {
+                "captcha": {
+                    "description": "Captcha 是验证码",
+                    "type": "string"
+                },
+                "captcha_info": {
+                    "description": "CaptchaInfo 是验证码信息",
+                    "type": "string"
+                },
+                "email": {
+                    "description": "Email 是龙译账号的邮箱",
+                    "type": "string"
+                },
+                "password": {
+                    "description": "Password 是龙译账号的密码",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "description": "MoetranJWT 是登录成功后返回的 JWT token",
+                    "type": "string"
+                },
+                "user": {
+                    "description": "User 是登录成功后返回的用户信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/handlers.UserInfo"
+                        }
+                    ]
+                }
+            }
+        },
         "handlers.MemberInfo": {
             "type": "object",
             "properties": {
@@ -1206,7 +1296,7 @@ const docTemplate = `{
                     ]
                 },
                 "team": {
-                    "description": "对应的汉化组信息",
+                    "description": "对应的汉化组信息，可能为空",
                     "allOf": [
                         {
                             "$ref": "#/definitions/handlers.TeamInfo"
@@ -1214,7 +1304,7 @@ const docTemplate = `{
                     ]
                 },
                 "user": {
-                    "description": "对应的用户信息",
+                    "description": "对应的用户信息，可能为空",
                     "allOf": [
                         {
                             "$ref": "#/definitions/handlers.UserInfo"
@@ -1388,6 +1478,10 @@ const docTemplate = `{
                     "description": "用户 ID",
                     "type": "integer"
                 },
+                "is_admin": {
+                    "description": "是否是 panel 管理员",
+                    "type": "boolean"
+                },
                 "members": {
                     "description": "在各个汉化组中的成员信息",
                     "type": "array",
@@ -1395,13 +1489,17 @@ const docTemplate = `{
                         "$ref": "#/definitions/handlers.MemberInfo"
                     }
                 },
-                "nickname": {
-                    "description": "昵",
+                "moetran_id": {
+                    "description": "龙译 ID",
                     "type": "string"
                 },
-                "poplar_is_admin": {
-                    "description": "是否是 panel 管理员",
-                    "type": "boolean"
+                "moetran_jwt": {
+                    "description": "龙译 JWT",
+                    "type": "string"
+                },
+                "nickname": {
+                    "description": "昵称",
+                    "type": "string"
                 },
                 "qq_number": {
                     "description": "QQ 号",

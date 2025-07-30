@@ -44,3 +44,9 @@ api:
   base_url: "http://api.moetran.com/v1" 
   # 尨译 API 的授权 Token（初始化时）
   auth_token: ""
+
+jwt:
+  # JWT 密钥
+  secret_key: "priestess"
+  # JWT 过期时间（单位：秒）
+  expire_time: 3600

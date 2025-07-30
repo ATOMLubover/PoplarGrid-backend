@@ -162,7 +162,7 @@ func (h *ProjectHandler) List(ctx iris.Context) {
 		Index:       uint(index),
 	})
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
 			Error:  "获取项目列表失败",
 			Detail: err.Error(),
@@ -220,7 +220,7 @@ func (h *ProjectHandler) Detail(ctx iris.Context) {
 		UserId:    userId,
 	})
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
 			Error:  "获取单个项目详情失败",
 			Detail: err.Error(),
@@ -280,7 +280,7 @@ func (h *ProjectHandler) Create(ctx iris.Context) {
 		IsHidden:      request.IsHidden,
 	})
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
 			Error:  "创建项目失败",
 			Detail: err.Error(),
@@ -349,7 +349,7 @@ func (h *ProjectHandler) Delete(ctx iris.Context) {
 
 		ProjectId: projectId,
 	}); err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
 			Error:  "删除项目失败",
 			Detail: err.Error(),
@@ -418,7 +418,7 @@ func (h *ProjectHandler) Update(ctx iris.Context) {
 		Title:       request.Title,
 		Description: request.Description,
 	}); err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
 			Error:  "更新项目失败",
 			Detail: err.Error(),

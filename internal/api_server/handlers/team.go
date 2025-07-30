@@ -74,7 +74,7 @@ func (h *TeamHandler) List(ctx iris.Context) {
 		Limit:  pageSize,
 	})
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
 			Error:  "获取当前汉化组列表失败",
 			Detail: err.Error(),

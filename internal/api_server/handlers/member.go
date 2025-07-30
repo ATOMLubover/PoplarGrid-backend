@@ -23,10 +23,10 @@ type LaborMask = services.LaborMask
 type MemberInfo struct {
 	// 成员 ID
 	Id uint `json:"id"`
-	// 对应的用户信息
-	User UserInfo `json:"user"`
-	// 对应的汉化组信息
-	Team TeamInfo `json:"team"`
+	// 对应的用户信息，可能为空
+	User *UserInfo `json:"user,omitempty"`
+	// 对应的汉化组信息，可能为空
+	Team *TeamInfo `json:"team,omitempty"`
 	// 在组内的职责（掩码格式）
 	Role LaborMask `json:"role"`
 }
@@ -73,11 +73,29 @@ func (h *MemberHandler) List(ctx iris.Context) {
 		Limit:  pageSize,
 	})
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(ErrorResponse{
 			Error: "获取成员列表失败",
 		})
 		return
+	}
+
+	// 将成员列表转换为 DTO
+	memberInfos := make([]*MemberInfo, 0, len(members))
+
+	for _, member := range members {
+		memberInfos = append(memberInfos, &MemberInfo{
+			Id: member.Id,
+			User: &UserInfo{
+				Id:       member.User.Id,
+				Nickname: member.User.Nickname,
+			},
+			Team: &TeamInfo{
+				Id:   member.Team.Id,
+				Name: member.Team.Name,
+			},
+			Role: member.Role,
+		})
 	}
 
 	ctx.JSON(members)
