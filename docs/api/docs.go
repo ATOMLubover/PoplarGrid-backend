@@ -76,7 +76,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -120,7 +120,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -173,7 +173,36 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/crawler/auto-update-all": {
+            "post": {
+                "description": "自动递归地更新当前用户所有汉化组的项目信息，可能会需要较长时间",
+                "tags": [
+                    "crawler"
+                ],
+                "summary": "更新汉化组的项目信息",
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -240,7 +269,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -284,7 +313,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -337,7 +366,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -393,7 +422,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -466,7 +495,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -510,7 +539,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -551,7 +580,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -590,7 +619,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -641,7 +670,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -697,7 +726,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -729,7 +758,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -770,7 +799,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -826,7 +855,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -870,7 +899,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -911,7 +940,53 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/bind": {
+            "post": {
+                "description": "绑定已有的龙译账号到 PoplarGrid 用户",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "绑定龙译账号",
+                "parameters": [
+                    {
+                        "description": "绑定参数",
+                        "name": "body_params",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.BindParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.BindResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "无效的请求参数",
+                        "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -919,7 +994,7 @@ const docTemplate = `{
         },
         "/auth/login": {
             "post": {
-                "description": "登录 PoplarGrid 以及龙译的账号，返回龙译的 JWT token",
+                "description": "登录 PoplarGrid 以及龙译的账号，必须在绑定之后才可以使用",
                 "consumes": [
                     "application/json"
                 ],
@@ -957,7 +1032,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -1007,6 +1082,50 @@ const docTemplate = `{
                 "time": {
                     "description": "申请时间",
                     "type": "string"
+                }
+            }
+        },
+        "handlers.BindParams": {
+            "type": "object",
+            "required": [
+                "captcha",
+                "captcha_info",
+                "email",
+                "password"
+            ],
+            "properties": {
+                "captcha": {
+                    "description": "Captcha 是验证码",
+                    "type": "string"
+                },
+                "captcha_info": {
+                    "description": "CaptchaInfo 是验证码信息",
+                    "type": "string"
+                },
+                "email": {
+                    "description": "Email 是龙译账号的邮箱",
+                    "type": "string"
+                },
+                "password": {
+                    "description": "Password 是龙译账号的密码",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.BindResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "description": "MoetranJWT 是登录成功后返回的 JWT",
+                    "type": "string"
+                },
+                "user": {
+                    "description": "User 是登录成功后返回的用户信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/handlers.UserInfo"
+                        }
+                    ]
                 }
             }
         },
@@ -1267,7 +1386,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "token": {
-                    "description": "MoetranJWT 是登录成功后返回的 JWT token",
+                    "description": "MoetranJWT 是登录成功后返回的 JWT",
                     "type": "string"
                 },
                 "user": {

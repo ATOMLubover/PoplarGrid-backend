@@ -60,7 +60,7 @@ func (h *UserHandler) BeforeActivation(b mvc.BeforeActivation) {
 // @Produce 	json
 // @Success	 	200 {object} UserInfo
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
-// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Failure     500 {string} string "服务器内部错误"
 //
 // @Router 		/api/users/me [get]
 func (h *UserHandler) MyDetail(ctx iris.Context) {
@@ -89,7 +89,7 @@ func (h *UserHandler) MyDetail(ctx iris.Context) {
 // @Produce 	json
 // @Success	 	200 {object} UserInfo
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
-// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Failure     500 {string} string "服务器内部错误"
 //
 // @Router 		/api/users/{id} [get]
 func (h *UserHandler) Detail(ctx iris.Context) {

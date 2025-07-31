@@ -18,6 +18,13 @@ type LoginParams struct {
 	CaptchaInfo string // 验证码信息
 }
 
+// LoginResult 定义了登录的结果
+type LoginResult struct {
+	UserInfo   UserInfo // 绑定后的用户信息
+	PoplarJWT  string   // PoplarGrid 的 token
+	MoetranJWT string   // 龙译的 JWT
+}
+
 // RegisterParams 定义了注册请求的参数
 type RegisterParams struct {
 	Email    string // 账号邮箱
@@ -27,23 +34,24 @@ type RegisterParams struct {
 	QQNumber *int   // QQ 号，可选
 }
 
+// RegisterResult 定义了绑定的结果
+// 其本质上与 LoginResult 相同
+type RegisterResult LoginResult
+
 // BindParams 定义了绑定请求的参数
 // 其本质上与 LoginParams 相同
 type BindParams LoginParams
 
 // BindResult 定义了绑定的结果
-type BindResult struct {
-	UserInfo   UserInfo // 绑定后的用户信息
-	PoplarJWT  string   // PoplarGrid 的 JWT token
-	MoetranJWT string   // 龙译的 JWT token
-}
+// 其本质上与 LoginResult 相同
+type BindResult LoginResult
 
 // AuthService 定义了鉴权服务的接口
 type AuthService interface {
-	// Login 用户登录，返回用户信息并生成 JWT token
-	Login(params *LoginParams) (info *UserInfo, poplarToken, moetranToken string, err error)
-	// Register 用户注册，返回用户信息和 JWT token
-	Register(params *RegisterParams) (info *UserInfo, poplarToken, moetranToken string, err error)
+	// Login 用户登录，返回用户信息并生成 JWT
+	Login(params *LoginParams) (*LoginResult, error)
+	// Register 用户注册，返回用户信息和 JWT
+	Register(params *RegisterParams) (*RegisterResult, error)
 	// Bind 绑定已有的龙译账号到 PoplarGrid 用户
 	Bind(params *BindParams) (*BindResult, error)
 }
@@ -72,12 +80,12 @@ func NewAuthService(
 }
 
 // Login 实现 AuthService 接口的 Login 方法
-func (s *authServiceImpl) Login(params *LoginParams) (*UserInfo, string, string, error) {
+func (s *authServiceImpl) Login(params *LoginParams) (*LoginResult, error) {
 	if params.Email == "" ||
 		params.Password == "" ||
 		params.Captcha == "" ||
 		params.CaptchaInfo == "" {
-		return nil, "", "", errors.New("缺少必需的登录参数")
+		return nil, errors.New("缺少必需的登录参数")
 	}
 
 	// 调用尨译进行登录验证
@@ -89,7 +97,7 @@ func (s *authServiceImpl) Login(params *LoginParams) (*UserInfo, string, string,
 	})
 	if err != nil {
 		s.logger.Error("Login 调用龙译 API 登录失败", slog.Any("error", err))
-		return nil, "", "", errors.New("调用龙译 API 登录失败")
+		return nil, errors.New("调用龙译 API 登录失败")
 	}
 
 	// 验证用户的邮箱和密码
@@ -109,57 +117,33 @@ func (s *authServiceImpl) Login(params *LoginParams) (*UserInfo, string, string,
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			s.logger.Warn("Login 查询没有结果", slog.String("email", params.Email))
-			return nil, "", "", errors.New("用户不存在或密码错误")
+			return nil, errors.New("用户不存在或密码错误")
 		}
 		s.logger.Error("Login 查询用户失败", slog.Any("error", err))
-		return nil, "", "", errors.New("查询用户失败")
+		return nil, errors.New("查询用户失败")
 	}
 
-	switch user.PasswordHash {
-	case "":
-		// 如果哈希密码为空，说明用户是首次使用 PoplarGrid Panel 登录，直接记录
-		s.logger.Info("Login 用户首次登录，记录密码哈希", slog.String("email", params.Email))
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
-		if err != nil {
-			s.logger.Error("Login 哈希密码失败", slog.Any("error", err))
-			return nil, "", "", errors.New("哈希密码失败，但是尨译账号登录成功")
-		}
-		user.PasswordHash = string(hashedPassword)
-
-		// 更新用户的密码哈希和 MoetranJwt
-		if err := models.GetUser().Update(s.handle, &models.User{
-			BaseModel: models.BaseModel{
-				Id: user.Id,
-			},
-			PasswordHash: user.PasswordHash,
-			MoetranJwt:   moetranJWT,
-		}); err != nil {
-			s.logger.Error("Login 更新用户密码哈希失败", slog.Any("error", err))
-			return nil, "", "", errors.New("更新用户密码哈希失败，但是尨译账号登录成功")
-		}
-	default:
-		// 如果哈希密码不为空，验证密码是否正确
-		if err := bcrypt.CompareHashAndPassword(
-			[]byte(user.PasswordHash), []byte(params.Password),
-		); err != nil {
-			// 密码哈希不匹配，返回错误
-			s.logger.Warn("Login 密码不匹配", slog.String("email", params.Email))
-			return nil, "", "", errors.New("密码错误")
-		}
-
-		// 更新用户的 MoetranJwt
-		if err := models.GetUser().Update(s.handle, &models.User{
-			BaseModel: models.BaseModel{
-				Id: user.Id,
-			},
-			MoetranJwt: moetranJWT,
-		}); err != nil {
-			s.logger.Error("Login 更新用户 MoetranJwt 失败", slog.Any("error", err))
-			return nil, "", "", errors.New("更新用户 MoetranJwt 失败")
-		}
+	// 如果哈希密码不为空，验证密码是否正确
+	if err := bcrypt.CompareHashAndPassword(
+		[]byte(user.PasswordHash), []byte(params.Password),
+	); err != nil {
+		// 密码哈希不匹配，返回错误
+		s.logger.Warn("Login 密码不匹配", slog.String("email", params.Email))
+		return nil, errors.New("密码错误")
 	}
 
-	// 查找用户对应的 member IDs 用以加入到 JWT token 中
+	// 更新用户的 MoetranJwt
+	if err := models.GetUser().Update(s.handle, &models.User{
+		BaseModel: models.BaseModel{
+			Id: user.Id,
+		},
+		MoetranJwt: moetranJWT,
+	}); err != nil {
+		s.logger.Error("Login 更新用户 MoetranJwt 失败", slog.Any("error", err))
+		return nil, errors.New("更新用户 MoetranJwt 失败")
+	}
+
+	// 查找用户对应的 member IDs 用以加入到 JWT 中
 	memberSpec := &models.MemberSpec{
 		UserId: &user.Id,
 	}
@@ -173,23 +157,24 @@ func (s *authServiceImpl) Login(params *LoginParams) (*UserInfo, string, string,
 		nil, nil)
 	if err != nil {
 		s.logger.Error("Login 查询用户成员失败", slog.Any("error", err))
-		return nil, "", "", errors.New("查询用户成员信息失败，但是尨译账号登录成功")
+		return nil, errors.New("查询用户成员信息失败，但是尨译账号登录成功")
 	}
 
-	// 生成 PoplarGrid 的 JWT token
-	authToken := AuthToken{
-		UserId:    uint(user.Id),
-		MemberIds: make([]uint, 0, len(members)),
+	// 生成 PoplarGrid 的 token
+	authToken := &AuthToken{
+		UserId:     uint(user.Id),
+		MemberIds:  make([]uint, 0, len(members)),
+		MoetranJwt: moetranJWT,
 	}
 
 	for _, member := range members {
 		authToken.MemberIds = append(authToken.MemberIds, uint(member.Id))
 	}
 
-	poplarJWT, err := s.tokenFactory.GenerateToken(&authToken)
+	poplarToken, err := s.tokenFactory.GenerateToken(authToken)
 	if err != nil {
-		s.logger.Error("Login 生成 JWT token 失败", slog.Any("error", err))
-		return nil, "", "", errors.New("生成 JWT token 失败，但是尨译账号登录成功")
+		s.logger.Error("Login 生成 JWT 失败", slog.Any("error", err))
+		return nil, errors.New("生成 JWT 失败，但是尨译账号登录成功")
 	}
 
 	// 返回用户信息
@@ -203,16 +188,20 @@ func (s *authServiceImpl) Login(params *LoginParams) (*UserInfo, string, string,
 		userInfo.QQNumber = *user.QQNumber
 	}
 
-	return userInfo, poplarJWT, moetranJWT, nil
+	return &LoginResult{
+		UserInfo:   *userInfo,
+		PoplarJWT:  poplarToken,
+		MoetranJWT: moetranJWT,
+	}, nil
 }
 
 // Register 实现 AuthService 接口的 Register 方法
-func (s *authServiceImpl) Register(params *RegisterParams) (*UserInfo, string, string, error) {
+func (s *authServiceImpl) Register(params *RegisterParams) (*RegisterResult, error) {
 	if params.Email == "" ||
 		params.Password == "" ||
 		params.Nickname == "" ||
 		params.VCode == "" {
-		return nil, "", "", errors.New("缺少必需的注册参数")
+		return nil, errors.New("缺少必需的注册参数")
 	}
 
 	// 先向尨译发送注册请求
@@ -224,7 +213,7 @@ func (s *authServiceImpl) Register(params *RegisterParams) (*UserInfo, string, s
 	})
 	if err != nil {
 		s.logger.Error("Register 调用龙译 API 注册失败", slog.Any("error", err))
-		return nil, "", "", errors.New("调用龙译 API 注册失败")
+		return nil, errors.New("调用龙译 API 注册失败")
 	}
 
 	// 创建用户
@@ -237,25 +226,26 @@ func (s *authServiceImpl) Register(params *RegisterParams) (*UserInfo, string, s
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
 	if err != nil {
 		s.logger.Error("Register 哈希密码失败", slog.Any("error", err))
-		return nil, "", "", errors.New("哈希密码失败，但是尨译账号注册成功，可以登录")
+		return nil, errors.New("哈希密码失败，但是尨译账号注册成功，可以登录")
 	}
 
 	user.PasswordHash = string(hashedPassword)
 
 	if err := models.GetUser().Insert(s.handle, user); err != nil {
 		s.logger.Error("Register 创建用户失败", slog.Any("error", err))
-		return nil, "", "", errors.New("注册用户失败，但是尨译账号注册成功，可以登录")
+		return nil, errors.New("注册用户失败，但是尨译账号注册成功，可以登录")
 	}
 
-	// 生成 PoplarGrid 的 JWT token
-	authToken := AuthToken{
-		UserId: uint(user.Id),
+	// 生成 PoplarGrid 的 token
+	authToken := &AuthToken{
+		UserId:     uint(user.Id),
+		MoetranJwt: moetranJWT,
 	}
 
-	poplarJWT, err := s.tokenFactory.GenerateToken(&authToken)
+	poplarToken, err := s.tokenFactory.GenerateToken(authToken)
 	if err != nil {
-		s.logger.Error("Register 生成 JWT token 失败", slog.Any("error", err))
-		return nil, "", "", errors.New("生成 JWT token 失败，但是尨译账号注册成功，可以登录")
+		s.logger.Error("Register 生成 JWT 失败", slog.Any("error", err))
+		return nil, errors.New("生成 JWT 失败，但是尨译账号注册成功，可以登录")
 	}
 
 	userInfo := &UserInfo{
@@ -268,7 +258,11 @@ func (s *authServiceImpl) Register(params *RegisterParams) (*UserInfo, string, s
 		userInfo.QQNumber = *user.QQNumber
 	}
 
-	return userInfo, poplarJWT, moetranJWT, nil
+	return &RegisterResult{
+		UserInfo:   *userInfo,
+		PoplarJWT:  poplarToken,
+		MoetranJWT: moetranJWT,
+	}, nil
 }
 
 // Bind 实现 AuthService 接口的 Bind 方法
@@ -309,14 +303,43 @@ func (s *authServiceImpl) Bind(params *BindParams) (*BindResult, error) {
 	}
 
 	// 将信息绑定进入本地数据库
-	if err := models.GetUser().Insert(s.handle, &models.User{
+	newUser := &models.User{
 		Nickname:     userInfo.Response.Name,
 		Email:        params.Email,
 		PasswordHash: string(hashedPassword),
 		MoetranId:    userInfo.Response.ID,
 		MoetranJwt:   moetranJWT,
-	}); err != nil {
+	}
+
+	if err := models.GetUser().Insert(s.handle, newUser); err != nil {
 		s.logger.Error("Bind 绑定用户失败", slog.Any("error", err))
 		return nil, errors.New("绑定用户失败，但是尨译账号登录成功")
 	}
+
+	// 生成 PoplarGrid 的 token
+	authToken := &AuthToken{
+		UserId:     uint(newUser.Id),
+		MoetranJwt: moetranJWT,
+	}
+	poplarToken, err := s.tokenFactory.GenerateToken(authToken)
+	if err != nil {
+		s.logger.Error("Bind 生成 JWT 失败", slog.Any("error", err))
+		return nil, errors.New("生成 JWT 失败，但是尨译账号登录成功")
+	}
+
+	r := &BindResult{
+		UserInfo: UserInfo{
+			Id:       uint(newUser.Id),
+			Nickname: newUser.Nickname,
+			Email:    newUser.Email,
+			IsAdmin:  newUser.IsAdmin,
+		},
+		PoplarJWT:  poplarToken,
+		MoetranJWT: moetranJWT,
+	}
+	if newUser.QQNumber != nil {
+		r.UserInfo.QQNumber = *newUser.QQNumber
+	}
+
+	return r, nil
 }

@@ -3,7 +3,7 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"strconv"
+	"poplargrid/internal/api_server/services"
 	"strings"
 	"time"
 
@@ -106,27 +106,32 @@ func NewCorsMiddleware(
 
 // NewUserInfoExtractMiddleware 生成一个提取用户信息的中间件
 // 其作用于 handler 之前
-func NewUserInfoExtractMiddleware() IrisMiddleware {
+func NewUserInfoExtractMiddleware(tokenFactory services.AuthTokenFactory) IrisMiddleware {
 	return func(ctx iris.Context) {
-		// 首先解析 Client-Request-User-Id
-		userIdStr := ctx.GetHeader("Client-Request-User-Id")
-		if userIdStr == "" {
-			ctx.StopWithJSON(iris.StatusBadRequest, ErrorResponse{
-				Error: "缺少 Client-Request-User-Id 请求头",
-			})
+		// 从请求头中获取 Authorization 头
+		authHeader := ctx.GetHeader("Authorization")
+		if authHeader == "" {
+			// 如果没有 Authorization 头，返回 401 Unauthorized
+			ctx.StatusCode(iris.StatusUnauthorized)
+			ctx.Text("未提取到有效的 Authorization 头")
 			return
 		}
 
-		userId, err := strconv.ParseUint(userIdStr, 10, 32)
-		if err != nil || userId == 0 {
-			ctx.StopWithJSON(iris.StatusBadRequest, ErrorResponse{
-				Error: "无效的 Client-Request-User-Id 请求头",
-			})
+		// 将 Authorization 头分割为 Bearer 和 Token
+		jwtStr := strings.TrimPrefix(authHeader, "Bearer ")
+
+		token, err := tokenFactory.ParseToken(jwtStr)
+		if err != nil {
+			// 如果解析失败，返回 401 Unauthorized
+			ctx.StatusCode(iris.StatusUnauthorized)
+			ctx.Text("无法解析的 Authorization 头")
 			return
 		}
 
-		// 将 userId 存入上下文
-		ctx.Values().Set("user_id", userId)
+		// 将解析后的 token 信息存入上下文
+		ctx.Values().Set("user_id", token.UserId)
+		ctx.Values().Set("member_ids", token.MemberIds)
+		ctx.Values().Set("moetran_jwt", token.MoetranJwt)
 
 		// 继续处理请求
 		ctx.Next()

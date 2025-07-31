@@ -10,12 +10,8 @@ import (
 
 // Crawler 定义了尨译爬虫
 type Crawler interface {
-	// UpdateTeams 更新汉化组信息
-	UpdateTeams(moetranAuth string) error
-	// UpdateProjectSets 更新项目集信息
-	UpdateProjectSets(teamMoetranID, moetranAuth string) error
-	// UpdateProjects 更新指定作品集下的项目信息
-	UpdateProjects(teamMoetranID, projectSetMoetranID, moetranAuth string) error
+	// AutoUpdateAll 自动递归地更新当前用户所有汉化组的项目信息
+	AutoUpdateAll(moetranAuth string) error
 }
 
 // crawlerImpl 实现了 Crawler 接口
@@ -38,17 +34,22 @@ func NewCrawler(
 	}
 }
 
-// UpdateTeams 实现了 Crawler 接口的 UpdateTeams 方法
-func (c *crawlerImpl) UpdateTeams(moetranAuth string) error {
+// AutoUpdateAll 自动递归地更新当前用户所有汉化组的项目信息
+func (c *crawlerImpl) AutoUpdateAll(moetranAuth string) error {
+	return c.updateTeams(moetranAuth)
+}
+
+// updateTeams 更新指定的汉化组信息，以及其中所有的项目集和项目信息
+func (c *crawlerImpl) updateTeams(moetranAuth string) error {
 	// 调用尨译 API 获取汉化组信息
-	teams, err := c.apiClient.GetUserTeams(moetranAuth)
+	moetranTeams, err := c.apiClient.GetUserTeams(moetranAuth)
 	if err != nil {
 		c.logger.Error("UpdateTeams 调用龙译 API 获取汉化组信息失败", slog.Any("error", err))
 		return err
 	}
 
 	// 将获取到的汉化组信息转化为本地模型
-	poplarTeams := teamMoetranToPoplar(teams.Teams)
+	poplarTeams := teamMoetranToPoplar(moetranTeams.Teams)
 
 	// 将转化后的汉化组信息保存到数据库
 	// 此处根据 moetran_id 来进行 ON CONFLICT 更新
@@ -62,20 +63,29 @@ func (c *crawlerImpl) UpdateTeams(moetranAuth string) error {
 		return err
 	}
 
+	// 遍历所有汉化组，更新每个汉化组的项目集信息
+	for _, team := range poplarTeams {
+		if err := c.updateProjectSets(team.MoetranId, moetranAuth); err != nil {
+			c.logger.Error("UpdateTeams 更新项目集信息失败", slog.Any("error", err))
+			// 选择直接跳过该汉化组
+			continue
+		}
+	}
+
 	return nil
 }
 
-// UpdateProjectSets 实现了 Crawler 接口的 UpdateProjectSets 方法
-func (c *crawlerImpl) UpdateProjectSets(teamMoetranID, moetranAuth string) error {
+// updateProjectSets 更新指定作品集的信息，以及其中所有的项目信息
+func (c *crawlerImpl) updateProjectSets(teamMoetranID, moetranAuth string) error {
 	// 调用尨译 API 获取项目集信息
-	projectSets, err := c.apiClient.GetTeamProjectSets(teamMoetranID, moetranAuth)
+	moetranProjectSets, err := c.apiClient.GetTeamProjectSets(teamMoetranID, moetranAuth)
 	if err != nil {
 		c.logger.Error("UpdateProjectSets 调用龙译 API 获取项目集信息失败", slog.Any("error", err))
 		return err
 	}
 
 	// 将获取到的项目集信息转化为本地模型
-	poplarProjectSets := setMoetranToPoplar(projectSets.Sets)
+	poplarProjectSets := setMoetranToPoplar(moetranProjectSets.Sets)
 
 	// 将转化后的项目集信息保存到数据库
 	if err := c.handle.
@@ -88,30 +98,61 @@ func (c *crawlerImpl) UpdateProjectSets(teamMoetranID, moetranAuth string) error
 		return err
 	}
 
+	// 遍历每个作品集，更新其中的项目信息
+	for _, projectSet := range poplarProjectSets {
+		if err := c.updateProjects(teamMoetranID, projectSet.MoetranId, moetranAuth); err != nil {
+			c.logger.Error("UpdateProjectSets 更新项目集下的项目信息失败", slog.Any("error", err))
+			// 选择直接跳过该作品集
+			continue
+		}
+	}
+
 	return nil
 }
 
-// UpdateProjects 实现了 Crawler 接口的 UpdateProjects 方法
-func (c *crawlerImpl) UpdateProjects(teamMoetranID, projectSetMoetranID, moetranAuth string) error {
-	// 调用尨译 API 获取项目集下的项目信息
-	projects, err := c.apiClient.GetProjectInfo(teamMoetranID, projectSetMoetranID, moetranAuth)
-	if err != nil {
-		c.logger.Error("UpdateProjects 调用龙译 API 获取项目信息失败", slog.Any("error", err))
-		return err
-	}
+// updateProjects 更新指定作品集的所有项目
+func (c *crawlerImpl) updateProjects(teamMoetranID, projectSetMoetranID, moetranAuth string) error {
+	const LIMIT = 50 // 每次请求获取的项目数量
 
-	// 将获取到的项目信息转化为本地模型
-	poplarProjects := projectMoetranToPoplar(projects.Projects)
+	for page := 1; ; page++ {
+		// 调用尨译 API 获取项目集下的项目信息
+		moetranProjects, err := c.apiClient.GetProjects(
+			teamMoetranID, projectSetMoetranID,
+			page, LIMIT, moetranAuth)
+		if err != nil {
+			c.logger.Error("UpdateProjects 调用龙译 API 获取项目信息失败", slog.Any("error", err))
+			return err
+		}
 
-	// 将转化后的项目信息保存到数据库
-	if err := c.handle.
-		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "moetran_id"}},
-			DoNothing: true,
-		}).
-		Create(&poplarProjects).Error; err != nil {
-		c.logger.Error("UpdateProjects 保存项目信息到数据库失败", slog.Any("error", err))
-		return err
+		if len(moetranProjects.Projects) == 0 {
+			// 如果没有更多项目了，结束循环
+			c.logger.Info("UpdateProjects 结束更新作品集",
+				slog.String("team_moetran_id", teamMoetranID),
+				slog.String("project_set_moetran_id", projectSetMoetranID))
+			break
+		}
+
+		// 将获取到的项目信息转化为本地模型
+		poplarProjects := projectMoetranToPoplar(moetranProjects.Projects)
+
+		// 将转化后的项目信息保存到数据库
+		if err := c.handle.
+			Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "moetran_id"}},
+				DoNothing: true,
+			}).
+			Create(&poplarProjects).Error; err != nil {
+			c.logger.Error("UpdateProjects 保存项目信息到数据库失败", slog.Any("error", err))
+			return err
+		}
+
+		if len(moetranProjects.Projects) < LIMIT {
+			// 如果本次获取的项目数量少于 LIMIT，说明已经没有更多项目了
+			c.logger.Info("UpdateProjects 结束更新作品集",
+				slog.String("team_moetran_id", teamMoetranID),
+				slog.String("project_set_moetran_id", projectSetMoetranID))
+			break
+		}
 	}
 
 	return nil

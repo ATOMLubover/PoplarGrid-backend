@@ -29,6 +29,9 @@ type ServerConfig struct {
 	// 控制服务器的地址和端口
 	Port int `mapstructure:"port"`
 
+	// Cookie 缓存时间（单位：秒）
+	CookieLifetime int `mapstructure:"cookie_lifetime"`
+
 	// 跨域设置
 	CorsOrigins         []string `mapstructure:"cors_origins"`
 	CorsMethods         []string `mapstructure:"cors_methods"`

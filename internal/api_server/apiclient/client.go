@@ -20,15 +20,13 @@ type ApiClient interface {
 	// InviteMemberToProject 邀请成员加入项目
 	InviteMemberToProject(params *InviteMemberParams) (*moetranInviteMemberResponse, error)
 
-	// Login 登录龙译账号，返回 JWT token 或者错误信息
+	// Login 登录龙译账号，返回 JWT 或者错误信息
 	Login(params *LoginParams) (string, error)
-	// Register 注册龙译账号，返回 JWT token 或者错误信息
+	// Register 注册龙译账号，返回 JWT 或者错误信息
 	Register(params *RegisterParams) (string, error)
 
-	// GetProjectDetail 获取指定项目的详细信息，将响应体的 JSON 直接作为 string 返回
-	GetProjectDetail(projectId string, moetranAuth string) (string, error)
 	// GetProjects 获取指定项目集下的部分项目
-	GetProjects(projectSetId string, page, limit int, moetranAuth string) ([]ProjectDTO, error)
+	GetProjects(teamID, projectSetId string, page, limit int, moetranAuth string) (*ProjectsInfo, error)
 	// GetUserInfo 获取指定用户的详细信息
 	GetUserInfo(moetranAuth string) (*UserInfo, error)
 	// GetUserTeams 获取指定用户所在的团队列表
@@ -59,51 +57,6 @@ type apiClientImpl struct {
 	baseUrl string
 
 	logger slog.Logger
-}
-
-// GetProjectDetail 实现 ApiClient 接口的 GetProjectDetail 方法
-func (c *apiClientImpl) GetProjectDetail(projectId string, moetranAuth string) (string, error) {
-	// 组装请求 URL
-	url := fmt.Sprintf("%s/projects/%s",
-		c.baseUrl, projectId)
-
-	// 创建 HTTP GET 请求
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		c.logger.Error("创建龙译 get project 请求失败", slog.Any("error", err))
-		return "", errors.New("无法构建龙译 get project 请求")
-	}
-
-	// 设置必要的请求头
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", moetranAuth))
-
-	// 发送请求
-	res, err := c.client.Do(req)
-	if err != nil {
-		c.logger.Error("发送龙译 get project 请求失败", slog.Any("error", err))
-		return "", errors.New("请求龙译 get project 失败")
-	}
-	defer res.Body.Close()
-
-	// 检查响应状态码
-	if res.StatusCode != http.StatusOK {
-		c.logger.Error("龙译 get project 请求失败",
-			slog.Int("status_code", res.StatusCode),
-			slog.String("url", url),
-		)
-		return "", fmt.Errorf("龙译 get project 请求失败，状态码: %d", res.StatusCode)
-	}
-
-	// 不解析响应体，直接读到一个 string 中返回
-	var resBody bytes.Buffer
-	if _, err := resBody.ReadFrom(res.Body); err != nil {
-		c.logger.Error("读取龙译 get project 响应体失败", slog.Any("error", err))
-		return "", errors.New("读取龙译 get project 响应体失败")
-	}
-
-	// 返回响应体的字符串形式
-	return resBody.String(), nil
 }
 
 // CreateProject 实现 ApiClient 接口的 CreateProject 方法
@@ -556,10 +509,10 @@ func (c *apiClientImpl) GetTeamProjectSets(teamId string, moetranAuth string) (*
 }
 
 // GetProjects 实现 ApiClient 接口的 GetProjects 方法
-func (c *apiClientImpl) GetProjects(projectSetId string, page, limit int, moetranAuth string) ([]ProjectDTO, error) {
+func (c *apiClientImpl) GetProjects(teamID, projectSetID string, page, limit int, moetranAuth string) (*ProjectsInfo, error) {
 	// 组装请求 URL
-	url := fmt.Sprintf("%s/project-sets/%s/projects?page=%d&limit=%d",
-		c.baseUrl, projectSetId, page, limit)
+	url := fmt.Sprintf("%s/teams/%s/projects?page=%d&limit=%d&project_set=%s",
+		c.baseUrl, teamID, page, limit, projectSetID)
 
 	// 创建 HTTP GET 请求
 	req, err := http.NewRequest("GET", url, nil)
@@ -580,24 +533,30 @@ func (c *apiClientImpl) GetProjects(projectSetId string, page, limit int, moetra
 	}
 	defer res.Body.Close()
 
-	var projects []ProjectDTO
+	projectsInfo := &ProjectsInfo{}
 
 	// 检查响应状态码
 	if res.StatusCode != http.StatusOK {
+		// 此时尝试读取为 error 信息
+		if err := json.NewDecoder(res.Body).Decode(&projectsInfo.Error); err != nil {
+			c.logger.Error("解析龙译 get projects 错误响应失败", slog.Any("error", err))
+			return nil, errors.New("解析龙译错误响应失败")
+		}
+
 		c.logger.Error("龙译 get projects 请求失败",
 			slog.Int("status_code", res.StatusCode),
 			slog.String("url", url),
-		)
-		return nil, fmt.Errorf("龙译获取项目列表请求失败，状态码: %d", res.StatusCode)
+			slog.Any("error_message", projectsInfo.Error))
+		return projectsInfo, fmt.Errorf("龙译获取项目列表请求失败，状态码: %d", res.StatusCode)
 	}
 
 	// 解析正常的响应体
-	if err := json.NewDecoder(res.Body).Decode(&projects); err != nil {
+	if err := json.NewDecoder(res.Body).Decode(&projectsInfo.Projects); err != nil {
 		c.logger.Error("解析龙译 get projects 响应失败", slog.Any("error", err))
 		return nil, errors.New("解析龙译获取项目列表响应失败")
 	}
 
-	return projects, nil
+	return projectsInfo, nil
 }
 
 // =========== 辅助函数 ===========

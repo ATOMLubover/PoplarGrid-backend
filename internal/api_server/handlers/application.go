@@ -83,7 +83,7 @@ func (h *ApplicationHandler) BeforeActivation(b mvc.BeforeActivation) {
 // @Produce 	json
 // @Success 	200 {object} []ApplicationInfo
 // @Failure 	400 {object} ErrorResponse "无效的请求参数"
-// @Failure 	500 {object} ErrorResponse "服务器内部错误"
+// @Failure 	500 {string} string "服务器内部错误"
 //
 // @Router 		/api/applications [get]
 func (h *ApplicationHandler) List(ctx iris.Context) {
@@ -165,7 +165,7 @@ func (h *ApplicationHandler) List(ctx iris.Context) {
 // @Produce 	json
 // @Success 	200 {object} SuccessResponse "创建成功"
 // @Failure 	400 {object} ErrorResponse "无效的请求参数"
-// @Failure 	500 {object} ErrorResponse "服务器内部错误"
+// @Failure 	500 {string} string "服务器内部错误"
 //
 // @Router 		/api/applications [post]
 func (h *ApplicationHandler) Create(ctx iris.Context) {
@@ -223,7 +223,7 @@ func (h *ApplicationHandler) Create(ctx iris.Context) {
 // @Produce 	json
 // @Success 	200 {object} SuccessResponse "处理成功"
 // @Failure 	400 {object} ErrorResponse "无效的请求参数"
-// @Failure 	500 {object} ErrorResponse "服务器内部错误"
+// @Failure 	500 {string} string "服务器内部错误"
 //
 // @Router 		/api/applications/{id} [put]
 func (h *ApplicationHandler) Process(ctx iris.Context) {

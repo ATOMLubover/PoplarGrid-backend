@@ -5,10 +5,11 @@ import (
 	"time"
 )
 
-// AuthToken 定义了 Poplar Grid 的 JWT token 结构
+// AuthToken 定义了 Poplar Grid 的 JWT 结构
 type AuthToken struct {
-	UserId    uint   `json:"user_id"`    // UserId 是用户的唯一标识符
-	MemberIds []uint `json:"member_ids"` // MemberIds 是用户在各个团队中的成员 ID 列表
+	UserId     uint   // UserId 是用户的唯一标识符
+	MemberIds  []uint // MemberIds 是用户在各个团队中的成员 ID 列表
+	MoetranJwt string // MoetranJwt 是用户的 Moetran JWT
 }
 
 // AuthTokenFactory 定义了生成和解析 AuthToken 的接口

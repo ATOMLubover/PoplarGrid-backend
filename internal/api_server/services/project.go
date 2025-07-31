@@ -131,7 +131,6 @@ type ProjectInfo struct {
 	IsPublished   bool          // 是否已发布
 	AllowAutoJoin bool          // 是否允许自动加入
 	Labors        []*LaborInfo  // 成员参与的分工信息
-	MoetranInfo   string        // 尨译项目的信息，直接以 string 形式返回
 }
 
 // CreateProjectParams 定义了创建项目所需的信息
@@ -391,31 +390,6 @@ func (s *projectServiceImpl) GetProjectDetail(params *ProjectDetailParams) (*Pro
 		IsPublished:   project.IsPublished,
 		AllowAutoJoin: project.AllowAutoJoin,
 	}
-
-	// 获取查询用户的龙译 JWT
-	userPKey := models.PKey(params.UserId)
-	userSpec := &models.UserSpec{
-		Id: &userPKey,
-	}
-	userFields := &models.UserFields{
-		Id:         true,
-		MoetranJwt: true,
-	}
-
-	user, err := models.GetUser().SelectFirst(s.handle, userSpec, userFields)
-	if err != nil {
-		s.logger.Error("GetProjectDetail 查询用户信息失败", slog.Any("error", err))
-		return nil, errors.New("查询用户信息失败")
-	}
-
-	// 查询龙译的项目详情
-	moetranInfo, err := s.apiClient.GetProjectDetail(project.MoetranId, user.MoetranJwt)
-	if err != nil {
-		s.logger.Error("GetProjectDetail 调用龙译 API 获取项目详情失败", slog.Any("error", err))
-		return nil, errors.New("调用龙译 API 获取项目详情失败")
-	}
-
-	projectInfo.MoetranInfo = moetranInfo
 
 	// 再查询响应的成员分工信息
 	laborSpec := &models.LaborSpec{

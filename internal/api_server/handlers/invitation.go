@@ -86,7 +86,7 @@ func (h *InvitationHandler) BeforeActivation(b mvc.BeforeActivation) {
 // @Produce 	json
 // @Success 	200 {object} []InvitationInfo
 // @Failure 	400 {object} ErrorResponse "无效的请求参数"
-// @Failure 	500 {object} ErrorResponse "服务器内部错误"
+// @Failure 	500 {string} string "服务器内部错误"
 //
 // @Router 		/api/invitations [get]
 func (h *InvitationHandler) List(ctx iris.Context) {
@@ -168,7 +168,7 @@ func (h *InvitationHandler) List(ctx iris.Context) {
 // @Produce 	json
 // @Success 	200 {object} SuccessResponse "创建成功"
 // @Failure 	400 {object} ErrorResponse "无效的请求参数"
-// @Failure 	500 {object} ErrorResponse "服务器内部错误"
+// @Failure 	500 {string} string "服务器内部错误"
 //
 // @Router 		/api/invitations [post]
 func (h *InvitationHandler) Create(ctx iris.Context) {
@@ -227,7 +227,7 @@ func (h *InvitationHandler) Create(ctx iris.Context) {
 // @Produce 	json
 // @Success 	200 {object} SuccessResponse "处理成功"
 // @Failure 	400 {object} ErrorResponse "无效的请求参数"
-// @Failure 	500 {object} ErrorResponse "服务器内部错误"
+// @Failure 	500 {string} string "服务器内部错误"
 //
 // @Router 		/api/invitations/{id} [put]
 func (h *InvitationHandler) Process(ctx iris.Context) {

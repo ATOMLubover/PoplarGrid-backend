@@ -60,7 +60,7 @@ func (h *MemberHandler) BeforeActivation(b mvc.BeforeActivation) {
 // @Produce 	json
 // @Success 	200 {object} []MemberInfo
 // @Failure 	400 {object} ErrorResponse "无效的请求参数"
-// @Failure 	500 {object} ErrorResponse "服务器内部错误"
+// @Failure 	500 {string} string "服务器内部错误"
 //
 // @Router 		/api/members [get]
 func (h *MemberHandler) List(ctx iris.Context) {

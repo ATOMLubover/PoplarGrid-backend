@@ -102,7 +102,7 @@ func (w *WorksetHandler) BeforeActivation(b mvc.BeforeActivation) {
 // @Produce 	json
 // @Success	 	200 {object} []WorksetInfo
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
-// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Failure     500 {string} string "服务器内部错误"
 //
 // @Router 		/api/worksets [get]
 func (h *WorksetHandler) List(ctx iris.Context) {
@@ -148,7 +148,7 @@ func (h *WorksetHandler) List(ctx iris.Context) {
 // @Produce 	json
 // @Success	 	200 {object} WorksetStats
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
-// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Failure     500 {string} string "服务器内部错误"
 // @Router 		/api/worksets/{id}/stats [get]
 func (h *WorksetHandler) Stats(ctx iris.Context) {
 	// 获取 workset_id 参数
@@ -204,7 +204,7 @@ func (h *WorksetHandler) Stats(ctx iris.Context) {
 // @Produce 	json
 // @Success 	200 {object} SuccessResponse "创建成功"
 // @Failure 	400 {object} ErrorResponse "无效的请求参数"
-// @Failure 	500 {object} ErrorResponse "服务器内部错误"
+// @Failure 	500 {string} string "服务器内部错误"
 //
 // @Router 		/api/worksets [post]
 func (h *WorksetHandler) Create(ctx iris.Context) {

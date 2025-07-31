@@ -125,7 +125,7 @@ func (p *ProjectHandler) BeforeActivation(b mvc.BeforeActivation) {
 // @Produce     json
 // @Success     200 {object} []ProjectInfo
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
-// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Failure     500 {string} string "服务器内部错误"
 //
 // @Router      /api/projects [get]
 func (h *ProjectHandler) List(ctx iris.Context) {
@@ -190,7 +190,7 @@ func (h *ProjectHandler) List(ctx iris.Context) {
 // @Produce 	json
 // @Success	 	200 {object} ProjectInfo
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
-// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Failure     500 {string} string "服务器内部错误"
 //
 // @Router 		/api/projects/{id} [get]
 func (h *ProjectHandler) Detail(ctx iris.Context) {
@@ -243,7 +243,7 @@ func (h *ProjectHandler) Detail(ctx iris.Context) {
 // @Produce 	json
 // @Success	 	200 {object} SuccessResponse "创建成功"
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
-// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Failure     500 {string} string "服务器内部错误"
 //
 // @Router 		/api/projects [post]
 func (h *ProjectHandler) Create(ctx iris.Context) {
@@ -307,7 +307,7 @@ func (h *ProjectHandler) Create(ctx iris.Context) {
 // @Produce 	json
 // @Success	 	200 {object} SuccessResponse "删除成功"
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
-// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Failure     500 {string} string "服务器内部错误"
 //
 // @Router 		/api/projects/{id} [delete]
 func (h *ProjectHandler) Delete(ctx iris.Context) {
@@ -374,7 +374,7 @@ func (h *ProjectHandler) Delete(ctx iris.Context) {
 // @Produce 	json
 // @Success	 	200 {object} SuccessResponse "更新成功"
 // @Failure     400 {object} ErrorResponse "无效的请求参数"
-// @Failure     500 {object} ErrorResponse "服务器内部错误"
+// @Failure     500 {string} string "服务器内部错误"
 //
 // @Router 		/api/projects/{id} [patch]
 func (h *ProjectHandler) Update(ctx iris.Context) {

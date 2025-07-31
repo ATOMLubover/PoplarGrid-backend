@@ -181,9 +181,9 @@ func ApplyMvc(irisApp *iris.Application) *iris.Application {
 	// 初始化数据库句柄
 	handle := InitDatabase()
 
-	// 注册龙译 API Client
+	// 创建龙译 API Client
 	apiClient := apiclient.NewApiClient(cfg.Api.BaseUrl, *slog.Default())
-	// 创建 JWT 工厂
+	// 创建 token 工厂
 	jwtFactory := services.NewAuthTokenFactory(cfg.JWT.SecretKey, time.Duration(cfg.JWT.ExpireTime)*time.Second)
 
 	// 注册各个 service 的依赖
@@ -207,8 +207,10 @@ func ApplyMvc(irisApp *iris.Application) *iris.Application {
 			cfg.Server.CorsWithCredentials,
 			time.Duration(cfg.Server.CorsMaxAge)*time.Second,
 		),
-		// TODO：请求头预处理
-		handlers.NewUserInfoExtractMiddleware(),
+		// 提取 Authoriaztion 头中的 token
+		handlers.NewUserInfoExtractMiddleware(
+			jwtFactory,
+		),
 	)
 
 	// 注册路由处理器

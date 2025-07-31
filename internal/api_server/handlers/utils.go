@@ -31,6 +31,7 @@ func RouteAPIHandler(root *mvc.Application) {
 	RouteMemberHandler(api)
 	RouteInvitationHandler(api)
 	RouteApplicationHandler(api)
+	RouteCrawlerHandler(api)
 }
 
 // // handlerPair 集成了 handler 和取消时的 respond 函数

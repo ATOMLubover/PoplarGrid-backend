@@ -151,7 +151,7 @@ type moetranLoginRequest struct {
 
 // moetranLoginResponse 定义了登录响应的结构体
 type moetranLoginResponse struct {
-	Token   string `json:"token"` // JWT token
+	Token   string `json:"token"` // JWT
 	Error   string `json:"error"`
 	Message struct {
 		Email    []string `json:"email"`    // 邮箱
@@ -178,7 +178,7 @@ type moetranRegisterRequest struct {
 // moetranRegisterResponse 定义了注册响应的结构体
 type moetranRegisterResponse struct {
 	Message string `json:"message"` // 响应消息
-	Token   string `json:"token"`   // JWT token
+	Token   string `json:"token"`   // JWT
 }
 
 // UserDTO 定义了获取用户信息的响应结构体
@@ -222,4 +222,10 @@ type ProjectDTO struct {
 	ID    string `json:"id"`    // 项目 ID
 	Name  string `json:"name"`  // 项目名称
 	Intro string `json:"intro"` // 项目简介
+}
+
+// ProjectsInfo 定义了获取项目信息的结构体
+type ProjectsInfo struct {
+	Error    normalErrorResponse // 错误发生时的响应
+	Projects []ProjectDTO        // 用户所在的项目列表
 }
