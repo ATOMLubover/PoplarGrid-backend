@@ -21,7 +21,7 @@ CREATE INDEX idx_users_qq_number ON users(qq_number);
 CREATE UNIQUE INDEX idx_users_nickname_unique_active ON users (nickname) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX idx_users_email_unique_active ON users (email) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX idx_users_qq_number_unique_active ON users (qq_number) WHERE deleted_at IS NULL AND qq_number IS NOT NULL;
-
+CREATE UNIQUE INDEX idx_users_moetran_id_unique ON users (moetran_id);
 
 -- Table: teams
 CREATE TABLE teams (
@@ -37,7 +37,7 @@ CREATE TABLE teams (
 CREATE INDEX idx_teams_deleted_at ON teams(deleted_at);
 CREATE INDEX idx_teams_moetran_id ON teams(moetran_id);
 CREATE UNIQUE INDEX idx_teams_name_unique_active ON teams (name) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX idx_teams_moetran_id_unique_active ON teams (moetran_id) WHERE deleted_at IS NULL AND moetran_id IS NOT NULL;
+CREATE UNIQUE INDEX idx_teams_moetran_id_unique ON teams (moetran_id);
 
 
 -- Table: members
@@ -62,7 +62,7 @@ ALTER TABLE members DROP CONSTRAINT IF EXISTS unique_user_in_team;
 CREATE INDEX idx_members_deleted_at ON members(deleted_at);
 CREATE INDEX idx_members_user_id ON members(user_id);
 CREATE INDEX idx_members_team_id ON members(team_id);
-CREATE UNIQUE INDEX idx_members_user_team_unique_active ON members (user_id, team_id) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX idx_members_user_team_unique ON members (user_id, team_id);
 
 
 -- Table: worksets
@@ -85,7 +85,7 @@ CREATE INDEX idx_worksets_team_id ON worksets(team_id);
 CREATE INDEX idx_worksets_moetran_id ON worksets(moetran_id);
 CREATE UNIQUE INDEX idx_worksets_name_team_unique_active ON worksets (team_id, name) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX idx_worksets_project_sequence_name_unique_active ON worksets (project_sequence_name) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX idx_worksets_moetran_id_unique_active ON worksets (moetran_id) WHERE deleted_at IS NULL AND moetran_id IS NOT NULL;
+CREATE UNIQUE INDEX idx_worksets_moetran_id_unique ON worksets (moetran_id);
 
 
 -- Table: projects
@@ -117,7 +117,7 @@ CREATE INDEX idx_projects_moetran_id ON projects(moetran_id);
 CREATE INDEX idx_projects_principal_id ON projects(principal_id);
 CREATE INDEX idx_projects_workset_id ON projects(workset_id);
 CREATE UNIQUE INDEX idx_projects_workset_index_unique_active ON projects (workset_id, workset_index) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX idx_projects_moetran_id_unique_active ON projects (moetran_id) WHERE deleted_at IS NULL AND moetran_id IS NOT NULL;
+CREATE UNIQUE INDEX idx_projects_moetran_id_unique ON projects (moetran_id);
 
 
 -- Table: labors

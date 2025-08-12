@@ -107,6 +107,7 @@ func (h *AuthHandler) Bind(ctx iris.Context) {
 		Value:    result.PoplarJWT,
 		Expires:  expiresAt,
 		HttpOnly: true,
+		Path:     "/",
 		// TODO: 测试环境不启用 HTTPS
 		// Secure:   true,
 	})

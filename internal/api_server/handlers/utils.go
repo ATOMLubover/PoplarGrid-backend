@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"poplargrid/internal/api_server/services"
+
 	"github.com/kataras/iris/v12/mvc"
 )
 
@@ -20,9 +22,12 @@ type SuccessResponse struct {
 }
 
 // RouteAPIHandler 注册 API 相关的路由
-func RouteAPIHandler(root *mvc.Application) {
+func RouteAPIHandler(root *mvc.Application, tokenFactory services.AuthTokenFactory) {
 	// 创建 /api 路由组
 	api := root.Party("/api")
+
+	// 设置全局中间件
+	api.Router.Use(NewUserInfoExtractMiddleware(tokenFactory))
 
 	// 注册各个 handler 的路由
 	RouteUserHandler(api)

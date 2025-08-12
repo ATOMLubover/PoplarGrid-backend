@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"poplargrid/internal/api_server/apiclient"
 	"poplargrid/internal/api_server/config"
+	"poplargrid/internal/api_server/crawler"
 	"poplargrid/internal/api_server/handlers"
 	"poplargrid/internal/api_server/services"
 	"poplargrid/internal/shared/configutil"
@@ -185,6 +186,8 @@ func ApplyMvc(irisApp *iris.Application) *iris.Application {
 	apiClient := apiclient.NewApiClient(cfg.Api.BaseUrl, *slog.Default())
 	// 创建 token 工厂
 	jwtFactory := services.NewAuthTokenFactory(cfg.JWT.SecretKey, time.Duration(cfg.JWT.ExpireTime)*time.Second)
+	// 创建 crawler
+	crawler := crawler.NewCrawler(handle, apiClient, slog.Default())
 
 	// 注册各个 service 的依赖
 	mvcApp.Register(
@@ -195,6 +198,8 @@ func ApplyMvc(irisApp *iris.Application) *iris.Application {
 		services.NewUserService(handle, slog.Default()),
 		services.NewWorksetService(handle, apiClient, slog.Default()),
 		services.NewAuthService(jwtFactory, handle, apiClient, slog.Default()),
+		services.NewCrawlerService(crawler, slog.Default()),
+		services.NewMemberService(handle, jwtFactory, slog.Default()),
 	)
 
 	// 注册中间件
@@ -207,14 +212,10 @@ func ApplyMvc(irisApp *iris.Application) *iris.Application {
 			cfg.Server.CorsWithCredentials,
 			time.Duration(cfg.Server.CorsMaxAge)*time.Second,
 		),
-		// 提取 Authoriaztion 头中的 token
-		handlers.NewUserInfoExtractMiddleware(
-			jwtFactory,
-		),
 	)
 
 	// 注册路由处理器
-	handlers.RouteAPIHandler(mvcApp)
+	handlers.RouteAPIHandler(mvcApp, jwtFactory)
 	handlers.RouteAuthHandler(mvcApp)
 
 	return irisApp

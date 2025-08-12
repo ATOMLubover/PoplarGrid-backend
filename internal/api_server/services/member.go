@@ -56,19 +56,23 @@ type MemberInfo struct {
 type MemberService interface {
 	// GetMembers 获取指定条件下的成员列表
 	GetMembers(params *MemberListParams) ([]*MemberInfo, error)
+	// UpdateToken 更新指定用户 Token 中的 memberIDs
+	UpdateToken(userID uint, moetranAuth string) (string, error)
 }
 
 // memberServiceImpl 是 MemberService 接口的实现
 type memberServiceImpl struct {
-	handle *gorm.DB
-	logger *slog.Logger
+	handle  *gorm.DB
+	factory AuthTokenFactory
+	logger  *slog.Logger
 }
 
 // NewMemberService 创建一个新的 MemberService 实例
-func NewMemberService(hdl *gorm.DB, lgr *slog.Logger) MemberService {
+func NewMemberService(hdl *gorm.DB, factory AuthTokenFactory, lgr *slog.Logger) MemberService {
 	return &memberServiceImpl{
-		handle: hdl,
-		logger: lgr,
+		handle:  hdl,
+		factory: factory,
+		logger:  lgr,
 	}
 }
 
@@ -119,6 +123,50 @@ func (s *memberServiceImpl) GetMembers(params *MemberListParams) ([]*MemberInfo,
 	}
 
 	return memberInfos, nil
+}
+
+// UpdateToken 实现了 MemberService 接口的 UpdateToken 方法
+func (s *memberServiceImpl) UpdateToken(userID uint, moetranAuth string) (string, error) {
+	// 查询用户的所有成员 ID
+	userPKey := models.PKey(userID)
+	memberSpec := &models.MemberSpec{
+		UserId: &userPKey,
+	}
+	memberFields := &models.MemberFields{
+		Id: true,
+	}
+
+	// 执行查询
+	members, err := models.GetMember().SelectMany(
+		s.handle, memberSpec, memberFields,
+		nil, nil)
+	if err != nil {
+		s.logger.Error("UpdateToken 查询用户成员失败", slog.Any("error", err))
+		return "", errors.New("查询用户成员信息失败")
+	}
+
+	// 提取所有成员 ID
+	memberIDs := make([]uint, len(members))
+
+	for i, member := range members {
+		memberIDs[i] = uint(member.Id)
+	}
+
+	// 获取原始的 Token
+	authToken := &AuthToken{
+		UserId:     userID,
+		MoetranJwt: moetranAuth,
+		MemberIds:  memberIDs,
+	}
+
+	// 返回更新后的 AuthToken
+	newToken, err := s.factory.GenerateToken(authToken)
+	if err != nil {
+		s.logger.Error("UpdateToken 生成新的 Token 失败", slog.Any("error", err))
+		return "", errors.New("生成新的 Token 失败")
+	}
+
+	return newToken, nil
 }
 
 // buildLaborMask 将数据库的角色字段转换为 LaborMask
