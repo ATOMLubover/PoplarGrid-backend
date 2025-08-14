@@ -100,8 +100,8 @@ func (w *WorksetHandler) BeforeActivation(b mvc.BeforeActivation) {
 //
 // @Tags 		workset
 // @Produce 	json
-// @Success	 	200 {object} []WorksetInfo
-// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Success	 	200 {object} FormatResponse[[]WorksetInfo]
+// @Failure     400 {object} StringFormatResponse "无效的请求参数"
 // @Failure     500 {string} string "服务器内部错误"
 //
 // @Router 		/api/worksets [get]
@@ -115,10 +115,7 @@ func (h *WorksetHandler) List(ctx iris.Context) {
 		Limit:  pageSize,
 	})
 	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "获取工作集列表失败",
-		})
+		wrapError(ctx, err)
 		return
 	}
 
@@ -134,7 +131,7 @@ func (h *WorksetHandler) List(ctx iris.Context) {
 		})
 	}
 
-	ctx.JSON(worksetInfos)
+	wrapSuccess(ctx, worksetInfos)
 }
 
 // Stats godoc
@@ -146,29 +143,22 @@ func (h *WorksetHandler) List(ctx iris.Context) {
 //
 // @Tags 		workset
 // @Produce 	json
-// @Success	 	200 {object} WorksetStats
-// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Success	 	200 {object} FormatResponse[WorksetStats]
+// @Failure     400 {object} StringFormatResponse "无效的请求参数"
 // @Failure     500 {string} string "服务器内部错误"
 // @Router 		/api/worksets/{id}/stats [get]
 func (h *WorksetHandler) Stats(ctx iris.Context) {
 	// 获取 workset_id 参数
 	worksetId, err := ctx.Params().GetUint("id")
 	if err != nil || worksetId <= 0 {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "workset_id 必须是一个明确给出的正整数",
-		})
+		wrapError(ctx, newHdlErr(ErrParamsLackage, "无效的 workset ID"))
 		return
 	}
 
 	// 调用服务层获取统计数据
-	stats, err := h.WorksetService.GetWorksetStats(worksetId)
-	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ctx.JSON(ErrorResponse{
-			Error:  "获取特定作品集的项目统计信息失败",
-			Detail: err.Error(),
-		}))
+	stats, e := h.WorksetService.GetWorksetStats(worksetId)
+	if e != nil {
+		wrapError(ctx, e)
 		return
 	}
 
@@ -202,8 +192,8 @@ func (h *WorksetHandler) Stats(ctx iris.Context) {
 //
 // @Tags 		workset
 // @Produce 	json
-// @Success 	200 {object} SuccessResponse "创建成功"
-// @Failure 	400 {object} ErrorResponse "无效的请求参数"
+// @Success 	200 {object} StringFormatResponse "创建成功"
+// @Failure 	400 {object} StringFormatResponse "无效的请求参数"
 // @Failure 	500 {string} string "服务器内部错误"
 //
 // @Router 		/api/worksets [post]
@@ -212,10 +202,7 @@ func (h *WorksetHandler) Create(ctx iris.Context) {
 	var req CreateWorksetRequest
 
 	if err := ctx.ReadJSON(&req); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "无效的请求参数",
-		})
+		wrapError(ctx, newHdlErr(ErrParamsLackage, "无效的请求参数"))
 		return
 	}
 
@@ -226,19 +213,9 @@ func (h *WorksetHandler) Create(ctx iris.Context) {
 		TeamId:      req.TeamId,
 	})
 	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "创建工作集失败",
-			Detail: err.Error(),
-		})
+		wrapError(ctx, err)
 		return
 	}
 
-	ctx.JSON(SuccessResponse{
-		Message: info.Message,
-		Detail: &iris.Map{
-			"workset_id": info.WorksetId,
-			"moetran_id": info.MoetranId,
-		},
-	})
+	wrapSuccess(ctx, info)
 }

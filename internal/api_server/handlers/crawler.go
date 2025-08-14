@@ -33,56 +33,42 @@ func (h *CrawlerHandler) BeforeActivation(b mvc.BeforeActivation) {
 //
 // @Tags 		crawler
 // @Produces 	json
-// @Success     200 {object} SuccessResponse "更新成功"
-// @Failure 	400 {object} ErrorResponse "无效的请求参数"
+// @Success     200 {object} StringFormatResponse "更新成功"
+// @Failure 	400 {object} StringFormatResponse "无效的请求参数"
 // @Failure 	500 {string} string "服务器内部错误"
 //
 // @Router /api/crawler/auto-update-all [post]
 func (h *CrawlerHandler) AutoUpdateAll(ctx iris.Context) {
-	// 从上下文中获取 moetranAuth 和 userID
-	moetranAuth := ctx.Values().GetString("moetran_jwt")
-	if moetranAuth == "" {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "未提取到有效的 moetran_auth",
-		})
+	// 从上下文中获取 moetranJWT 和 userID
+	moetranJWT := ctx.Values().GetString("moetran_jwt")
+	if moetranJWT == "" {
+		wrapError(ctx, newHdlErr(ErrParamsLackage, "缺少 Moetran JWT"))
 		return
 	}
 
 	userID, err := ctx.Values().GetUint("user_id")
 	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "无法获取用户 ID",
-		})
+		wrapError(ctx, newHdlErr(ErrParamsLackage, "缺少用户 ID"))
 		return
 	}
 
 	// 调用服务层进行自动更新
-	if err := h.CrawlerService.AutoUpdateAll(userID, moetranAuth); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "自动更新失败",
-			Detail: err.Error(),
-		})
+	if err := h.CrawlerService.AutoUpdateAll(userID, moetranJWT); err != nil {
+		wrapError(ctx, err)
 		return
 	}
 
 	// 随后更新 memberIDs 的 Cookie
-	newToken, err := h.MemberService.UpdateToken(userID, moetranAuth)
-	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "拉取尨译信息成功，更新 Token 失败",
-			Detail: err.Error(),
-		})
+	newToken, e := h.MemberService.UpdateToken(userID, moetranJWT)
+	if e != nil {
+		wrapError(ctx, e)
 		return
 	}
 
 	// 设置新的 Token Cookie
 	// 为响应添加 Set-Cookie 头部
 	expiresAt := time.Now().Add(7 * time.Hour) // 默认为 7 天
-	if cfg := config.GetConfig(); cfg != nil && cfg.Server.CookieLifetime <= 0 {
+	if cfg := config.GetConfig(); cfg != nil && cfg.Server.CookieLifetime > 0 {
 		expiresAt = time.Now().Add(time.Duration(cfg.Server.CookieLifetime) * time.Second)
 	}
 
@@ -96,8 +82,5 @@ func (h *CrawlerHandler) AutoUpdateAll(ctx iris.Context) {
 		// Secure:   true,
 	})
 
-	ctx.StatusCode(iris.StatusOK)
-	ctx.JSON(SuccessResponse{
-		Message: "自动更新成功",
-	})
+	wrapSuccess(ctx, "更新成功")
 }

@@ -61,7 +61,6 @@ type CreateWorksetParams struct {
 
 // WorksetCreatedInfo 定义了创建工作集后的返回信息
 type WorksetCreatedInfo struct {
-	Message   string // 成功消息
 	WorksetId uint   // 工作集 ID
 	MoetranId string // 龙译 ID
 }
@@ -69,12 +68,12 @@ type WorksetCreatedInfo struct {
 // WorksetService 接口定义了作品集服务的基本操作
 type WorksetService interface {
 	// GetWorksets 根据参数获取作品集列表
-	GetWorksets(params *WorksetListParams) ([]*WorksetInfo, error)
+	GetWorksets(params *WorksetListParams) ([]*WorksetInfo, Err)
 	// GetWorksetStats 获取特定作品集的项目统计信息
-	GetWorksetStats(worksetId uint) (*WorksetStats, error)
+	GetWorksetStats(worksetId uint) (*WorksetStats, Err)
 
 	// CreateWorkset 创建一个新的工作集
-	CreateWorkset(params *CreateWorksetParams) (*WorksetCreatedInfo, error)
+	CreateWorkset(params *CreateWorksetParams) (*WorksetCreatedInfo, Err)
 }
 
 // worksetServiceImpl 是 WorksetService 的实现
@@ -98,7 +97,7 @@ func NewWorksetService(
 }
 
 // GetWorksets 实现 WorksetService 接口的 GetWorksets 方法
-func (s *worksetServiceImpl) GetWorksets(params *WorksetListParams) ([]*WorksetInfo, error) {
+func (s *worksetServiceImpl) GetWorksets(params *WorksetListParams) ([]*WorksetInfo, Err) {
 	// 查询条件为汉化组 ID
 	teamPKey := models.PKey(params.TeamId)
 	worksetSpec := &models.WorksetSpec{
@@ -111,15 +110,15 @@ func (s *worksetServiceImpl) GetWorksets(params *WorksetListParams) ([]*WorksetI
 		&params.Offset, &params.Limit)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			s.logger.Warn("没有找到指定团队的作品集",
+			s.logger.Warn("GetWorksets 没有找到指定团队的作品集",
 				slog.Any("team_id", params.TeamId),
 				slog.Any("error", err))
-			return nil, errors.New("没有找到指定团队的作品集")
+			return nil, ErrNoSatifiedResults
 		}
-		s.logger.Error("获取指定团队的作品集失败",
+		s.logger.Error("GetWorksets 获取指定团队的作品集失败",
 			slog.Any("team_id", params.TeamId),
 			slog.Any("error", err))
-		return nil, errors.New("查询团队的作品集列表失败")
+		return nil, ErrDatabaseFailure
 	}
 
 	// 将查询结果转换为 WorksetInfo
@@ -139,7 +138,7 @@ func (s *worksetServiceImpl) GetWorksets(params *WorksetListParams) ([]*WorksetI
 }
 
 // GetWorksetStats 实现 WorksetService 接口的 GetWorksetStats 方法
-func (s *worksetServiceImpl) GetWorksetStats(worksetId uint) (*WorksetStats, error) {
+func (s *worksetServiceImpl) GetWorksetStats(worksetId uint) (*WorksetStats, Err) {
 	// 查询条件为作品集 ID
 	worksetPKey := models.PKey(worksetId)
 
@@ -147,15 +146,15 @@ func (s *worksetServiceImpl) GetWorksetStats(worksetId uint) (*WorksetStats, err
 	stat, err := models.GetWorkStatsMv().Select(s.handle, worksetPKey)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			s.logger.Warn("没有找到指定的作品集",
+			s.logger.Warn("GetWorksetStats 没有找到指定的作品集",
 				slog.Any("workset_id", worksetPKey),
 				slog.Any("error", err))
-			return nil, errors.New("没有找到指定的作品集")
+			return nil, ErrNoSatifiedResults
 		}
-		s.logger.Error("获取指定的作品集统计数据失败",
+		s.logger.Error("GetWorksetStats 获取指定的作品集统计数据失败",
 			slog.Any("workset_id", worksetPKey),
 			slog.Any("error", err))
-		return nil, errors.New("查询指定的作品集统计数据失败")
+		return nil, ErrDatabaseFailure
 	}
 
 	// 转化为 WorksetStats
@@ -185,13 +184,13 @@ func (s *worksetServiceImpl) GetWorksetStats(worksetId uint) (*WorksetStats, err
 }
 
 // CreateWorkset 实现 WorksetService 接口的 CreateWorkset 方法
-func (s *worksetServiceImpl) CreateWorkset(params *CreateWorksetParams) (*WorksetCreatedInfo, error) {
+func (s *worksetServiceImpl) CreateWorkset(params *CreateWorksetParams) (*WorksetCreatedInfo, Err) {
 	// 检查是否是非法冒用
 	// 检查申请者的成员 ID 是否在上下文中
 	if _, exists := params.CurrentMemberIds[params.OperatorMemberId]; !exists {
 		s.logger.Warn("CreateWorkset 所使用成员 ID 不在当前用户的成员列表中",
 			slog.Uint64("operator_member_id", uint64(params.OperatorMemberId)))
-		return nil, errors.New("非法引用申请者成员 ID")
+		return nil, ErrInvalidOperator
 	}
 
 	// 检查当前用户是否有权利在本团队下创建工作集
@@ -213,12 +212,12 @@ func (s *worksetServiceImpl) CreateWorkset(params *CreateWorksetParams) (*Workse
 			s.logger.Warn("CreateWorkset 没有找到指定成员",
 				slog.Any("member_id", params.OperatorMemberId),
 				slog.Any("error", err))
-			return nil, errors.New("没有找到指定成员")
+			return nil, ErrNoSatifiedResults
 		}
 		s.logger.Error("CreateWorkset 查询指定成员失败",
 			slog.Any("member_id", params.OperatorMemberId),
 			slog.Any("error", err))
-		return nil, errors.New("查询指定成员失败")
+		return nil, ErrDatabaseFailure
 	}
 
 	// 如果当前用户不是团队的管理员，则不允许创建工作集
@@ -226,7 +225,7 @@ func (s *worksetServiceImpl) CreateWorkset(params *CreateWorksetParams) (*Workse
 		s.logger.Warn("CreateWorkset 当前用户不是团队管理员",
 			slog.Any("member_id", params.OperatorMemberId),
 			slog.Any("team_id", params.TeamId))
-		return nil, errors.New("当前用户没有权限在本团队下创建工作集")
+		return nil, newSrvError(ErrNoPermission, "当前用户不是团队管理员")
 	}
 
 	// 获取对应汉化组的龙译 ID
@@ -237,10 +236,16 @@ func (s *worksetServiceImpl) CreateWorkset(params *CreateWorksetParams) (*Workse
 
 	team, err := models.GetTeam().SelectFirst(s.handle, teamSpec)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logger.Warn("CreateWorkset 没有找到指定团队",
+				slog.Any("team_id", params.TeamId),
+				slog.Any("error", err))
+			return nil, ErrNoSatifiedResults
+		}
 		s.logger.Error("CreateWorkset 查询团队信息失败",
 			slog.Any("team_id", params.TeamId),
 			slog.Any("error", err))
-		return nil, errors.New("查询团队信息失败")
+		return nil, ErrDatabaseFailure
 	}
 
 	// 创建事务协调器
@@ -249,20 +254,6 @@ func (s *worksetServiceImpl) CreateWorkset(params *CreateWorksetParams) (*Workse
 	var worksetCreatedInfo *WorksetCreatedInfo
 
 	if err := c.RunInTransaction(context.Background(), func(tx *gorm.DB) (error, func() error) {
-		// 先在本地创建工作集
-		workset := &models.Workset{
-			Name:        params.Name,
-			Description: params.Description,
-			TeamId:      models.PKey(params.TeamId),
-		}
-
-		if err := models.GetWorkset().Insert(tx, workset); err != nil {
-			s.logger.Error("CreateWorkset 插入工作集失败",
-				slog.Any("workset", workset),
-				slog.Any("error", err))
-			return errors.New("插入工作集失败"), nil
-		}
-
 		// 调用龙译创建作品集
 		projSetInfo, err := s.apiClient.CreateProjectSet(&apiclient.CreateProjectSetParams{
 			Name:          params.Name,
@@ -273,26 +264,26 @@ func (s *worksetServiceImpl) CreateWorkset(params *CreateWorksetParams) (*Workse
 			s.logger.Error("CreateWorkset 调用龙译 API 创建作品集失败",
 				slog.Any("team_id", params.TeamId),
 				slog.Any("error", err))
-			return errors.New("调用龙译 API 创建作品集失败"), nil
+			return ErrMoetranAPIFailure, nil
 		}
 
 		// 更新本地工作集的龙译 ID
-		if err := models.GetWorkset().Update(tx, &models.Workset{
-			BaseModel: models.BaseModel{
-				Id: workset.Id,
-			},
-			MoetranId: projSetInfo.ProjectSet.Id,
-		}); err != nil {
-			s.logger.Error("CreateWorkset 更新工作集龙译 ID 失败",
-				slog.Any("workset_id", workset.Id),
+		workset := &models.Workset{
+			Name:        params.Name,
+			Description: params.Description,
+			TeamId:      models.PKey(params.TeamId),
+			MoetranId:   projSetInfo.ProjectSet.Id,
+		}
+
+		if err := models.GetWorkset().Insert(tx, workset); err != nil {
+			s.logger.Error("CreateWorkset 创建作品集失败失败",
 				slog.Any("moetran_id", projSetInfo.ProjectSet.Id),
 				slog.Any("error", err))
-			return errors.New("更新工作集龙译 ID 失败"), nil
+			return ErrDatabaseFailure, nil
 		}
 
 		// 组装返回信息
 		worksetCreatedInfo = &WorksetCreatedInfo{
-			Message:   "工作集创建成功",
 			WorksetId: uint(workset.Id),
 			MoetranId: projSetInfo.ProjectSet.Id,
 		}
@@ -302,7 +293,7 @@ func (s *worksetServiceImpl) CreateWorkset(params *CreateWorksetParams) (*Workse
 	}); err != nil {
 		s.logger.Error("CreateWorkset 事务执行失败",
 			slog.Any("error", err))
-		return nil, errors.New("创建工作集失败")
+		return nil, newSrvError(ErrDatabaseFailure, "创建作品集失败")
 	}
 
 	return worksetCreatedInfo, nil

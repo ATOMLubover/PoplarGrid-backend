@@ -26,7 +26,7 @@ type TeamInfo struct {
 // TeamService 接口定义了团队服务的基本操作
 type TeamService interface {
 	// GetTeams 获取指定用户的团队列表
-	GetTeams(params *TeamListParams) ([]*TeamInfo, error)
+	GetTeams(params *TeamListParams) ([]*TeamInfo, Err)
 }
 
 // teamServiceImpl 是 TeamService 的实现
@@ -47,7 +47,7 @@ func NewTeamService(
 }
 
 // GetTeams 实现 TeamService 接口的 GetTeams 方法
-func (s *teamServiceImpl) GetTeams(params *TeamListParams) ([]*TeamInfo, error) {
+func (s *teamServiceImpl) GetTeams(params *TeamListParams) ([]*TeamInfo, Err) {
 	// 查询条件为用户 ID
 	userPKey := models.PKey(params.UserId)
 	memberSpec := &models.MemberSpec{
@@ -64,8 +64,12 @@ func (s *teamServiceImpl) GetTeams(params *TeamListParams) ([]*TeamInfo, error) 
 		s.handle, memberSpec, memberFields,
 		&params.Offset, &params.Limit)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logger.Warn("GetTeams 查询没有结果",
+				slog.Uint64("userId", uint64(params.UserId)))
+		}
 		s.logger.Error("GetTeams 查询成员信息失败", slog.Any("error", err))
-		return nil, errors.New("查询用户的汉化组列表失败")
+		return nil, ErrDatabaseFailure
 	}
 
 	// 将查询结果转换为团队信息
@@ -77,7 +81,7 @@ func (s *teamServiceImpl) GetTeams(params *TeamListParams) ([]*TeamInfo, error) 
 				slog.Any("member_id", member.BaseModel.Id),
 				slog.Any("user_id", member.UserId),
 				slog.Any("team_id", member.TeamId))
-			return nil, errors.New("出现异常的无团队成员")
+			return nil, newSrvError(ErrDatabaseFailure, "异常的无团队成员")
 		}
 
 		teamInfos = append(teamInfos, &TeamInfo{

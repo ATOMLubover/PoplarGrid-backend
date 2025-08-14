@@ -59,11 +59,11 @@ type ProcessApplicationParams struct {
 // ApplicationService 接口定义了申请服务的基本操作
 type ApplicationService interface {
 	// GetApplications 获取指定条件下的申请列表
-	GetApplications(params *ApplicationListParams) ([]*ApplicationInfo, error)
+	GetApplications(params *ApplicationListParams) ([]ApplicationInfo, Err)
 	// CreateApplication 创建新的申请
-	CreateApplication(params *CreateApplicationParams) error
+	CreateApplication(params *CreateApplicationParams) Err
 	// ProcessApplication 处理申请（接受或拒绝）
-	ProcessApplication(params *ProcessApplicationParams) error
+	ProcessApplication(params *ProcessApplicationParams) Err
 }
 
 // applicationServiceImpl 是 ApplicationService 的实现
@@ -87,19 +87,19 @@ func NewApplicationService(
 }
 
 // GetApplications 实现 ApplicationService 接口的 GetApplications 方法
-func (s *applicationServiceImpl) GetApplications(params *ApplicationListParams) ([]*ApplicationInfo, error) {
+func (s *applicationServiceImpl) GetApplications(params *ApplicationListParams) ([]ApplicationInfo, Err) {
 	// 检查是否查询的 applicantMemberId、processorMemberId 属于当前用户的成员 ID 集合
 	if _, ok := params.CurrentMemberIds[params.ApplicantMemberId]; params.ApplicantMemberId != 0 && !ok {
 		// 只有 applicantMemberId 不为默认值的 0 时才检查
 		s.logger.Error("GetApplications 申请者不在当前成员列表中",
 			slog.Uint64("applicant_id", uint64(params.ApplicantMemberId)))
-		return nil, errors.New("申请者不在当前成员列表中")
+		return nil, ErrInvalidOperator
 	}
 	if _, ok := params.CurrentMemberIds[params.ProcessorMemberId]; params.ProcessorMemberId != 0 && !ok {
 		// 只有 processorMemberId 不为默认值的 0 时才检查
 		s.logger.Error("GetApplications 处理者不在当前成员列表中",
 			slog.Uint64("processor_id", uint64(params.ProcessorMemberId)))
-		return nil, errors.New("处理者不在当前成员列表中")
+		return nil, ErrInvalidOperator
 	}
 
 	// 查询条件为申请者或处理者成员 ID
@@ -135,38 +135,36 @@ func (s *applicationServiceImpl) GetApplications(params *ApplicationListParams) 
 				slog.Uint64("applicant_id", uint64(params.ApplicantMemberId)),
 				slog.Uint64("processor_id", uint64(params.ProcessorMemberId)),
 				slog.Uint64("target_project_id", uint64(params.TargetProjectId)))
-			return nil, errors.New("没有找到符合条件的申请")
+			return nil, ErrNoSatifiedResults
 		}
-		s.logger.Error("GetApplications 查询申请失败", slog.Any("error", err))
-		return nil, errors.New("查询申请列表失败")
+		s.logger.Error("GetApplications 查询申请失败", slog.Any("Error", err))
+		return nil, ErrDatabaseFailure
 	}
 
 	// 将查询结果转换为 ApplicationInfo
-	applicationInfos := make([]*ApplicationInfo, 0, len(applications))
+	applicationInfos := make([]ApplicationInfo, len(applications))
 
-	for _, application := range applications {
-		applicationInfos = append(applicationInfos, &ApplicationInfo{
-			Id:                     uint(application.Id),
-			ApplicantMemberId:      uint(application.ApplicantMemberId),
-			ProcessorMemberId:      uint(application.ProcessorMemberId),
-			TargetProjectId:        uint(application.TargetProjectId),
-			TargetProjectTitle:     application.FkProject.Title,
-			TargetProjectWorksetId: uint(application.FkProject.WorksetId),
-			TargetProjectIndex:     uint(application.FkProject.WorksetIndex),
-			TargetLaborMask:        LaborMask(application.TargetLaborMask),
-		})
+	for i, application := range applications {
+		applicationInfos[i].Id = uint(application.Id)
+		applicationInfos[i].ApplicantMemberId = uint(application.ApplicantMemberId)
+		applicationInfos[i].ProcessorMemberId = uint(application.ProcessorMemberId)
+		applicationInfos[i].TargetProjectId = uint(application.TargetProjectId)
+		applicationInfos[i].TargetProjectTitle = application.FkProject.Title
+		applicationInfos[i].TargetProjectWorksetId = uint(application.FkProject.WorksetId)
+		applicationInfos[i].TargetProjectIndex = uint(application.FkProject.WorksetIndex)
+		applicationInfos[i].TargetLaborMask = LaborMask(application.TargetLaborMask)
 	}
 
 	return applicationInfos, nil
 }
 
 // CreateApplication 实现 ApplicationService 接口的 CreateApplication 方法
-func (s *applicationServiceImpl) CreateApplication(params *CreateApplicationParams) error {
+func (s *applicationServiceImpl) CreateApplication(params *CreateApplicationParams) Err {
 	// 检查申请者是否在当前成员 ID 集合中
 	if _, exists := params.CurrentMemberIds[params.ApplicantMemberId]; !exists {
 		s.logger.Error("CreateApplication 申请者不在当前成员列表中",
 			slog.Uint64("applicant_id", uint64(params.ApplicantMemberId)))
-		return errors.New("申请者不在当前成员列表中")
+		return ErrInvalidOperator
 	}
 
 	// 检查当前申请者是否能够担任申请的角色
@@ -184,20 +182,20 @@ func (s *applicationServiceImpl) CreateApplication(params *CreateApplicationPara
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			s.logger.Warn("CreateApplication 没有找到指定申请者成员",
 				slog.Uint64("applicant_id", uint64(params.ApplicantMemberId)),
-				slog.Any("error", err))
-			return errors.New("没有找到指定申请者成员")
+				slog.Any("Error", err))
+			return ErrNoSatifiedResults
 		}
 		s.logger.Error("CreateApplication 查询申请者成员信息失败",
 			slog.Uint64("applicant_id", uint64(params.ApplicantMemberId)),
-			slog.Any("error", err))
-		return errors.New("查询申请者成员信息失败")
+			slog.Any("Error", err))
+		return ErrDatabaseFailure
 	}
 
 	if err := checkValidLabor(member, params.TargetLaborMask); err != nil {
 		s.logger.Error("CreateApplication 申请者不能担任申请的分工",
 			slog.Uint64("applicant_id", uint64(params.ApplicantMemberId)),
-			slog.Any("error", err))
-		return errors.New("申请者不能担任申请的分工")
+			slog.Any("Error", err))
+		return newSrvError(ErrInvalidOperator, "申请者不能担任申请的分工")
 	}
 
 	// 检查申请者是否已经在当前项目
@@ -216,8 +214,8 @@ func (s *applicationServiceImpl) CreateApplication(params *CreateApplicationPara
 		s.logger.Error("CreateApplication 查询申请者在项目中的分工记录失败",
 			slog.Uint64("applicant_id", uint64(params.ApplicantMemberId)),
 			slog.Uint64("project_id", uint64(params.TargetProjectId)),
-			slog.Any("error", err))
-		return errors.New("查询申请者在项目中的分工记录失败")
+			slog.Any("Error", err))
+		return ErrDatabaseFailure
 	}
 
 	if labor != nil {
@@ -225,7 +223,7 @@ func (s *applicationServiceImpl) CreateApplication(params *CreateApplicationPara
 		s.logger.Error("CreateApplication 申请者已经在当前项目中",
 			slog.Uint64("applicant_id", uint64(params.ApplicantMemberId)),
 			slog.Uint64("project_id", uint64(params.TargetProjectId)))
-		return errors.New("申请者已经在当前项目中")
+		return newSrvError(ErrInvalidOperator, "申请者已经在当前项目中")
 	}
 
 	// 再检查是否有重复的未处理申请记录
@@ -244,8 +242,8 @@ func (s *applicationServiceImpl) CreateApplication(params *CreateApplicationPara
 		s.logger.Error("CreateApplication 查询未处理的申请记录失败",
 			slog.Uint64("applicant_id", uint64(params.ApplicantMemberId)),
 			slog.Uint64("project_id", uint64(params.TargetProjectId)),
-			slog.Any("error", err))
-		return errors.New("查询未处理的申请记录失败")
+			slog.Any("Error", err))
+		return ErrDatabaseFailure
 	}
 
 	if len(applications) > 0 {
@@ -253,7 +251,7 @@ func (s *applicationServiceImpl) CreateApplication(params *CreateApplicationPara
 		s.logger.Error("CreateApplication 存在未处理的申请记录",
 			slog.Uint64("applicant_id", uint64(params.ApplicantMemberId)),
 			slog.Uint64("project_id", uint64(params.TargetProjectId)))
-		return errors.New("存在未处理的申请记录")
+		return newSrvError(ErrInvalidOperator, "已存在未处理的申请记录")
 	}
 
 	// 创建新的申请记录
@@ -264,20 +262,20 @@ func (s *applicationServiceImpl) CreateApplication(params *CreateApplicationPara
 	}
 
 	if err := models.GetApplication().Insert(s.handle, application); err != nil {
-		s.logger.Error("CreateApplication 插入申请记录失败", slog.Any("error", err))
-		return errors.New("创建申请失败")
+		s.logger.Error("CreateApplication 插入申请记录失败", slog.Any("Error", err))
+		return ErrDatabaseFailure
 	}
 
 	return nil
 }
 
 // ProcessApplication 实现 ApplicationService 接口的 ProcessApplication 方法
-func (s *applicationServiceImpl) ProcessApplication(params *ProcessApplicationParams) error {
+func (s *applicationServiceImpl) ProcessApplication(params *ProcessApplicationParams) Err {
 	// 检查处理成员 ID 是否在当前成员 ID 集合中
 	if _, exists := params.CurrentMemberIds[params.ProcessorMemberId]; !exists {
 		s.logger.Error("ProcessApplication 处理成员 ID 不在当前成员列表中",
 			slog.Uint64("processor_member_id", uint64(params.ProcessorMemberId)))
-		return errors.New("处理成员 ID 不在当前成员列表中")
+		return ErrInvalidOperator
 	}
 
 	// 创建事务协调器
@@ -305,20 +303,20 @@ func (s *applicationServiceImpl) ProcessApplication(params *ProcessApplicationPa
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				s.logger.Warn("ProcessApplication 没有找到指定申请记录",
 					slog.Uint64("application_id", uint64(params.ApplicationId)))
-				return errors.New("没有找到指定申请记录"), nil
+				return ErrNoSatifiedResults, nil
 			}
 			s.logger.Error("ProcessApplication 查询申请记录失败",
 				slog.Uint64("application_id", uint64(params.ApplicationId)),
-				slog.Any("error", err))
-			return errors.New("查询申请记录失败"), nil
+				slog.Any("Error", err))
+			return ErrDatabaseFailure, nil
 		}
 
 		// 检查处理者是否是申请的处理者
 		if application.ProcessorMemberId != models.PKey(params.ProcessorMemberId) {
-			s.logger.Error("ProcessApplication 处理者不是申请的处理者",
+			s.logger.Error("ProcessApplication 处理者不是申请的审核者",
 				slog.Uint64("application_id", uint64(params.ApplicationId)),
 				slog.Uint64("processor_member_id", uint64(params.ProcessorMemberId)))
-			return errors.New("处理者不是申请的处理者"), nil
+			return newSrvError(ErrNoPermission, "处理者不是申请的审核者"), nil
 		}
 
 		// 更新申请状态
@@ -339,8 +337,8 @@ func (s *applicationServiceImpl) ProcessApplication(params *ProcessApplicationPa
 		}); err != nil {
 			s.logger.Error("ProcessApplication 更新申请记录失败",
 				slog.Uint64("application_id", uint64(params.ApplicationId)),
-				slog.Any("error", err))
-			return errors.New("更新申请记录失败"), nil
+				slog.Any("Error", err))
+			return ErrDatabaseFailure, nil
 		}
 
 		// 如果不接受申请，则略过创建新的分工记录
@@ -354,8 +352,8 @@ func (s *applicationServiceImpl) ProcessApplication(params *ProcessApplicationPa
 			LaborMask: application.TargetLaborMask,
 		}
 		if err := models.GetLabor().Insert(s.handle, labor); err != nil {
-			s.logger.Error("ProcessApplication 创建分工记录失败", slog.Any("error", err))
-			return errors.New("创建分工记录失败"), nil
+			s.logger.Error("ProcessApplication 创建分工记录失败", slog.Any("Error", err))
+			return ErrDatabaseFailure, nil
 		}
 
 		// 利用龙译发出邀请
@@ -377,17 +375,30 @@ func (s *applicationServiceImpl) ProcessApplication(params *ProcessApplicationPa
 
 		applicant, err := models.GetMember().SelectFirst(s.handle, applicantSpec, memberFields)
 		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				s.logger.Warn("ProcessApplication 查询申请者成员信息失败",
+					slog.Uint64("applicant_member_id", uint64(application.ApplicantMemberId)),
+					slog.Any("Error", err))
+				return ErrNoSatifiedResults, nil
+			}
 			s.logger.Error("ProcessApplication 查询申请者成员信息失败",
 				slog.Uint64("applicant_member_id", uint64(application.ApplicantMemberId)),
-				slog.Any("error", err))
-			return errors.New("查询申请者成员信息失败"), nil
+				slog.Any("Error", err))
+			return ErrDatabaseFailure, nil
 		}
+
 		processor, err := models.GetMember().SelectFirst(s.handle, processorSpec, memberFields)
 		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				s.logger.Warn("ProcessApplication 查询处理者成员信息失败",
+					slog.Uint64("processor_member_id", uint64(application.ProcessorMemberId)),
+					slog.Any("Error", err))
+				return ErrNoSatifiedResults, nil
+			}
 			s.logger.Error("ProcessApplication 查询处理者成员信息失败",
 				slog.Uint64("processor_member_id", uint64(application.ProcessorMemberId)),
-				slog.Any("error", err))
-			return errors.New("查询处理者成员信息失败"), nil
+				slog.Any("Error", err))
+			return ErrDatabaseFailure, nil
 		}
 
 		inviteInfo := &apiclient.InviteMemberParams{
@@ -401,15 +412,15 @@ func (s *applicationServiceImpl) ProcessApplication(params *ProcessApplicationPa
 			s.logger.Error("ProcessApplication 邀请成员到龙译项目失败",
 				slog.Uint64("applicant_member_id", uint64(application.ApplicantMemberId)),
 				slog.Uint64("processor_member_id", uint64(application.ProcessorMemberId)),
-				slog.Any("error", err))
-			return errors.New("邀请成员到龙译项目失败"), nil
+				slog.Any("Error", err))
+			return newSrvError(ErrMoetranAPIFailure, "邀请成员到龙译项目失败"), nil
 		}
 
 		return nil, nil
 
 	}); err != nil {
-		s.logger.Error("ProcessApplication 处理申请失败", slog.Any("error", err))
-		return errors.New("处理申请失败")
+		s.logger.Error("ProcessApplication 处理申请失败", slog.Any("Error", err))
+		return newSrvError(ErrDatabaseFailure, "处理申请失败")
 	}
 
 	return nil

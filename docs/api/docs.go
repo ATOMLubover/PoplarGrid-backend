@@ -61,22 +61,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/handlers.ApplicationInfo"
-                            }
+                            "$ref": "#/definitions/handlers.FormatResponse-array_handlers_ApplicationInfo"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "type": "string"
+                            "type": "objcet"
                         }
                     }
                 }
@@ -108,19 +105,19 @@ const docTemplate = `{
                     "200": {
                         "description": "创建成功",
                         "schema": {
-                            "$ref": "#/definitions/handlers.SuccessResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "type": "string"
+                            "type": "objcet"
                         }
                     }
                 }
@@ -161,13 +158,13 @@ const docTemplate = `{
                     "200": {
                         "description": "处理成功",
                         "schema": {
-                            "$ref": "#/definitions/handlers.SuccessResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -190,13 +187,13 @@ const docTemplate = `{
                     "200": {
                         "description": "更新成功",
                         "schema": {
-                            "$ref": "#/definitions/handlers.SuccessResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -254,16 +251,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/handlers.InvitationInfo"
-                            }
+                            "$ref": "#/definitions/handlers.FormatResponse-array_handlers_InvitationInfo"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -301,13 +295,13 @@ const docTemplate = `{
                     "200": {
                         "description": "创建成功",
                         "schema": {
-                            "$ref": "#/definitions/handlers.SuccessResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -354,13 +348,13 @@ const docTemplate = `{
                     "200": {
                         "description": "处理成功",
                         "schema": {
-                            "$ref": "#/definitions/handlers.SuccessResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -407,16 +401,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/handlers.MemberInfo"
-                            }
+                            "$ref": "#/definitions/handlers.FormatResponse-array_handlers_MemberInfo"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -480,16 +471,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/handlers.ProjectInfo"
-                            }
+                            "$ref": "#/definitions/handlers.FormatResponse-array_handlers_ProjectInfo"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -527,13 +515,13 @@ const docTemplate = `{
                     "200": {
                         "description": "创建成功",
                         "schema": {
-                            "$ref": "#/definitions/handlers.SuccessResponse"
+                            "$ref": "#/definitions/handlers.FormatResponse-handlers_ProjectCreatedInfo"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -568,13 +556,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ProjectInfo"
+                            "$ref": "#/definitions/handlers.FormatResponse-handlers_ProjectInfo"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -607,13 +595,13 @@ const docTemplate = `{
                     "200": {
                         "description": "删除成功",
                         "schema": {
-                            "$ref": "#/definitions/handlers.SuccessResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -658,13 +646,13 @@ const docTemplate = `{
                     "200": {
                         "description": "更新成功",
                         "schema": {
-                            "$ref": "#/definitions/handlers.SuccessResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -711,16 +699,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/handlers.TeamInfo"
-                            }
+                            "$ref": "#/definitions/handlers.FormatResponse-array_handlers_TeamInfo"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -743,22 +728,13 @@ const docTemplate = `{
                 ],
                 "summary": "利用 cookie，获取当前用户的详情",
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.UserInfo"
-                        }
+                    "307": {
+                        "description": "Temporary Redirect"
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     }
                 }
@@ -787,13 +763,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.UserInfo"
+                            "$ref": "#/definitions/handlers.FormatResponse-handlers_UserInfo"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -840,16 +816,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/handlers.WorksetInfo"
-                            }
+                            "$ref": "#/definitions/handlers.FormatResponse-array_handlers_WorksetInfo"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -887,13 +860,13 @@ const docTemplate = `{
                     "200": {
                         "description": "创建成功",
                         "schema": {
-                            "$ref": "#/definitions/handlers.SuccessResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -928,13 +901,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.WorksetStats"
+                            "$ref": "#/definitions/handlers.FormatResponse-handlers_WorksetStats"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -974,59 +947,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.BindResponse"
+                            "$ref": "#/definitions/handlers.FormatResponse-handlers_BindResponse"
                         }
                     },
                     "400": {
                         "description": "无效的请求参数",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/login": {
-            "post": {
-                "description": "登录 PoplarGrid 以及龙译的账号，必须在绑定之后才可以使用",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "登录账号",
-                "parameters": [
-                    {
-                        "description": "登录参数",
-                        "name": "params",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.LoginParams"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.LoginResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "无效的请求参数",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.StringFormatResponse"
                         }
                     },
                     "500": {
@@ -1115,6 +1042,13 @@ const docTemplate = `{
         "handlers.BindResponse": {
             "type": "object",
             "properties": {
+                "members": {
+                    "description": "Members 是用户在各个汉化组中的成员信息",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.MemberInfo"
+                    }
+                },
                 "token": {
                     "description": "MoetranJWT 是登录成功后返回的 JWT",
                     "type": "string"
@@ -1239,14 +1173,227 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.ErrorResponse": {
+        "handlers.FormatResponse-array_handlers_ApplicationInfo": {
             "type": "object",
             "properties": {
-                "detail": {
-                    "description": "可选，在 service 层发生错误时提供详细信息",
-                    "type": "string"
+                "data": {
+                    "description": "成功时返回的数据，可能不携带",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.ApplicationInfo"
+                    }
                 },
-                "error": {
+                "error_code": {
+                    "description": "错误码，不为 0 时表示发生错误",
+                    "type": "integer"
+                },
+                "message": {
+                    "description": "错误信息或成功消息",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.FormatResponse-array_handlers_InvitationInfo": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "成功时返回的数据，可能不携带",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.InvitationInfo"
+                    }
+                },
+                "error_code": {
+                    "description": "错误码，不为 0 时表示发生错误",
+                    "type": "integer"
+                },
+                "message": {
+                    "description": "错误信息或成功消息",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.FormatResponse-array_handlers_MemberInfo": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "成功时返回的数据，可能不携带",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.MemberInfo"
+                    }
+                },
+                "error_code": {
+                    "description": "错误码，不为 0 时表示发生错误",
+                    "type": "integer"
+                },
+                "message": {
+                    "description": "错误信息或成功消息",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.FormatResponse-array_handlers_ProjectInfo": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "成功时返回的数据，可能不携带",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.ProjectInfo"
+                    }
+                },
+                "error_code": {
+                    "description": "错误码，不为 0 时表示发生错误",
+                    "type": "integer"
+                },
+                "message": {
+                    "description": "错误信息或成功消息",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.FormatResponse-array_handlers_TeamInfo": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "成功时返回的数据，可能不携带",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.TeamInfo"
+                    }
+                },
+                "error_code": {
+                    "description": "错误码，不为 0 时表示发生错误",
+                    "type": "integer"
+                },
+                "message": {
+                    "description": "错误信息或成功消息",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.FormatResponse-array_handlers_WorksetInfo": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "成功时返回的数据，可能不携带",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.WorksetInfo"
+                    }
+                },
+                "error_code": {
+                    "description": "错误码，不为 0 时表示发生错误",
+                    "type": "integer"
+                },
+                "message": {
+                    "description": "错误信息或成功消息",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.FormatResponse-handlers_BindResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "成功时返回的数据，可能不携带",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/handlers.BindResponse"
+                        }
+                    ]
+                },
+                "error_code": {
+                    "description": "错误码，不为 0 时表示发生错误",
+                    "type": "integer"
+                },
+                "message": {
+                    "description": "错误信息或成功消息",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.FormatResponse-handlers_ProjectCreatedInfo": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "成功时返回的数据，可能不携带",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/handlers.ProjectCreatedInfo"
+                        }
+                    ]
+                },
+                "error_code": {
+                    "description": "错误码，不为 0 时表示发生错误",
+                    "type": "integer"
+                },
+                "message": {
+                    "description": "错误信息或成功消息",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.FormatResponse-handlers_ProjectInfo": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "成功时返回的数据，可能不携带",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/handlers.ProjectInfo"
+                        }
+                    ]
+                },
+                "error_code": {
+                    "description": "错误码，不为 0 时表示发生错误",
+                    "type": "integer"
+                },
+                "message": {
+                    "description": "错误信息或成功消息",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.FormatResponse-handlers_UserInfo": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "成功时返回的数据，可能不携带",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/handlers.UserInfo"
+                        }
+                    ]
+                },
+                "error_code": {
+                    "description": "错误码，不为 0 时表示发生错误",
+                    "type": "integer"
+                },
+                "message": {
+                    "description": "错误信息或成功消息",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.FormatResponse-handlers_WorksetStats": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "成功时返回的数据，可能不携带",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/handlers.WorksetStats"
+                        }
+                    ]
+                },
+                "error_code": {
+                    "description": "错误码，不为 0 时表示发生错误",
+                    "type": "integer"
+                },
+                "message": {
+                    "description": "错误信息或成功消息",
                     "type": "string"
                 }
             }
@@ -1296,31 +1443,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.JSONMap": {
-            "type": "object",
-            "additionalProperties": {}
-        },
-        "handlers.LaborInfo": {
-            "type": "object",
-            "properties": {
-                "labor_mask": {
-                    "description": "分工掩码，使用",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/handlers.LaborMask"
-                        }
-                    ]
-                },
-                "member_id": {
-                    "description": "成员 ID",
-                    "type": "integer"
-                },
-                "nickname": {
-                    "description": "成员昵称",
-                    "type": "string"
-                }
-            }
-        },
         "handlers.LaborMask": {
             "description": "分工掩码与成员在汉化组中的职责相关，使用位掩码表示不同的职责 第 0 位表示监制/负责人 第 1 位表示图源 第 2 位表示美工 第 3 位表示翻译 第 4 位表示校对 第 5 位表示嵌字 第 6 位表示嵌字审核 第 7 位表示发布",
             "type": "integer",
@@ -1354,50 +1476,6 @@ const docTemplate = `{
                 "LABOR_REVIEWER_MASK",
                 "LABOR_PUBLISHER_MASK"
             ]
-        },
-        "handlers.LoginParams": {
-            "type": "object",
-            "required": [
-                "captcha",
-                "captcha_info",
-                "email",
-                "password"
-            ],
-            "properties": {
-                "captcha": {
-                    "description": "Captcha 是验证码",
-                    "type": "string"
-                },
-                "captcha_info": {
-                    "description": "CaptchaInfo 是验证码信息",
-                    "type": "string"
-                },
-                "email": {
-                    "description": "Email 是龙译账号的邮箱",
-                    "type": "string"
-                },
-                "password": {
-                    "description": "Password 是龙译账号的密码",
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.LoginResponse": {
-            "type": "object",
-            "properties": {
-                "token": {
-                    "description": "MoetranJWT 是登录成功后返回的 JWT",
-                    "type": "string"
-                },
-                "user": {
-                    "description": "User 是登录成功后返回的用户信息",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/handlers.UserInfo"
-                        }
-                    ]
-                }
-            }
         },
         "handlers.MemberInfo": {
             "type": "object",
@@ -1476,6 +1554,19 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.ProjectCreatedInfo": {
+            "type": "object",
+            "properties": {
+                "moetranId": {
+                    "description": "龙译 ID",
+                    "type": "string"
+                },
+                "projectId": {
+                    "description": "项目 ID",
+                    "type": "integer"
+                }
+            }
+        },
         "handlers.ProjectInfo": {
             "type": "object",
             "properties": {
@@ -1490,13 +1581,6 @@ const docTemplate = `{
                 "id": {
                     "description": "项目 ID",
                     "type": "integer"
-                },
-                "labors": {
-                    "description": "相关的分工，如果未指定将不会返回",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handlers.LaborInfo"
-                    }
                 },
                 "legacy_id": {
                     "description": "Legacy ID，如果未指定将不会返回",
@@ -1528,18 +1612,19 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.SuccessResponse": {
+        "handlers.StringFormatResponse": {
             "type": "object",
             "properties": {
-                "detail": {
-                    "description": "可选，提供额外的成功信息",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/handlers.JSONMap"
-                        }
-                    ]
+                "data": {
+                    "description": "成功时返回的数据，可能不携带",
+                    "type": "string"
+                },
+                "error_code": {
+                    "description": "错误码，不为 0 时表示发生错误",
+                    "type": "integer"
                 },
                 "message": {
+                    "description": "错误信息或成功消息",
                     "type": "string"
                 }
             }
@@ -1600,13 +1685,6 @@ const docTemplate = `{
                 "is_admin": {
                     "description": "是否是 panel 管理员",
                     "type": "boolean"
-                },
-                "members": {
-                    "description": "在各个汉化组中的成员信息",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handlers.MemberInfo"
-                    }
                 },
                 "moetran_id": {
                     "description": "龙译 ID",

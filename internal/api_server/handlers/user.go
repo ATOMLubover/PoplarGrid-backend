@@ -11,7 +11,7 @@ import (
 // UserInfo 定义了用户的基本信息 DTO
 type UserInfo struct {
 	// 用户 ID
-	Id uint `json:"id"`
+	ID uint `json:"id"`
 	// 昵称
 	Nickname string `json:"nickname"`
 	// 邮箱
@@ -26,6 +26,12 @@ type UserInfo struct {
 	MoetranId string `json:"moetran_id,omitempty"`
 	// 龙译 JWT
 	MoetranJwt string `json:"moetran_jwt,omitempty"`
+}
+
+// UserDetail 定义了用户详情的 DTO
+type UserDetail struct {
+	// 用户的基本信息
+	User *UserInfo `json:",inline"`
 	// 在各个汉化组中的成员信息
 	Members []MemberInfo `json:"members,omitempty"`
 }
@@ -58,19 +64,15 @@ func (h *UserHandler) BeforeActivation(b mvc.BeforeActivation) {
 //
 // @Tags 		user
 // @Produce 	json
-// @Success	 	200 {object} UserInfo
-// @Failure     400 {object} ErrorResponse "无效的请求参数"
-// @Failure     500 {string} string "服务器内部错误"
+// @Success	 	307
+// @Failure     400 {object} StringFormatResponse "无效的请求参数"
 //
 // @Router 		/api/users/me [get]
 func (h *UserHandler) MyDetail(ctx iris.Context) {
 	// 从路径参数获取用户 ID
 	userId, err := ctx.Params().GetUint("id")
 	if err != nil || userId <= 0 {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "无法获取有效的 user_id",
-		})
+		wrapError(ctx, newHdlErr(ErrParamsLackage, "无法获取有效的 user_id"))
 		return
 	}
 
@@ -87,8 +89,8 @@ func (h *UserHandler) MyDetail(ctx iris.Context) {
 //
 // @Tags 		user
 // @Produce 	json
-// @Success	 	200 {object} UserInfo
-// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Success	 	200 {object} FormatResponse[UserInfo]
+// @Failure     400 {object} StringFormatResponse "无效的请求参数"
 // @Failure     500 {string} string "服务器内部错误"
 //
 // @Router 		/api/users/{id} [get]
@@ -96,41 +98,37 @@ func (h *UserHandler) Detail(ctx iris.Context) {
 	// 从路径参数获取用户 ID
 	userId, err := ctx.Params().GetUint("id")
 	if err != nil || userId <= 0 {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "无法获取有效的 user_id",
-		})
+		wrapError(ctx, newHdlErr(ErrParamsLackage, "无法获取有效的 user_id"))
 		return
 	}
 
 	// 调用服务层获取用户详情
-	user, err := h.UserService.GetUserDetail(userId)
-	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "获取特定用户详情失败",
-			Detail: err.Error(),
-		})
+	user, e := h.UserService.GetUserDetail(userId)
+	if e != nil {
+		wrapError(ctx, e)
 		return
 	}
 
 	// 将服务层的 UserInfo 转换为 DTO
-	userInfo := &UserInfo{
-		Id:         user.Id,
-		Nickname:   user.Nickname,
-		Email:      user.Email,
-		QQNumber:   user.QQNumber,
-		IsAdmin:    user.IsAdmin,
-		Remark:     user.Remark,
-		MoetranId:  user.MoetranId,
-		MoetranJwt: user.MoetranJwt,
+	res := &UserDetail{
+		User: &UserInfo{
+			ID:         user.ID,
+			Nickname:   user.Nickname,
+			Email:      user.Email,
+			QQNumber:   user.QQNumber,
+			IsAdmin:    user.IsAdmin,
+			Remark:     user.Remark,
+			MoetranId:  user.MoetranId,
+			MoetranJwt: user.MoetranJwt,
+		},
 	}
 
 	// 如果用户有成员信息，则填充
 	if user.Members != nil {
-		userInfo.Members = make([]MemberInfo, len(user.Members))
+		res.Members = make([]MemberInfo, len(user.Members))
+
 		for i, member := range user.Members {
-			userInfo.Members[i] = MemberInfo{
+			res.Members[i] = MemberInfo{
 				Id: member.Id,
 				Team: &TeamInfo{
 					Id:   member.Team.Id,
@@ -141,5 +139,5 @@ func (h *UserHandler) Detail(ctx iris.Context) {
 		}
 	}
 
-	ctx.JSON(userInfo)
+	wrapSuccess(ctx, res)
 }

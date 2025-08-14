@@ -47,19 +47,16 @@ func (t *TeamHandler) BeforeActivation(b mvc.BeforeActivation) {
 //
 // @Tags 		team
 // @Produce 	json
-// @Success	 	200 {object} []TeamInfo
-// @Failure     400 {object} ErrorResponse "无效的请求参数"
-// @Failure     500 {string} string "服务器内部错误"
+// @Success	 	200 {object} FormatResponse[[]TeamInfo]
+// @Failure     400 {object} StringFormatResponse "无效的请求参数"
+// @Failure     500 {string} StringFormatResponse "服务器内部错误"
 //
 // @Router 		/api/teams [get]
 func (h *TeamHandler) List(ctx iris.Context) {
 	// 从上下文获取当前用户 ID
 	userId, err := ctx.Values().GetUint("user_id")
 	if err != nil || userId <= 0 {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "无法获取有效的 user_id",
-		})
+		wrapError(ctx, newHdlErr(ErrParamsLackage, "无法获取有效的 user ID"))
 		return
 	}
 
@@ -68,19 +65,15 @@ func (h *TeamHandler) List(ctx iris.Context) {
 	pageSize := ctx.URLParamIntDefault("page_size", 10)
 
 	// 调用服务层获取数据
-	teams, err := h.TeamService.GetTeams(&services.TeamListParams{
+	teams, e := h.TeamService.GetTeams(&services.TeamListParams{
 		UserId: userId,
 		Offset: (pageSerial - 1) * pageSize,
 		Limit:  pageSize,
 	})
-	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "获取当前汉化组列表失败",
-			Detail: err.Error(),
-		})
+	if e != nil {
+		wrapError(ctx, e)
 		return
 	}
 
-	ctx.JSON(teams)
+	wrapSuccess(ctx, teams)
 }

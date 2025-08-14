@@ -82,11 +82,22 @@ type ProjectInfo struct {
 	LegacyId uint `json:"legacy_id,omitempty"`
 	// 是否允许自动加入，如果未指定将不会返回
 	AllowAutoJoin bool `json:"allow_auto_join,omitempty"`
-	// 相关的分工，如果未指定将不会返回
-	Labors []*LaborInfo `json:"labors,omitempty"`
 
 	// 尨译项目的信息，直接以 string 形式返回，后端不做解析
 	MoetranProjectInfo string `json:"moetran_project_info,omitempty"`
+}
+
+// ProjectDetail 定义了项目的响应格式
+type ProjectDetail struct {
+	ProjectInfo *ProjectInfo `json:"project_info"`
+	// 相关的分工，如果未指定将不会返回
+	Labors []*LaborInfo `json:"labors,omitempty"`
+}
+
+// ProjectCreatedInfo 定义了创建项目后的返回信息
+type ProjectCreatedInfo struct {
+	ProjectId uint   // 项目 ID
+	MoetranId string // 龙译 ID
 }
 
 // RouteProjectHandler 注册项目相关的路由
@@ -123,8 +134,8 @@ func (p *ProjectHandler) BeforeActivation(b mvc.BeforeActivation) {
 //
 // @Tags        project
 // @Produce     json
-// @Success     200 {object} []ProjectInfo
-// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Success     200 {object} FormatResponse[[]ProjectInfo]
+// @Failure     400 {object} StringFormatResponse "无效的请求参数"
 // @Failure     500 {string} string "服务器内部错误"
 //
 // @Router      /api/projects [get]
@@ -135,11 +146,7 @@ func (h *ProjectHandler) List(ctx iris.Context) {
 	statusMaskSlice := ctx.URLParamSlice("status_mask")
 	statusMasks, err := h.sliceStringToStatus(statusMaskSlice)
 	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "无法转换状态参数",
-			Detail: err.Error(),
-		})
+		wrapError(ctx, newHdlErr(ErrBadParams, fmt.Sprintf("无法转换 status_mask: %v", err)))
 		return
 	}
 
@@ -153,7 +160,7 @@ func (h *ProjectHandler) List(ctx iris.Context) {
 	index := ctx.URLParamIntDefault("index", 0)
 
 	// 根据参数调用服务层获取数据
-	projects, err := h.ProjectService.GetProjects(&services.ProjectListParams{
+	projects, e := h.ProjectService.GetProjects(&services.ProjectListParams{
 		Offset:      (pageSerial - 1) * pageSize,
 		Limit:       pageSize,
 		StatusMasks: statusMasks,
@@ -161,12 +168,8 @@ func (h *ProjectHandler) List(ctx iris.Context) {
 		WorksetId:   uint(worksetId),
 		Index:       uint(index),
 	})
-	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "获取项目列表失败",
-			Detail: err.Error(),
-		})
+	if e != nil {
+		wrapError(ctx, e)
 		return
 	}
 
@@ -177,7 +180,7 @@ func (h *ProjectHandler) List(ctx iris.Context) {
 		projectInfos = append(projectInfos, serviceProjectToDTO(project))
 	}
 
-	ctx.JSON(projectInfos)
+	wrapSuccess(ctx, projectInfos)
 }
 
 // Detail godoc
@@ -188,8 +191,8 @@ func (h *ProjectHandler) List(ctx iris.Context) {
 //
 // @Tags 		project
 // @Produce 	json
-// @Success	 	200 {object} ProjectInfo
-// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Success	 	200 {object} FormatResponse[ProjectInfo]
+// @Failure     400 {object} StringFormatResponse "无效的请求参数"
 // @Failure     500 {string} string "服务器内部错误"
 //
 // @Router 		/api/projects/{id} [get]
@@ -197,39 +200,47 @@ func (h *ProjectHandler) Detail(ctx iris.Context) {
 	// 读取上下文中的 user_id
 	userId, err := ctx.Values().GetUint("user_id")
 	if err != nil || userId <= 0 {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "无法获取有效的 user_id",
-		})
+		wrapError(ctx, newHdlErr(ErrHeaderLackage, "未提取到有效的 user ID"))
 		return
 	}
 
 	// 从 path 参数中获取项目 ID
 	projectId, err := ctx.Params().GetUint("id")
 	if err != nil || projectId <= 0 {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "无法获得有效的 project_id",
-		})
+		wrapError(ctx, newHdlErr(ErrParamsLackage, "无法获取有效的 project ID"))
 		return
 	}
 
 	// 调用服务层获取数据
-	project, err := h.ProjectService.GetProjectDetail(&services.ProjectDetailParams{
+	projectInfo, e := h.ProjectService.GetProjectDetail(&services.ProjectDetailParams{
 		ProjectId: projectId,
 		UserId:    userId,
 	})
-	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "获取单个项目详情失败",
-			Detail: err.Error(),
-		})
+	if e != nil {
+		wrapError(ctx, e)
 		return
 	}
 
 	// 将 service 的格式转换为 DTO 格式
-	ctx.JSON(serviceProjectToDTO(project))
+	res := &ProjectDetail{
+		ProjectInfo: serviceProjectToDTO(projectInfo),
+	}
+
+	// 转换分工信息
+	if projectInfo.Labors != nil {
+		res.Labors = make([]*LaborInfo, len(projectInfo.Labors))
+
+		// 将分工信息转换为 DTO 格式
+		for i, labor := range projectInfo.Labors {
+			res.Labors[i] = &LaborInfo{
+				MemberId:  labor.MemberId,
+				Nickname:  labor.Nickname,
+				LaborMask: labor.LaborMask,
+			}
+		}
+	}
+
+	wrapSuccess(ctx, res)
 }
 
 // Create godoc
@@ -241,8 +252,8 @@ func (h *ProjectHandler) Detail(ctx iris.Context) {
 //
 // @Tags 		project
 // @Produce 	json
-// @Success	 	200 {object} SuccessResponse "创建成功"
-// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Success	 	200 {object} FormatResponse[ProjectCreatedInfo] "创建成功"
+// @Failure     400 {object} StringFormatResponse "无效的请求参数"
 // @Failure     500 {string} string "服务器内部错误"
 //
 // @Router 		/api/projects [post]
@@ -250,10 +261,7 @@ func (h *ProjectHandler) Create(ctx iris.Context) {
 	// 读取上下文中的 member_ids
 	memberIds, ok := ctx.Values().Get("member_ids").(map[uint]struct{})
 	if !ok {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "未提取到有效 member_ids",
-		})
+		wrapError(ctx, newHdlErr(ErrHeaderLackage, "未提取到有效 member IDs"))
 		return
 	}
 
@@ -261,10 +269,7 @@ func (h *ProjectHandler) Create(ctx iris.Context) {
 	var request CreateProjectRequest
 
 	if err := ctx.ReadJSON(&request); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "请求体格式错误",
-		})
+		wrapError(ctx, newHdlErr(ErrParamsLackage, "无效的请求参数"))
 		return
 	}
 
@@ -280,20 +285,13 @@ func (h *ProjectHandler) Create(ctx iris.Context) {
 		IsHidden:      request.IsHidden,
 	})
 	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "创建项目失败",
-			Detail: err.Error(),
-		})
+		wrapError(ctx, err)
 		return
 	}
 
-	ctx.JSON(SuccessResponse{
-		Message: info.Message,
-		Detail: &iris.Map{
-			"project_id": info.ProjectId,
-			"moetran_id": info.MoetranId,
-		},
+	wrapSuccess(ctx, &ProjectCreatedInfo{
+		ProjectId: info.ProjectId,
+		MoetranId: info.MoetranId,
 	})
 }
 
@@ -305,8 +303,8 @@ func (h *ProjectHandler) Create(ctx iris.Context) {
 //
 // @Tags 		project
 // @Produce 	json
-// @Success	 	200 {object} SuccessResponse "删除成功"
-// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Success	 	200 {object} StringFormatResponse "删除成功"
+// @Failure     400 {object} StringFormatResponse "无效的请求参数"
 // @Failure     500 {string} string "服务器内部错误"
 //
 // @Router 		/api/projects/{id} [delete]
@@ -314,20 +312,14 @@ func (h *ProjectHandler) Delete(ctx iris.Context) {
 	// 读取上下文中的 member_ids
 	memberIds, ok := ctx.Values().Get("member_ids").(map[uint]struct{})
 	if !ok {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "未提取到有效 member_ids",
-		})
+		wrapError(ctx, newHdlErr(ErrHeaderLackage, "未提取到有效的 member IDs"))
 		return
 	}
 
 	// 从 path 参数中获取项目 ID
 	projectId, err := ctx.Params().GetUint("id")
 	if err != nil || projectId <= 0 {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "无法获得有效的 project_id",
-		})
+		wrapError(ctx, newHdlErr(ErrParamsLackage, "无法获取有效的 project ID"))
 		return
 	}
 
@@ -335,10 +327,7 @@ func (h *ProjectHandler) Delete(ctx iris.Context) {
 	var request DeleteProjectRequest
 
 	if err := ctx.ReadJSON(&request); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "请求体格式错误",
-		})
+		wrapError(ctx, newHdlErr(ErrParamsLackage, "无效的请求参数"))
 		return
 	}
 
@@ -349,17 +338,11 @@ func (h *ProjectHandler) Delete(ctx iris.Context) {
 
 		ProjectId: projectId,
 	}); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "删除项目失败",
-			Detail: err.Error(),
-		})
+		wrapError(ctx, err)
 		return
 	}
 
-	ctx.JSON(SuccessResponse{
-		Message: "项目删除成功",
-	})
+	wrapSuccess(ctx, "项目删除成功")
 }
 
 // Update godoc
@@ -372,8 +355,8 @@ func (h *ProjectHandler) Delete(ctx iris.Context) {
 //
 // @Tags 		project
 // @Produce 	json
-// @Success	 	200 {object} SuccessResponse "更新成功"
-// @Failure     400 {object} ErrorResponse "无效的请求参数"
+// @Success	 	200 {object} StringFormatResponse "更新成功"
+// @Failure     400 {object} StringFormatResponse "无效的请求参数"
 // @Failure     500 {string} string "服务器内部错误"
 //
 // @Router 		/api/projects/{id} [patch]
@@ -381,20 +364,14 @@ func (h *ProjectHandler) Update(ctx iris.Context) {
 	// 读取上下文中的 member_ids
 	memberIds, ok := ctx.Values().Get("member_ids").(map[uint]struct{})
 	if !ok {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "未提取到有效 member_ids",
-		})
+		wrapError(ctx, newHdlErr(ErrHeaderLackage, "未提取到有效的 member IDs"))
 		return
 	}
 
 	// 从 path 参数中获取项目 ID
 	projectId, err := ctx.Params().GetUint("id")
 	if err != nil || projectId <= 0 {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "无法获得有效的 project_id",
-		})
+		wrapError(ctx, newHdlErr(ErrParamsLackage, "无法获取有效的 project ID"))
 		return
 	}
 
@@ -402,10 +379,7 @@ func (h *ProjectHandler) Update(ctx iris.Context) {
 	var request UpdateProjectRequest
 
 	if err := ctx.ReadJSON(&request); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "请求体格式错误",
-		})
+		wrapError(ctx, newHdlErr(ErrParamsLackage, "无效的请求参数"))
 		return
 	}
 
@@ -418,17 +392,11 @@ func (h *ProjectHandler) Update(ctx iris.Context) {
 		Title:       request.Title,
 		Description: request.Description,
 	}); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "更新项目失败",
-			Detail: err.Error(),
-		})
+		wrapError(ctx, err)
 		return
 	}
 
-	ctx.JSON(SuccessResponse{
-		Message: "项目更新成功",
-	})
+	wrapSuccess(ctx, "项目更新成功")
 }
 
 // sliceStringToStatus 将字符串切片转换为无符号整数切片
@@ -460,18 +428,6 @@ func serviceProjectToDTO(project *services.ProjectInfo) *ProjectInfo {
 		WorksetIndex:  project.WorksetIndex,
 		LegacyId:      project.LegacyId,
 		AllowAutoJoin: project.AllowAutoJoin,
-	}
-
-	if project.Labors != nil {
-		projectInfo.Labors = make([]*LaborInfo, 0, len(project.Labors))
-		// 将分工信息转换为 DTO 格式
-		for _, labor := range project.Labors {
-			projectInfo.Labors = append(projectInfo.Labors, &LaborInfo{
-				MemberId:  labor.MemberId,
-				Nickname:  labor.Nickname,
-				LaborMask: labor.LaborMask,
-			})
-		}
 	}
 
 	return projectInfo

@@ -58,8 +58,8 @@ func (h *MemberHandler) BeforeActivation(b mvc.BeforeActivation) {
 //
 // @Tags 		member
 // @Produce 	json
-// @Success 	200 {object} []MemberInfo
-// @Failure 	400 {object} ErrorResponse "无效的请求参数"
+// @Success 	200 {object} FormatResponse[[]MemberInfo]
+// @Failure 	400 {object} StringFormatResponse "无效的请求参数"
 // @Failure 	500 {string} string "服务器内部错误"
 //
 // @Router 		/api/members [get]
@@ -73,10 +73,7 @@ func (h *MemberHandler) List(ctx iris.Context) {
 		Limit:  pageSize,
 	})
 	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "获取成员列表失败",
-		})
+		wrapError(ctx, err)
 		return
 	}
 
@@ -87,7 +84,7 @@ func (h *MemberHandler) List(ctx iris.Context) {
 		memberInfos = append(memberInfos, &MemberInfo{
 			Id: member.Id,
 			User: &UserInfo{
-				Id:       member.User.Id,
+				ID:       member.User.ID,
 				Nickname: member.User.Nickname,
 			},
 			Team: &TeamInfo{
@@ -98,5 +95,5 @@ func (h *MemberHandler) List(ctx iris.Context) {
 		})
 	}
 
-	ctx.JSON(members)
+	wrapSuccess(ctx, memberInfos)
 }

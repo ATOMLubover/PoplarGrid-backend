@@ -10,7 +10,7 @@ import (
 
 // UserInfo 定义了用户的基本信息
 type UserInfo struct {
-	Id         uint         // 用户 ID
+	ID         uint         // 用户 ID
 	Nickname   string       // 昵称
 	Email      string       // 邮箱
 	QQNumber   int          // QQ 号
@@ -24,7 +24,7 @@ type UserInfo struct {
 // UserService 接口定义了用户服务的基本操作
 type UserService interface {
 	// GetUserDetail 获取指定用户的详细信息
-	GetUserDetail(userId uint) (*UserInfo, error)
+	GetUserDetail(userId uint) (*UserInfo, Err)
 }
 
 // userServiceImpl 是 UserService 接口的实现
@@ -42,7 +42,7 @@ func NewUserService(hdl *gorm.DB, lgr *slog.Logger) UserService {
 }
 
 // GetUserDetail 实现 UserService 接口的方法，获取指定用户的详细信息
-func (s *userServiceImpl) GetUserDetail(userId uint) (*UserInfo, error) {
+func (s *userServiceImpl) GetUserDetail(userId uint) (*UserInfo, Err) {
 	// 查询条件为用户 ID
 	userPKey := models.PKey(userId)
 	userSpec := &models.UserSpec{
@@ -67,15 +67,15 @@ func (s *userServiceImpl) GetUserDetail(userId uint) (*UserInfo, error) {
 			s.logger.Error("GetUserDetail 未获取到指定用户详情",
 				slog.Uint64("user_id", uint64(userId)),
 				slog.Any("error", err))
-			return nil, errors.New("用户不存在")
+			return nil, ErrNoSatifiedResults
 		}
 		s.logger.Error("GetUserDetail 获取指定用户详情失败", "error", err)
-		return nil, errors.New("获取指定用户详情失败")
+		return nil, ErrDatabaseFailure
 	}
 
 	// 将查询结果转换为 UserInfo
 	userInfo := &UserInfo{
-		Id:         uint(user.Id),
+		ID:         uint(user.Id),
 		Nickname:   user.Nickname,
 		Email:      user.Email,
 		IsAdmin:    user.IsAdmin,
@@ -104,8 +104,13 @@ func (s *userServiceImpl) GetUserDetail(userId uint) (*UserInfo, error) {
 		s.handle, memberSpec, memberFields,
 		nil, nil)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logger.Warn("GetUserDetail 查询 members 没有结果",
+				slog.Uint64("userID", uint64(userId)))
+			return nil, ErrNoSatifiedResults
+		}
 		s.logger.Error("GetUserDetail 查询用户成员失败", slog.Any("error", err))
-		return nil, errors.New("查询用户成员信息失败")
+		return nil, ErrDatabaseFailure
 	}
 
 	// 将成员信息转换为 MemberInfo

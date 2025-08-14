@@ -55,9 +55,9 @@ type MemberInfo struct {
 // MemberService 接口定义了成员服务的基本操作
 type MemberService interface {
 	// GetMembers 获取指定条件下的成员列表
-	GetMembers(params *MemberListParams) ([]*MemberInfo, error)
+	GetMembers(params *MemberListParams) ([]*MemberInfo, Err)
 	// UpdateToken 更新指定用户 Token 中的 memberIDs
-	UpdateToken(userID uint, moetranAuth string) (string, error)
+	UpdateToken(userID uint, moetranAuth string) (string, Err)
 }
 
 // memberServiceImpl 是 MemberService 接口的实现
@@ -77,7 +77,7 @@ func NewMemberService(hdl *gorm.DB, factory AuthTokenFactory, lgr *slog.Logger) 
 }
 
 // GetTeams 实现 MemberService 接口的方法
-func (s *memberServiceImpl) GetMembers(params *MemberListParams) ([]*MemberInfo, error) {
+func (s *memberServiceImpl) GetMembers(params *MemberListParams) ([]*MemberInfo, Err) {
 	// 查询条件为汉化组 ID
 	teamPKey := models.PKey(params.TeamId)
 	memberSpec := &models.MemberSpec{
@@ -105,13 +105,12 @@ func (s *memberServiceImpl) GetMembers(params *MemberListParams) ([]*MemberInfo,
 			s.logger.Warn("GetMembers 没有找到指定汉化组的成员信息",
 				slog.Any("team_id", params.TeamId),
 				slog.Any("error", err))
-			return nil, errors.New("没有找到指定汉化组的成员信息")
+			return nil, ErrNoSatifiedResults
 		}
-
 		s.logger.Error("GetMembers 查询指定汉化组的成员信息失败",
 			slog.Any("team_id", params.TeamId),
 			slog.Any("error", err))
-		return nil, errors.New("查询指定汉化组的成员信息失败")
+		return nil, ErrDatabaseFailure
 	}
 
 	// 将查询结果转换为 MemberInfo
@@ -126,7 +125,7 @@ func (s *memberServiceImpl) GetMembers(params *MemberListParams) ([]*MemberInfo,
 }
 
 // UpdateToken 实现了 MemberService 接口的 UpdateToken 方法
-func (s *memberServiceImpl) UpdateToken(userID uint, moetranAuth string) (string, error) {
+func (s *memberServiceImpl) UpdateToken(userID uint, moetranAuth string) (string, Err) {
 	// 查询用户的所有成员 ID
 	userPKey := models.PKey(userID)
 	memberSpec := &models.MemberSpec{
@@ -141,8 +140,14 @@ func (s *memberServiceImpl) UpdateToken(userID uint, moetranAuth string) (string
 		s.handle, memberSpec, memberFields,
 		nil, nil)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logger.Warn("UpdateToken 没有找到指定用户的成员信息",
+				slog.Any("user_id", userID),
+				slog.Any("error", err))
+			return "", ErrNoSatifiedResults
+		}
 		s.logger.Error("UpdateToken 查询用户成员失败", slog.Any("error", err))
-		return "", errors.New("查询用户成员信息失败")
+		return "", ErrDatabaseFailure
 	}
 
 	// 提取所有成员 ID
@@ -163,7 +168,7 @@ func (s *memberServiceImpl) UpdateToken(userID uint, moetranAuth string) (string
 	newToken, err := s.factory.GenerateToken(authToken)
 	if err != nil {
 		s.logger.Error("UpdateToken 生成新的 Token 失败", slog.Any("error", err))
-		return "", errors.New("生成新的 Token 失败")
+		return "", ErrTokenGenerationFailure
 	}
 
 	return newToken, nil
@@ -206,7 +211,7 @@ func memberModelToInfo(member *models.Member) *MemberInfo {
 	m := &MemberInfo{
 		Id: uint(member.BaseModel.Id),
 		User: &UserInfo{
-			Id: uint(member.UserId),
+			ID: uint(member.UserId),
 		},
 		Team: &TeamInfo{
 			Id: uint(member.TeamId),

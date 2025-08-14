@@ -15,9 +15,9 @@ type AuthToken struct {
 // AuthTokenFactory 定义了生成和解析 AuthToken 的接口
 type AuthTokenFactory interface {
 	// GenerateToken 生成一个新的 AuthToken 签名字符串
-	GenerateToken(token *AuthToken) (string, error)
+	GenerateToken(token *AuthToken) (string, Err)
 	// ParseToken 解析一个 AuthToken 字符串，返回 AuthToken 对象
-	ParseToken(tokenString string) (*AuthToken, error)
+	ParseToken(tokenString string) (*AuthToken, Err)
 }
 
 // authTokenFactoryImpl 实现了 AuthTokenFactory 接口
@@ -37,15 +37,19 @@ func NewAuthTokenFactory(secretKey string, expirationTime time.Duration) AuthTok
 }
 
 // GenerateToken 实现 AuthTokenFactory 接口的 GenerateToken 方法
-func (f *authTokenFactoryImpl) GenerateToken(token *AuthToken) (string, error) {
-	return f.factory.GenToken(*token)
+func (f *authTokenFactoryImpl) GenerateToken(token *AuthToken) (string, Err) {
+	tokenStr, err := f.factory.GenToken(*token)
+	if err != nil {
+		return "", newSrvError(ErrTokenGenerationFailure, err.Error())
+	}
+	return tokenStr, nil
 }
 
 // ParseToken 实现 AuthTokenFactory 接口的 ParseToken 方法
-func (f *authTokenFactoryImpl) ParseToken(tokenString string) (*AuthToken, error) {
+func (f *authTokenFactoryImpl) ParseToken(tokenString string) (*AuthToken, Err) {
 	claims, err := f.factory.ParseToken(tokenString)
 	if err != nil {
-		return nil, err
+		return nil, newSrvError(ErrTokenGenerationFailure, err.Error())
 	}
 	return claims, nil
 }

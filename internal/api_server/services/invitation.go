@@ -58,11 +58,11 @@ type ProcessInvitationParams struct {
 // InvitationService 接口定义了邀请服务的基本操作
 type InvitationService interface {
 	// GetInvitations 获取指定条件下的邀请列表
-	GetInvitations(params *InvitationListParams) ([]*InvitationInfo, error)
+	GetInvitations(params *InvitationListParams) ([]*InvitationInfo, Err)
 	// CreateInvitation 创建新的邀请
-	CreateInvitation(params *CreateInvitationParams) error
+	CreateInvitation(params *CreateInvitationParams) Err
 	// ProcessInvitation 处理邀请（接受或拒绝）
-	ProcessInvitation(params *ProcessInvitationParams) error
+	ProcessInvitation(params *ProcessInvitationParams) Err
 }
 
 // invitationServiceImpl 是 InvitationService 的实现
@@ -86,19 +86,19 @@ func NewInvitationService(
 }
 
 // GetInvitations 实现 InvitationService 接口的 GetInvitations 方法
-func (s *invitationServiceImpl) GetInvitations(params *InvitationListParams) ([]*InvitationInfo, error) {
+func (s *invitationServiceImpl) GetInvitations(params *InvitationListParams) ([]*InvitationInfo, Err) {
 	// 检查是否查询的 invitorMeberId、inviteeMemberId 属于当前用户的成员 ID 集合
 	if _, ok := params.CurrentMemberIds[params.InvitorMemberId]; params.InvitorMemberId != 0 && !ok {
 		// 只有 invitorMeberId 不为默认值的 0 时才检查
 		s.logger.Error("GetInvitations 邀请者不在当前成员列表中",
 			slog.Uint64("invitor_id", uint64(params.InvitorMemberId)))
-		return nil, errors.New("邀请者不在当前成员列表中")
+		return nil, ErrInvalidOperator
 	}
 	if _, ok := params.CurrentMemberIds[params.InviteeMemberId]; params.InviteeMemberId != 0 && !ok {
 		// 只有 inviteeMemberId 不为默认值的 0 时才检查
 		s.logger.Error("GetInvitations 接受者不在当前成员列表中",
 			slog.Uint64("invitee_id", uint64(params.InviteeMemberId)))
-		return nil, errors.New("接受者不在当前成员列表中")
+		return nil, ErrInvalidOperator
 	}
 
 	// 查询条件为邀请者或接收者成员 ID
@@ -135,10 +135,10 @@ func (s *invitationServiceImpl) GetInvitations(params *InvitationListParams) ([]
 				slog.Uint64("invitor_id", uint64(params.InvitorMemberId)),
 				slog.Uint64("invitee_id", uint64(params.InviteeMemberId)),
 				slog.Uint64("target_project_id", uint64(params.TargetProjectId)))
-			return nil, errors.New("没有找到符合条件的邀请")
+			return nil, ErrNoSatifiedResults
 		}
 		s.logger.Error("GetInvitations 查询邀请失败", slog.Any("error", err))
-		return nil, errors.New("查询邀请列表失败")
+		return nil, ErrDatabaseFailure
 	}
 
 	// 将查询结果转换为 InvitationInfo
@@ -161,12 +161,12 @@ func (s *invitationServiceImpl) GetInvitations(params *InvitationListParams) ([]
 }
 
 // CreateInvitation 实现 InvitationService 接口的 CreateInvitation 方法
-func (s *invitationServiceImpl) CreateInvitation(params *CreateInvitationParams) error {
+func (s *invitationServiceImpl) CreateInvitation(params *CreateInvitationParams) Err {
 	// 检查邀请者是否在当前成员 ID 集合中
 	if _, exists := params.CurrentMemberIds[params.InvitorMemberId]; !exists {
 		s.logger.Error("CreateInvitation 邀请者不在当前成员列表中",
 			slog.Uint64("invitor_id", uint64(params.InvitorMemberId)))
-		return errors.New("邀请者不在当前成员列表中")
+		return ErrInvalidOperator
 	}
 
 	// 检查受邀者是否能够担当指定的分工
@@ -184,12 +184,12 @@ func (s *invitationServiceImpl) CreateInvitation(params *CreateInvitationParams)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			s.logger.Warn("CreateInvitation 没有找到指定成员",
 				slog.Uint64("member_id", uint64(params.InviteeMemberId)))
-			return errors.New("没有找到指定成员")
+			return ErrNoSatifiedResults
 		}
 		s.logger.Error("CreateInvitation 查询指定成员失败",
 			slog.Uint64("member_id", uint64(params.InviteeMemberId)),
 			slog.Any("error", err))
-		return errors.New("查询指定成员失败")
+		return ErrDatabaseFailure
 	}
 
 	// 检查受邀者是否有足够的权限
@@ -198,7 +198,7 @@ func (s *invitationServiceImpl) CreateInvitation(params *CreateInvitationParams)
 			slog.Uint64("invitee_id", uint64(params.InviteeMemberId)),
 			slog.Any("target_labor_mask", params.TargetLaborMask),
 			slog.Any("error", err))
-		return errors.New("受邀者没有足够的权限")
+		return newSrvError(ErrNoPermission, "受邀者没有足够的权限")
 	}
 
 	// 检查邀请者是否是指定项目的负责人
@@ -216,12 +216,12 @@ func (s *invitationServiceImpl) CreateInvitation(params *CreateInvitationParams)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			s.logger.Warn("CreateInvitation 没有找到指定项目",
 				slog.Uint64("project_id", uint64(params.TargetProjectId)))
-			return errors.New("没有找到指定项目")
+			return newSrvError(ErrNoSatifiedResults, "没有找到指定项目")
 		}
 		s.logger.Error("CreateInvitation 查询项目信息失败",
 			slog.Uint64("project_id", uint64(params.TargetProjectId)),
 			slog.Any("error", err))
-		return errors.New("查询项目信息失败")
+		return ErrDatabaseFailure
 	}
 
 	if project.PrincipalId != models.PKey(params.InvitorMemberId) {
@@ -229,7 +229,7 @@ func (s *invitationServiceImpl) CreateInvitation(params *CreateInvitationParams)
 		s.logger.Error("CreateInvitation 邀请者不是项目负责人",
 			slog.Uint64("invitor_id", uint64(params.InvitorMemberId)),
 			slog.Uint64("project_id", uint64(params.TargetProjectId)))
-		return errors.New("邀请者不是项目负责人")
+		return newSrvError(ErrNoPermission, "邀请者不是项目负责人")
 	}
 
 	// 检查接受者是否已经在当前项目
@@ -248,7 +248,7 @@ func (s *invitationServiceImpl) CreateInvitation(params *CreateInvitationParams)
 			slog.Uint64("invitee_id", uint64(params.InviteeMemberId)),
 			slog.Uint64("project_id", uint64(params.TargetProjectId)),
 			slog.Any("error", err))
-		return errors.New("查询接受者在项目中的分工记录失败")
+		return ErrDatabaseFailure
 	}
 
 	if labor != nil {
@@ -256,7 +256,7 @@ func (s *invitationServiceImpl) CreateInvitation(params *CreateInvitationParams)
 		s.logger.Error("CreateInvitation 接受者已经在当前项目中",
 			slog.Uint64("invitee_id", uint64(params.InviteeMemberId)),
 			slog.Uint64("project_id", uint64(params.TargetProjectId)))
-		return errors.New("接受者已经在当前项目中")
+		return newSrvError(ErrUnacceptedOperation, "接受者已经在当前项目中")
 	}
 
 	// 再检查是否有重复的未处理邀请记录
@@ -276,7 +276,7 @@ func (s *invitationServiceImpl) CreateInvitation(params *CreateInvitationParams)
 			slog.Uint64("invitee_id", uint64(params.InviteeMemberId)),
 			slog.Uint64("project_id", uint64(params.TargetProjectId)),
 			slog.Any("error", err))
-		return errors.New("查询未处理的邀请记录失败")
+		return ErrDatabaseFailure
 	}
 
 	if len(invitations) > 0 {
@@ -284,7 +284,7 @@ func (s *invitationServiceImpl) CreateInvitation(params *CreateInvitationParams)
 		s.logger.Error("CreateInvitation 存在未处理的邀请记录",
 			slog.Uint64("invitee_id", uint64(params.InviteeMemberId)),
 			slog.Uint64("project_id", uint64(params.TargetProjectId)))
-		return errors.New("存在未处理的邀请记录")
+		return newSrvError(ErrUnacceptedOperation, "存在未处理的邀请记录")
 	}
 
 	// 创建新的邀请记录
@@ -297,19 +297,19 @@ func (s *invitationServiceImpl) CreateInvitation(params *CreateInvitationParams)
 
 	if err := models.GetInvitation().Insert(s.handle, invitation); err != nil {
 		s.logger.Error("CreateInvitation 插入邀请记录失败", slog.Any("error", err))
-		return errors.New("创建邀请失败")
+		return newSrvError(ErrDatabaseFailure, "创建邀请记录失败")
 	}
 
 	return nil
 }
 
 // ProcessInvitation 实现 InvitationService 接口的 ProcessInvitation 方法
-func (s *invitationServiceImpl) ProcessInvitation(params *ProcessInvitationParams) error {
+func (s *invitationServiceImpl) ProcessInvitation(params *ProcessInvitationParams) Err {
 	// 检查邀请 ID 是否在当前成员 ID 集合中
 	if _, exists := params.CurrentMemberIds[params.ProcessorMemberId]; !exists {
 		s.logger.Error("ProcessInvitation 处理成员 ID 不在当前成员列表中",
 			slog.Uint64("processor_member_id", uint64(params.ProcessorMemberId)))
-		return errors.New("处理成员 ID 不在当前成员列表中")
+		return ErrInvalidOperator
 	}
 
 	// 查询邀请记录
@@ -325,12 +325,12 @@ func (s *invitationServiceImpl) ProcessInvitation(params *ProcessInvitationParam
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			s.logger.Warn("ProcessInvitation 没有找到指定邀请记录",
 				slog.Uint64("invitation_id", uint64(params.InvitationId)))
-			return errors.New("没有找到指定邀请记录")
+			return ErrNoSatifiedResults
 		}
 		s.logger.Error("ProcessInvitation 更新邀请记录失败",
 			slog.Uint64("invitation_id", uint64(params.InvitationId)),
 			slog.Any("error", err))
-		return errors.New("更新邀请记录失败")
+		return ErrDatabaseFailure
 	}
 
 	return nil

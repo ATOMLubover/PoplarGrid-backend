@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"log/slog"
 	"poplargrid/internal/api_server/crawler"
 )
@@ -9,7 +8,7 @@ import (
 // CrawlerService 定义了爬虫服务的接口
 type CrawlerService interface {
 	// AutoUpdateAll 自动递归地更新当前用户所有汉化组的项目信息
-	AutoUpdateAll(userID uint, moetranAuth string) error
+	AutoUpdateAll(userID uint, moetranAuth string) Err
 }
 
 // crawlerServiceImpl 实现了 CrawlerService 接口
@@ -30,12 +29,12 @@ func NewCrawlerService(
 }
 
 // AutoUpdateAll 自动递归地更新当前用户所有汉化组的项目信息
-func (s *crawlerServiceImpl) AutoUpdateAll(userID uint, moetranAuth string) error {
+func (s *crawlerServiceImpl) AutoUpdateAll(userID uint, moetranAuth string) Err {
 	// 调用爬虫的 AutoUpdateAll 方法
 	if err := s.crawler.RecurseUpdate(userID, moetranAuth); err != nil {
 		s.logger.Error("AutoUpdateAll 调用爬虫服务失败",
 			slog.Any("error", err))
-		return errors.New("拉取更新信息失败")
+		return newSrvError(ErrMoetranAPIFailure, "自动拉取尨译失败: "+err.Error())
 	}
 
 	return nil

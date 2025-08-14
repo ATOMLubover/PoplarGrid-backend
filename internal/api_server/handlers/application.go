@@ -81,19 +81,16 @@ func (h *ApplicationHandler) BeforeActivation(b mvc.BeforeActivation) {
 //
 // @Tags 		application
 // @Produce 	json
-// @Success 	200 {object} []ApplicationInfo
-// @Failure 	400 {object} ErrorResponse "无效的请求参数"
-// @Failure 	500 {string} string "服务器内部错误"
+// @Success 	200 {object} FormatResponse[[]ApplicationInfo]
+// @Failure 	400 {object} StringFormatResponse "无效的请求参数"
+// @Failure 	500 {objcet} StringFormatResponse "服务器内部错误"
 //
 // @Router 		/api/applications [get]
 func (h *ApplicationHandler) List(ctx iris.Context) {
 	// 读取上下文中的 member_ids
-	memberIds, ok := ctx.Values().Get("member_ids").(map[uint]struct{})
+	memberIDs, ok := ctx.Values().Get("member_ids").(map[uint]struct{})
 	if !ok {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "未提取到有效 member_ids",
-		})
+		wrapError(ctx, newHdlErr(ErrHeaderLackage, "未提取到有效 member IDs"))
 		return
 	}
 
@@ -108,11 +105,7 @@ func (h *ApplicationHandler) List(ctx iris.Context) {
 
 	// 检查参数的组合是否合法
 	if err := checkApplicationListQueryParams(applicantMemberId, processorMemberId, targetProjectId); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "查询参数组合非法",
-			Detail: err.Error(),
-		})
+		wrapError(ctx, newHdlErr(ErrBadParams, err.Error()))
 		return
 	}
 
@@ -123,14 +116,10 @@ func (h *ApplicationHandler) List(ctx iris.Context) {
 		ApplicantMemberId: uint(applicantMemberId),
 		ProcessorMemberId: uint(processorMemberId),
 		TargetProjectId:   uint(targetProjectId),
-		CurrentMemberIds:  memberIds,
+		CurrentMemberIds:  memberIDs,
 	})
 	if err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "获取申请列表失败",
-			Detail: err.Error(),
-		})
+		wrapError(ctx, err)
 		return
 	}
 
@@ -151,7 +140,7 @@ func (h *ApplicationHandler) List(ctx iris.Context) {
 		})
 	}
 
-	ctx.JSON(applicationInfos)
+	wrapSuccess(ctx, applicationInfos)
 }
 
 // Create godoc
@@ -163,19 +152,16 @@ func (h *ApplicationHandler) List(ctx iris.Context) {
 //
 // @Tags 		application
 // @Produce 	json
-// @Success 	200 {object} SuccessResponse "创建成功"
-// @Failure 	400 {object} ErrorResponse "无效的请求参数"
-// @Failure 	500 {string} string "服务器内部错误"
+// @Success 	200 {object} StringFormatResponse "创建成功"
+// @Failure 	400 {object} StringFormatResponse "无效的请求参数"
+// @Failure 	500 {objcet} StringFormatResponse "服务器内部错误"
 //
 // @Router 		/api/applications [post]
 func (h *ApplicationHandler) Create(ctx iris.Context) {
 	// 读取上下文中的 member_ids
 	memberIds, ok := ctx.Values().Get("member_ids").(map[uint]struct{})
 	if !ok {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "未提取到有效 member_ids",
-		})
+		wrapError(ctx, newHdlErr(ErrHeaderLackage, "未提取到有效 member IDs"))
 		return
 	}
 
@@ -183,11 +169,7 @@ func (h *ApplicationHandler) Create(ctx iris.Context) {
 
 	// 绑定请求体参数
 	if err := ctx.ReadJSON(&req); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "无效的请求参数",
-			Detail: err.Error(),
-		})
+		wrapError(ctx, newHdlErr(ErrParamsLackage, "无效的请求参数"))
 		return
 	}
 
@@ -198,17 +180,11 @@ func (h *ApplicationHandler) Create(ctx iris.Context) {
 		TargetLaborMask:   req.TargetLaborMask,
 		CurrentMemberIds:  memberIds,
 	}); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "创建申请失败",
-			Detail: err.Error(),
-		})
+		wrapError(ctx, err)
 		return
 	}
 
-	ctx.JSON(SuccessResponse{
-		Message: "申请创建成功",
-	})
+	wrapSuccess(ctx, "申请创建成功")
 }
 
 // Process godoc
@@ -221,8 +197,8 @@ func (h *ApplicationHandler) Create(ctx iris.Context) {
 //
 // @Tags 		application
 // @Produce 	json
-// @Success 	200 {object} SuccessResponse "处理成功"
-// @Failure 	400 {object} ErrorResponse "无效的请求参数"
+// @Success 	200 {object} StringFormatResponse "处理成功"
+// @Failure 	400 {object} StringFormatResponse "无效的请求参数"
 // @Failure 	500 {string} string "服务器内部错误"
 //
 // @Router 		/api/applications/{id} [put]
@@ -230,10 +206,7 @@ func (h *ApplicationHandler) Process(ctx iris.Context) {
 	// 读取上下文中的 member_ids
 	memberIds, ok := ctx.Values().Get("member_ids").(map[uint]struct{})
 	if !ok {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error: "未提取到有效 member_ids",
-		})
+		wrapError(ctx, newHdlErr(ErrHeaderLackage, "未提取到有效 member IDs"))
 		return
 	}
 
@@ -241,11 +214,7 @@ func (h *ApplicationHandler) Process(ctx iris.Context) {
 
 	// 绑定请求体参数
 	if err := ctx.ReadJSON(&req); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "无效的请求参数",
-			Detail: err.Error(),
-		})
+		wrapError(ctx, newHdlErr(ErrParamsLackage, "无效的请求参数"))
 		return
 	}
 
@@ -256,17 +225,11 @@ func (h *ApplicationHandler) Process(ctx iris.Context) {
 		Accept:            req.Accept,
 		CurrentMemberIds:  memberIds,
 	}); err != nil {
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(ErrorResponse{
-			Error:  "处理申请失败",
-			Detail: err.Error(),
-		})
+		wrapError(ctx, err)
 		return
 	}
 
-	ctx.JSON(SuccessResponse{
-		Message: "申请处理成功",
-	})
+	wrapSuccess(ctx, "申请处理成功")
 }
 
 // checkApplicationListQueryParams 检查申请列表查询参数的合法性

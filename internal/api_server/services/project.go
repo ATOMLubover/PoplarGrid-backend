@@ -176,18 +176,18 @@ type DeleteProjectParams struct {
 // ProjectService 接口定义了项目服务的基本操作
 type ProjectService interface {
 	// GetProjects 获取指定条件下的项目列表
-	GetProjects(params *ProjectListParams) ([]*ProjectInfo, error)
+	GetProjects(params *ProjectListParams) ([]*ProjectInfo, Err)
 	// GetProjectDetail 获取指定项目的详细信息
-	GetProjectDetail(params *ProjectDetailParams) (*ProjectInfo, error)
+	GetProjectDetail(params *ProjectDetailParams) (*ProjectInfo, Err)
 
 	// CreateProject 创建一个新的项目
-	CreateProject(params *CreateProjectParams) (*ProjectCreatedInfo, error)
+	CreateProject(params *CreateProjectParams) (*ProjectCreatedInfo, Err)
 
 	// UpdateProject 更新指定项目的信息
-	UpdateProject(params *UpdateProjectParams) error
+	UpdateProject(params *UpdateProjectParams) Err
 
 	// DeleteProject 删除指定的项目
-	DeleteProject(params *DeleteProjectParams) error
+	DeleteProject(params *DeleteProjectParams) Err
 }
 
 // projectServiceImpl 是 ProjectService 的实现
@@ -211,7 +211,7 @@ func NewProjectService(
 }
 
 // GetBasicPageWithParams 实现 ProjectService 接口的 GetBasicPageWithParams 方法
-func (s *projectServiceImpl) GetProjects(params *ProjectListParams) ([]*ProjectInfo, error) {
+func (s *projectServiceImpl) GetProjects(params *ProjectListParams) ([]*ProjectInfo, Err) {
 	// 当指定的 userId 不为 0 时，使用 labor 进行查询
 	// 其他的时候使用 project 进行查询
 	switch params.MemberId {
@@ -236,10 +236,10 @@ func (s *projectServiceImpl) GetProjects(params *ProjectListParams) ([]*ProjectI
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				s.logger.Warn("GetProjects 查询没有结果", slog.Any("params", params))
-				return nil, errors.New("没有找到符合条件的项目")
+				return nil, ErrNoSatifiedResults
 			}
 			s.logger.Error("GetProjects 查询项目列表时出现错误", slog.Any("error", err))
-			return nil, fmt.Errorf("查询项目列表时出现错误: %w", err)
+			return nil, ErrDatabaseFailure
 		}
 
 		// 将查询结果转换为 ProjectInfo
@@ -319,11 +319,10 @@ func (s *projectServiceImpl) GetProjects(params *ProjectListParams) ([]*ProjectI
 			Scan(&results).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				s.logger.Warn("GetProjects 查询没有结果", slog.Any("params", params))
-				return nil, errors.New("没有找到符合条件的项目")
+				return nil, ErrNoSatifiedResults
 			}
-
 			s.logger.Error("GetProjects 查询项目列表时出现错误", slog.Any("error", err))
-			return nil, errors.New("查询项目列表失败")
+			return nil, ErrDatabaseFailure
 		}
 
 		// 将查询结果转换为 ProjectInfo
@@ -361,7 +360,7 @@ func (s *projectServiceImpl) GetProjects(params *ProjectListParams) ([]*ProjectI
 }
 
 // GetProjectDetail 实现 ProjectService 接口的 GetProjectDetail 方法
-func (s *projectServiceImpl) GetProjectDetail(params *ProjectDetailParams) (*ProjectInfo, error) {
+func (s *projectServiceImpl) GetProjectDetail(params *ProjectDetailParams) (*ProjectInfo, Err) {
 	// 查询项目的基本信息
 	projectPKey := models.PKey(params.ProjectId)
 	projectSpec := &models.ProjectSpec{
@@ -372,10 +371,10 @@ func (s *projectServiceImpl) GetProjectDetail(params *ProjectDetailParams) (*Pro
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			s.logger.Warn("GetProjectDetail 查询没有结果", slog.Uint64("projectId", uint64(params.ProjectId)))
-			return nil, errors.New("没有找到对应的项目")
+			return nil, ErrNoSatifiedResults
 		}
 		s.logger.Error("GetProjectDetail 查询项目详情失败", slog.Any("error", err))
-		return nil, fmt.Errorf("查询项目详情失败")
+		return nil, ErrDatabaseFailure
 	}
 
 	projectInfo := &ProjectInfo{
@@ -405,8 +404,13 @@ func (s *projectServiceImpl) GetProjectDetail(params *ProjectDetailParams) (*Pro
 
 	labors, err := models.GetLabor().SelectMany(s.handle, laborSpec, laborFields)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logger.Warn("GetProjectDetail 查询没有结果",
+				slog.Uint64("projectId", uint64(params.ProjectId)))
+			return nil, ErrNoSatifiedResults
+		}
 		s.logger.Error("GetProjectDetail 查询项目成员分工信息失败", slog.Any("error", err))
-		return nil, errors.New("查询项目成员分工信息失败")
+		return nil, ErrDatabaseFailure
 	}
 
 	// 将 labors 转换为 ProjectInfo 的 Labors 字段
@@ -422,7 +426,7 @@ func (s *projectServiceImpl) GetProjectDetail(params *ProjectDetailParams) (*Pro
 }
 
 // CreateProject 实现 ProjectService 接口的 CreateProject 方法
-func (s *projectServiceImpl) CreateProject(params *CreateProjectParams) (*ProjectCreatedInfo, error) {
+func (s *projectServiceImpl) CreateProject(params *CreateProjectParams) (*ProjectCreatedInfo, Err) {
 	// 先检查是否是非法冒用
 	// 检查申请者的成员 ID 是否在上下文中
 	if _, exists := params.CurrentMemberIds[params.CreatorMemberId]; !exists {
@@ -430,7 +434,7 @@ func (s *projectServiceImpl) CreateProject(params *CreateProjectParams) (*Projec
 			slog.Uint64("creator_member_id", uint64(params.CreatorMemberId)),
 			// TODO: slog.Uint64
 			slog.Uint64("applicant_member_id", uint64(params.CreatorMemberId)))
-		return nil, errors.New("非法引用申请者成员 ID")
+		return nil, ErrInvalidOperator
 	}
 
 	// 构建一个事务协调器
@@ -453,7 +457,7 @@ func (s *projectServiceImpl) CreateProject(params *CreateProjectParams) (*Projec
 		// 在数据库中创建项目
 		if err := models.GetProject().Insert(tx, project); err != nil {
 			s.logger.Error("CreateProject 调用 CreateProject 中出现错误", slog.Any("error", err))
-			return errors.New("创建项目失败"), nil
+			return ErrDatabaseFailure, nil
 		}
 
 		// 创建 creator 的分工记录
@@ -469,7 +473,7 @@ func (s *projectServiceImpl) CreateProject(params *CreateProjectParams) (*Projec
 		// 然后在团队成员分工表中插入 creator 记录
 		if err := models.GetLabor().Insert(tx, labor); err != nil {
 			s.logger.Error("CreateProject 调用 CreateLaborDivision 中出现错误", slog.Any("error", err))
-			return errors.New("创建团队成员分工失败"), nil
+			return newSrvError(ErrDatabaseFailure, "创建项目分工失败"), nil
 		}
 
 		// 获取对应 user 的龙译 JWT
@@ -485,18 +489,20 @@ func (s *projectServiceImpl) CreateProject(params *CreateProjectParams) (*Projec
 			},
 		)
 		if err != nil {
-			s.logger.Error("CreateProject 获取用户信息失败", slog.Any("error", err))
-			return fmt.Errorf("获取用户信息失败"), nil
+			s.logger.Error("CreateProject 获取用户信息失败",
+				slog.Any("error", err))
+			return ErrDatabaseFailure, nil
 		}
 
 		// 随后调用龙译 API 创建项目
 		projInfo := s.buildMoetranProjInfo(params, project, member)
 		moetranRes, err := s.apiClient.CreateProject(projInfo)
 		if err != nil {
-			s.logger.Error("CreateProject 调用 CreateProject API 中出现错误", slog.Any("error", err))
+			s.logger.Error("CreateProject 调用 CreateProject API 中出现错误",
+				slog.Any("error", err))
 			// TODO：由于不确定尨译的 API 是否是幂等的，这里需要考虑补偿操作，比如删除对应项目
 			// 但在不确定尨译实现的情况下，先不处理补偿
-			return errors.New("调用龙译 API 创建项目失败"), nil
+			return ErrMoetranAPIFailure, nil
 		}
 
 		// 将龙译返回的项目 ID 更新到本地项目中
@@ -507,8 +513,9 @@ func (s *projectServiceImpl) CreateProject(params *CreateProjectParams) (*Projec
 				MoetranId: moetranRes.Project.Id,
 			},
 		); err != nil {
-			s.logger.Error("CreateProject 更新本地项目龙译 ID 失败", slog.Any("error", err))
-			return fmt.Errorf("更新本地项目的龙译 ID 失败"), nil
+			s.logger.Error("CreateProject 更新本地项目龙译 ID 失败",
+				slog.Any("error", err))
+			return ErrDatabaseFailure, nil
 		}
 
 		// 写入到返回结果
@@ -524,20 +531,20 @@ func (s *projectServiceImpl) CreateProject(params *CreateProjectParams) (*Projec
 	}); err != nil {
 		// 这里的 err 是上述事务中抛出的错误
 		s.logger.Error("CreateProject 事务执行失败", slog.Any("error", err))
-		return nil, errors.New("创建项目失败")
+		return nil, newSrvError(ErrDatabaseFailure, "创建项目失败")
 	}
 
 	return createdInfo, nil
 }
 
 // UpdateProject 实现 ProjectService 接口的 UpdateProject 方法
-func (s *projectServiceImpl) UpdateProject(params *UpdateProjectParams) error {
+func (s *projectServiceImpl) UpdateProject(params *UpdateProjectParams) Err {
 	// 先检查是否是非法冒用
 	// 检查申请者的成员 ID 是否在上下文中
 	if _, exists := params.CurrentMemberIds[params.UsingMemberId]; !exists {
 		s.logger.Warn("UpdateProject 所使用成员 ID 不在当前用户的成员列表中",
 			slog.Uint64("using_member_id", uint64(params.UsingMemberId)))
-		return errors.New("非法引用申请者成员 ID")
+		return ErrInvalidOperator
 	}
 
 	// 查询项目的负责是否是该成员
@@ -552,18 +559,20 @@ func (s *projectServiceImpl) UpdateProject(params *UpdateProjectParams) error {
 	project, err := models.GetProject().SelectFirst(s.handle, projectSpec, projectFields)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			s.logger.Warn("UpdateProject 查询没有结果", slog.Uint64("projectId", uint64(params.ProjectId)))
-			return errors.New("没有找到对应的项目")
+			s.logger.Warn("UpdateProject 查询没有结果",
+				slog.Uint64("projectId", uint64(params.ProjectId)))
+			return ErrNoSatifiedResults
 		}
-		s.logger.Error("UpdateProject 查询项目详情失败", slog.Any("error", err))
-		return errors.New("查询项目详情失败")
+		s.logger.Error("UpdateProject 查询项目详情失败",
+			slog.Any("error", err))
+		return ErrDatabaseFailure
 	}
 
 	// 检查更新者是否是项目负责人
 	if project.PrincipalId != models.PKey(params.UsingMemberId) {
 		s.logger.Warn("UpdateProject 成员不是项目负责人", slog.Uint64("projectId", uint64(params.ProjectId)),
 			slog.Uint64("memberId", uint64(params.UsingMemberId)))
-		return errors.New("只有项目负责人才能更新项目信息")
+		return newSrvError(ErrNoPermission, "只有项目负责人才能更新项目信息")
 	}
 
 	// 更新项目信息
@@ -573,20 +582,20 @@ func (s *projectServiceImpl) UpdateProject(params *UpdateProjectParams) error {
 
 	if err := models.GetProject().Update(s.handle, project); err != nil {
 		s.logger.Error("UpdateProject 更新项目失败", slog.Any("error", err))
-		return errors.New("更新项目失败")
+		return ErrDatabaseFailure
 	}
 
 	return nil
 }
 
 // DeleteProject 实现 ProjectService 接口的 DeleteProject 方法
-func (s *projectServiceImpl) DeleteProject(params *DeleteProjectParams) error {
+func (s *projectServiceImpl) DeleteProject(params *DeleteProjectParams) Err {
 	// 先检查是否是非法冒用
 	// 检查申请者的成员 ID 是否在上下文中
 	if _, exists := params.CurrentMemberIds[params.UsingMemberId]; !exists {
 		s.logger.Warn("DeleteProject 所使用成员 ID 不在当前用户的成员列表中",
 			slog.Uint64("using_member_id", uint64(params.UsingMemberId)))
-		return errors.New("非法引用申请者成员 ID")
+		return ErrInvalidOperator
 	}
 
 	// 查询项目的负责是否是该成员
@@ -601,23 +610,25 @@ func (s *projectServiceImpl) DeleteProject(params *DeleteProjectParams) error {
 	project, err := models.GetProject().SelectFirst(s.handle, projectSpec, projectFields)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			s.logger.Warn("DeleteProject 查询没有结果", slog.Uint64("projectId", uint64(params.ProjectId)))
-			return errors.New("没有找到对应的项目")
+			s.logger.Warn("DeleteProject 查询没有结果",
+				slog.Uint64("projectId", uint64(params.ProjectId)))
+			return ErrNoSatifiedResults
 		}
-		s.logger.Error("DeleteProject 查询项目详情失败", slog.Any("error", err))
-		return errors.New("查询项目详情失败")
+		s.logger.Error("DeleteProject 查询项目详情失败",
+			slog.Any("error", err))
+		return ErrDatabaseFailure
 	}
 
 	// 检查更新者是否是项目负责人
 	if project.PrincipalId != models.PKey(params.UsingMemberId) {
 		s.logger.Warn("DeleteProject 成员不是项目负责人", slog.Uint64("projectId", uint64(params.ProjectId)))
-		return errors.New("只有项目负责人才能删除项目信息")
+		return newSrvError(ErrNoPermission, "只有项目负责人才能删除项目信息")
 	}
 
 	// 删除项目信息
 	if err := models.GetProject().Delete(s.handle, project.Id); err != nil {
 		s.logger.Error("DeleteProject 删除项目失败", slog.Any("error", err))
-		return errors.New("删除项目失败")
+		return ErrDatabaseFailure
 	}
 
 	return nil

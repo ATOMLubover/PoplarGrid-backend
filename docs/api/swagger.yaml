@@ -52,6 +52,11 @@ definitions:
     type: object
   handlers.BindResponse:
     properties:
+      members:
+        description: Members 是用户在各个汉化组中的成员信息
+        items:
+          $ref: '#/definitions/handlers.MemberInfo'
+        type: array
       token:
         description: MoetranJWT 是登录成功后返回的 JWT
         type: string
@@ -136,12 +141,153 @@ definitions:
     - name
     - team_id
     type: object
-  handlers.ErrorResponse:
+  handlers.FormatResponse-array_handlers_ApplicationInfo:
     properties:
-      detail:
-        description: 可选，在 service 层发生错误时提供详细信息
+      data:
+        description: 成功时返回的数据，可能不携带
+        items:
+          $ref: '#/definitions/handlers.ApplicationInfo'
+        type: array
+      error_code:
+        description: 错误码，不为 0 时表示发生错误
+        type: integer
+      message:
+        description: 错误信息或成功消息
         type: string
-      error:
+    type: object
+  handlers.FormatResponse-array_handlers_InvitationInfo:
+    properties:
+      data:
+        description: 成功时返回的数据，可能不携带
+        items:
+          $ref: '#/definitions/handlers.InvitationInfo'
+        type: array
+      error_code:
+        description: 错误码，不为 0 时表示发生错误
+        type: integer
+      message:
+        description: 错误信息或成功消息
+        type: string
+    type: object
+  handlers.FormatResponse-array_handlers_MemberInfo:
+    properties:
+      data:
+        description: 成功时返回的数据，可能不携带
+        items:
+          $ref: '#/definitions/handlers.MemberInfo'
+        type: array
+      error_code:
+        description: 错误码，不为 0 时表示发生错误
+        type: integer
+      message:
+        description: 错误信息或成功消息
+        type: string
+    type: object
+  handlers.FormatResponse-array_handlers_ProjectInfo:
+    properties:
+      data:
+        description: 成功时返回的数据，可能不携带
+        items:
+          $ref: '#/definitions/handlers.ProjectInfo'
+        type: array
+      error_code:
+        description: 错误码，不为 0 时表示发生错误
+        type: integer
+      message:
+        description: 错误信息或成功消息
+        type: string
+    type: object
+  handlers.FormatResponse-array_handlers_TeamInfo:
+    properties:
+      data:
+        description: 成功时返回的数据，可能不携带
+        items:
+          $ref: '#/definitions/handlers.TeamInfo'
+        type: array
+      error_code:
+        description: 错误码，不为 0 时表示发生错误
+        type: integer
+      message:
+        description: 错误信息或成功消息
+        type: string
+    type: object
+  handlers.FormatResponse-array_handlers_WorksetInfo:
+    properties:
+      data:
+        description: 成功时返回的数据，可能不携带
+        items:
+          $ref: '#/definitions/handlers.WorksetInfo'
+        type: array
+      error_code:
+        description: 错误码，不为 0 时表示发生错误
+        type: integer
+      message:
+        description: 错误信息或成功消息
+        type: string
+    type: object
+  handlers.FormatResponse-handlers_BindResponse:
+    properties:
+      data:
+        allOf:
+        - $ref: '#/definitions/handlers.BindResponse'
+        description: 成功时返回的数据，可能不携带
+      error_code:
+        description: 错误码，不为 0 时表示发生错误
+        type: integer
+      message:
+        description: 错误信息或成功消息
+        type: string
+    type: object
+  handlers.FormatResponse-handlers_ProjectCreatedInfo:
+    properties:
+      data:
+        allOf:
+        - $ref: '#/definitions/handlers.ProjectCreatedInfo'
+        description: 成功时返回的数据，可能不携带
+      error_code:
+        description: 错误码，不为 0 时表示发生错误
+        type: integer
+      message:
+        description: 错误信息或成功消息
+        type: string
+    type: object
+  handlers.FormatResponse-handlers_ProjectInfo:
+    properties:
+      data:
+        allOf:
+        - $ref: '#/definitions/handlers.ProjectInfo'
+        description: 成功时返回的数据，可能不携带
+      error_code:
+        description: 错误码，不为 0 时表示发生错误
+        type: integer
+      message:
+        description: 错误信息或成功消息
+        type: string
+    type: object
+  handlers.FormatResponse-handlers_UserInfo:
+    properties:
+      data:
+        allOf:
+        - $ref: '#/definitions/handlers.UserInfo'
+        description: 成功时返回的数据，可能不携带
+      error_code:
+        description: 错误码，不为 0 时表示发生错误
+        type: integer
+      message:
+        description: 错误信息或成功消息
+        type: string
+    type: object
+  handlers.FormatResponse-handlers_WorksetStats:
+    properties:
+      data:
+        allOf:
+        - $ref: '#/definitions/handlers.WorksetStats'
+        description: 成功时返回的数据，可能不携带
+      error_code:
+        description: 错误码，不为 0 时表示发生错误
+        type: integer
+      message:
+        description: 错误信息或成功消息
         type: string
     type: object
   handlers.InvitationInfo:
@@ -175,22 +321,6 @@ definitions:
         description: 邀请时间
         type: string
     type: object
-  handlers.JSONMap:
-    additionalProperties: {}
-    type: object
-  handlers.LaborInfo:
-    properties:
-      labor_mask:
-        allOf:
-        - $ref: '#/definitions/handlers.LaborMask'
-        description: 分工掩码，使用
-      member_id:
-        description: 成员 ID
-        type: integer
-      nickname:
-        description: 成员昵称
-        type: string
-    type: object
   handlers.LaborMask:
     description: 分工掩码与成员在汉化组中的职责相关，使用位掩码表示不同的职责 第 0 位表示监制/负责人 第 1 位表示图源 第 2 位表示美工
       第 3 位表示翻译 第 4 位表示校对 第 5 位表示嵌字 第 6 位表示嵌字审核 第 7 位表示发布
@@ -222,36 +352,6 @@ definitions:
     - LABOR_LETTERER_MASK
     - LABOR_REVIEWER_MASK
     - LABOR_PUBLISHER_MASK
-  handlers.LoginParams:
-    properties:
-      captcha:
-        description: Captcha 是验证码
-        type: string
-      captcha_info:
-        description: CaptchaInfo 是验证码信息
-        type: string
-      email:
-        description: Email 是龙译账号的邮箱
-        type: string
-      password:
-        description: Password 是龙译账号的密码
-        type: string
-    required:
-    - captcha
-    - captcha_info
-    - email
-    - password
-    type: object
-  handlers.LoginResponse:
-    properties:
-      token:
-        description: MoetranJWT 是登录成功后返回的 JWT
-        type: string
-      user:
-        allOf:
-        - $ref: '#/definitions/handlers.UserInfo'
-        description: User 是登录成功后返回的用户信息
-    type: object
   handlers.MemberInfo:
     properties:
       id:
@@ -302,6 +402,15 @@ definitions:
     - invitation_id
     - processor_member_id
     type: object
+  handlers.ProjectCreatedInfo:
+    properties:
+      moetranId:
+        description: 龙译 ID
+        type: string
+      projectId:
+        description: 项目 ID
+        type: integer
+    type: object
   handlers.ProjectInfo:
     properties:
       allow_auto_join:
@@ -313,11 +422,6 @@ definitions:
       id:
         description: 项目 ID
         type: integer
-      labors:
-        description: 相关的分工，如果未指定将不会返回
-        items:
-          $ref: '#/definitions/handlers.LaborInfo'
-        type: array
       legacy_id:
         description: Legacy ID，如果未指定将不会返回
         type: integer
@@ -340,13 +444,16 @@ definitions:
         description: 作品集索引
         type: integer
     type: object
-  handlers.SuccessResponse:
+  handlers.StringFormatResponse:
     properties:
-      detail:
-        allOf:
-        - $ref: '#/definitions/handlers.JSONMap'
-        description: 可选，提供额外的成功信息
+      data:
+        description: 成功时返回的数据，可能不携带
+        type: string
+      error_code:
+        description: 错误码，不为 0 时表示发生错误
+        type: integer
       message:
+        description: 错误信息或成功消息
         type: string
     type: object
   handlers.TeamInfo:
@@ -390,11 +497,6 @@ definitions:
       is_admin:
         description: 是否是 panel 管理员
         type: boolean
-      members:
-        description: 在各个汉化组中的成员信息
-        items:
-          $ref: '#/definitions/handlers.MemberInfo'
-        type: array
       moetran_id:
         description: 龙译 ID
         type: string
@@ -545,17 +647,15 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/handlers.ApplicationInfo'
-            type: array
+            $ref: '#/definitions/handlers.FormatResponse-array_handlers_ApplicationInfo'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
-            type: string
+            type: objcet
       summary: 获取申请列表
       tags:
       - application
@@ -576,15 +676,15 @@ paths:
         "200":
           description: 创建成功
           schema:
-            $ref: '#/definitions/handlers.SuccessResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
-            type: string
+            type: objcet
       summary: 创建申请
       tags:
       - application
@@ -611,11 +711,11 @@ paths:
         "200":
           description: 处理成功
           schema:
-            $ref: '#/definitions/handlers.SuccessResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
@@ -630,11 +730,11 @@ paths:
         "200":
           description: 更新成功
           schema:
-            $ref: '#/definitions/handlers.SuccessResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
@@ -672,13 +772,11 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/handlers.InvitationInfo'
-            type: array
+            $ref: '#/definitions/handlers.FormatResponse-array_handlers_InvitationInfo'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
@@ -703,11 +801,11 @@ paths:
         "200":
           description: 创建成功
           schema:
-            $ref: '#/definitions/handlers.SuccessResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
@@ -738,11 +836,11 @@ paths:
         "200":
           description: 处理成功
           schema:
-            $ref: '#/definitions/handlers.SuccessResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
@@ -773,13 +871,11 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/handlers.MemberInfo'
-            type: array
+            $ref: '#/definitions/handlers.FormatResponse-array_handlers_MemberInfo'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
@@ -821,13 +917,11 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/handlers.ProjectInfo'
-            type: array
+            $ref: '#/definitions/handlers.FormatResponse-array_handlers_ProjectInfo'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
@@ -852,11 +946,11 @@ paths:
         "200":
           description: 创建成功
           schema:
-            $ref: '#/definitions/handlers.SuccessResponse'
+            $ref: '#/definitions/handlers.FormatResponse-handlers_ProjectCreatedInfo'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
@@ -879,11 +973,11 @@ paths:
         "200":
           description: 删除成功
           schema:
-            $ref: '#/definitions/handlers.SuccessResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
@@ -905,11 +999,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.ProjectInfo'
+            $ref: '#/definitions/handlers.FormatResponse-handlers_ProjectInfo'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
@@ -939,11 +1033,11 @@ paths:
         "200":
           description: 更新成功
           schema:
-            $ref: '#/definitions/handlers.SuccessResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
@@ -974,13 +1068,11 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/handlers.TeamInfo'
-            type: array
+            $ref: '#/definitions/handlers.FormatResponse-array_handlers_TeamInfo'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
@@ -1003,11 +1095,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.UserInfo'
+            $ref: '#/definitions/handlers.FormatResponse-handlers_UserInfo'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
@@ -1021,18 +1113,12 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.UserInfo'
+        "307":
+          description: Temporary Redirect
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: 服务器内部错误
-          schema:
-            type: string
+            $ref: '#/definitions/handlers.StringFormatResponse'
       summary: 利用 cookie，获取当前用户的详情
       tags:
       - user
@@ -1059,13 +1145,11 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/handlers.WorksetInfo'
-            type: array
+            $ref: '#/definitions/handlers.FormatResponse-array_handlers_WorksetInfo'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
@@ -1090,11 +1174,11 @@ paths:
         "200":
           description: 创建成功
           schema:
-            $ref: '#/definitions/handlers.SuccessResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
@@ -1117,11 +1201,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.WorksetStats'
+            $ref: '#/definitions/handlers.FormatResponse-handlers_WorksetStats'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
@@ -1147,46 +1231,16 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.BindResponse'
+            $ref: '#/definitions/handlers.FormatResponse-handlers_BindResponse'
         "400":
           description: 无效的请求参数
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.StringFormatResponse'
         "500":
           description: 服务器内部错误
           schema:
             type: string
       summary: 绑定龙译账号
-      tags:
-      - auth
-  /auth/login:
-    post:
-      consumes:
-      - application/json
-      description: 登录 PoplarGrid 以及龙译的账号，必须在绑定之后才可以使用
-      parameters:
-      - description: 登录参数
-        in: body
-        name: params
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.LoginParams'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.LoginResponse'
-        "400":
-          description: 无效的请求参数
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-        "500":
-          description: 服务器内部错误
-          schema:
-            type: string
-      summary: 登录账号
       tags:
       - auth
 swagger: "2.0"

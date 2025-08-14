@@ -150,26 +150,48 @@ func NewCheckUserIdMiddleware() IrisMiddleware {
 		}
 		if err != nil {
 			// 否则如果有其他错误，返回 400 Bad Request
-			ctx.StopWithJSON(iris.StatusBadRequest, ErrorResponse{
-				Error: "无效的 user_id，必须与当前登录用户 ID 匹配",
-			})
+			e := newHdlErr(ErrParamsLackage, "无法获取有效的 user_id")
+
+			ctx.StopWithJSON(
+				iris.StatusBadRequest,
+				StringFormatResponse{
+					ErrorCode: e.ErrorCode(),
+					Message:   e.Error(),
+				},
+			)
 			return
 		}
 
 		// 从上下文中获取 user_id
 		userId, err := ctx.Values().GetUint("user_id")
 		if err != nil {
-			ctx.StopWithJSON(iris.StatusBadRequest, ErrorResponse{
-				Error: "无法获取有效的 user_id",
-			})
+			// 如果上下文中没有 user_id，返回 400 Bad Request
+			e := newHdlErr(ErrHeaderLackage, "未提取到有效的 user_id")
+
+			ctx.StopWithJSON(
+				iris.StatusBadRequest,
+				StringFormatResponse{
+					ErrorCode: e.ErrorCode(),
+					Message:   e.Error(),
+				},
+			)
+
 			return
 		}
 
 		// 检查路径参数中的 user_id 是否与上下文中的 user_id 匹配
 		if pathUserId != userId {
-			ctx.StopWithJSON(iris.StatusBadRequest, ErrorResponse{
-				Error: "无效的 user_id，必须与当前登录用户 ID 匹配",
-			})
+			// 如果不匹配，返回 400 Bad Request
+			e := newHdlErr(ErrUnmatchedUserId, "路径参数 user_id 与当前登录用户 ID 不匹配")
+
+			ctx.StopWithJSON(
+				iris.StatusBadRequest,
+				StringFormatResponse{
+					ErrorCode: e.ErrorCode(),
+					Message:   e.Error(),
+				},
+			)
+
 			return
 		}
 
