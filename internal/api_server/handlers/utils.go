@@ -26,6 +26,7 @@ func RouteAPIHandler(root *mvc.Application, tokenFactory services.AuthTokenFacto
 
 	// 注册各个 handler 的路由
 	RouteUserHandler(api)
+	RouteProjectHandler(api)
 	RouteTeamHandler(api)
 	RouteWorksetHandler(api)
 	RouteMemberHandler(api)
