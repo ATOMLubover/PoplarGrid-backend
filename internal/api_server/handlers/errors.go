@@ -46,11 +46,11 @@ func IsHandlerError(e Err) bool {
 // 在 handler 层就能检出的错误，一定是 4xx 错误码
 const (
 	ErrAuthLackage     errno = iota + 501 // 缺少 authorization 信息
-	ErrHeaderLackage                        // 缺少必要的请求头信息
-	ErrParamsLackage                        // 缺少必要参数
-	ErrBadParams                            // 非法的请求参数组合
-	ErrUnmatchedUserId                      // 路径参数 user_id 与当前登录用户 ID 不匹配
-	ErrUnprocessable                        // 无法处理的请求
+	ErrHeaderLackage                      // 缺少必要的请求头信息
+	ErrParamsLackage                      // 缺少必要参数
+	ErrBadParams                          // 非法的请求参数组合
+	ErrUnmatchedUserId                    // 路径参数 user_id 与当前登录用户 ID 不匹配
+	ErrUnprocessable                      // 无法处理的请求
 )
 
 // hdlErr 实现了 Err 接口
@@ -96,7 +96,7 @@ func wrapError(ctx iris.Context, e Err) {
 	// 根据错误类型设置响应状态码
 	if services.IsServerError(e) {
 		// 如果是服务端错误，则使用 Text 响应
-		ctx.Text(e.Error())
+		ctx.WriteString(e.Error())
 
 		return
 	}

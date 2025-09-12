@@ -83,7 +83,7 @@ func (s *userServiceImpl) GetUserDetail(userId uint) (*UserInfo, Err) {
 		MoetranJwt: user.MoetranJwt,
 	}
 	if user.QQNumber != nil {
-		userInfo.QQNumber = *user.QQNumber
+		userInfo.QQNumber = int(*user.QQNumber)
 	}
 	if user.Remark != nil {
 		userInfo.Remark = *user.Remark

@@ -110,7 +110,8 @@ func (s *authServiceImpl) Bind(params *BindParams) (*BindResult, Err) {
 			DoUpdates: clause.AssignmentColumns([]string{"nickname"}),
 		}).
 		Create(newUser); err != nil {
-		s.logger.Error("Bind 绑定用户失败", slog.Any("Error", err))
+		s.logger.Error("Bind 绑定用户失败",
+			slog.Any("Error", err))
 		return nil, ErrDatabaseFailure
 	}
 
@@ -136,7 +137,7 @@ func (s *authServiceImpl) Bind(params *BindParams) (*BindResult, Err) {
 		MoetranJWT: moetranJWT,
 	}
 	if newUser.QQNumber != nil {
-		r.UserInfo.QQNumber = *newUser.QQNumber
+		r.UserInfo.QQNumber = int(*newUser.QQNumber)
 	}
 
 	return r, nil

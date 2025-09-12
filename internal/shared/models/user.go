@@ -9,10 +9,10 @@ type User struct {
 	BaseModel
 
 	// 基本信息
-	Nickname     string `gorm:"unique;size:128;not null"`
-	Email        string `gorm:"unique;size:128"`
-	QQNumber     *int   `gorm:"unique;index;default:null"`
-	PasswordHash string `gorm:"size:256;not null"`
+	Nickname     string  `gorm:"unique;size:128;not null"`
+	Email        string  `gorm:"unique;size:128"`
+	QQNumber     *uint64 `gorm:"unique;index;default:null"`
+	PasswordHash string  `gorm:"size:256;not null"`
 
 	// 控制信息
 	IsAdmin bool `gorm:"default:false"`
