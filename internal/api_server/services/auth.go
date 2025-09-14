@@ -109,7 +109,8 @@ func (s *authServiceImpl) Bind(params *BindParams) (*BindResult, Err) {
 			Columns:   []clause.Column{{Name: "moetran_id"}},
 			DoUpdates: clause.AssignmentColumns([]string{"nickname"}),
 		}).
-		Create(newUser); err != nil {
+		Create(newUser).
+		Error; err != nil {
 		s.logger.Error("Bind 绑定用户失败",
 			slog.Any("Error", err))
 		return nil, ErrDatabaseFailure

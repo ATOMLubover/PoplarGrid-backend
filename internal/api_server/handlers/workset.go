@@ -109,13 +109,20 @@ func (h *WorksetHandler) List(ctx iris.Context) {
 	pageSerial := ctx.URLParamIntDefault("page_serial", 1)
 	pageSize := ctx.URLParamIntDefault("page_size", 10)
 
+	teamId, err := ctx.URLParamInt("team_id")
+	if err != nil {
+		wrapError(ctx, newHdlErr(ErrParamsLackage, "无法获取有效的 team ID"))
+		return
+	}
+
 	// 调用服务获取工作集列表
-	worksets, err := h.WorksetService.GetWorksets(&services.WorksetListParams{
+	worksets, e := h.WorksetService.GetWorksets(&services.WorksetListParams{
 		Offset: (pageSerial - 1) * pageSize,
 		Limit:  pageSize,
+		TeamId: uint(teamId),
 	})
-	if err != nil {
-		wrapError(ctx, err)
+	if e != nil {
+		wrapError(ctx, e)
 		return
 	}
 
